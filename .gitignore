@@ -5,3 +5,4 @@ engine/linux/bin/
 # session stuff
 engine/source/session.vim
 engine/.vscode/
+engine/win_x64/*.pdb
