@@ -1,0 +1,110 @@
+TODO(jam) -------------
+
+TODO(engine) ----------
+
+- typed quick sort with inlined comparator (sort_search.h)
+- min / max heap setup and tests
+- debug tweakable values
+
+- sprite batching
+
+- simplex derivatives
+- other noise functions: voronoise, worley, ...
+
+- renderer static buffers
+- backend-independant interface
+
+- vulkan renderer
+
+- small-buffer-optimized vector (based of sarray)
+- data structures template of the bytesize as a base with a template of the typename as frontend
+- make Frame_Timing more dynamic instead of using static variables
+
+CURRENT ---------------
+
+DONE ------------------
+
+01/11/2020
+- intrinsics for SIMD and __rdtsc
+- debug performance counters
+
+25/10/2020
+- fixed the issue with simplex scaling !!
+
+23/10/2020
+- generic daryheap
+
+20/10/2020
+- fix the perlin noise analytical derivatives
+- clean the noise texture generation template
+
+08/10/2020
+- convert u64 into size_t
+- cleanup preprocessor includes for the platform layer and renderer
+
+24/08/2020
+- data unpacking with LE / BE conversions optimized depending on the compiler
+- started implementing ttf parser
+
+22/08/2020
+- bugfix data structures
+- darena unit test
+- dqueue unit test
+- dhashmap unit test
+
+21/08/2020
+- fix dhashmap implementation
+- renderer textures
+
+20/08/2020
+- dhashmap using a table + pool
+
+19/09/2020
+- Vertex_Batch implementation
+
+18/08/2020
+- renderer architecture planning esp. wrt. batching
+
+17/08/2020
+- darena using malloc that allocates extensions & fuses them when cleared to avoid pointer invalidation
+- stateful renderer : uniforms, shaders, vertex formats
+
+16/08/2020
+- constructor / destructor handling in darray, dqueue and dpool
+- fix dpool bug related to clearing of the bitset before using it
+
+13/08/2020
+- fix dpool implementation and unit tests
+- cleanup the bw:: namespace situation
+
+12/08/2020
+- fix default constructors / initialize situation
+    -> default constructors for POD and structs with no initialize() function
+    -> then free() or terminate() is responsible for resetting to default values
+
+    -> initialize() should setup default values and must not rely on a default constructor
+    -> then free() or terminate() is not responsible of resetting to default values
+
+07/08/2020
+- fix windows compilation
+- pull vertex_array & state out of Vertex_Layout and put them inside Vertex_Data
+- input handling with SDL for keyboard
+- define for keyboard inputs to detect (variable_name, SDL_key_value) with NUMBER_OF_DETECTED_KEYS
+
+06/08/2020
+- Vertex_Data takes stored_format and stored_buffer for all but the couple (buffer, vao) should be owned by the renderer to avoid updating multiple times to the same format
+- renderer strategy when the arenas are full
+
+04/08/2020
+- renderer draw_queue() function
+- make a "Hello Triangle!" using the renderer
+
+03/08/2020
+- renderer uniforms
+- renderer vertex formats
+- renderer shaders
+
+02/08/2020
+- arena
+- dqueue
+- test void_align_up & void_align_down
