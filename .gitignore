@@ -1,0 +1,7 @@
+# bin folders
+engine/win_x64/bin/
+engine/linux/bin/
+
+# session stuff
+engine/source/session.vim
+engine/.vscode/
