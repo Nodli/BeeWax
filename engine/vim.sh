@@ -12,4 +12,4 @@ vim -c ":nnoremap <F5> :wa<CR> :!${executable_path}<CR>"                        
     -c ":autocmd VimLeave * :mksession! ${session_path}"                                                                                                                                        \
     -c ":set number"                                                                                                                                                                            \
     -c ":nnoremap <F7> :e %:p:s,.h$,.X123X,:s,.cpp$,.h,:s,.X123X$,.cpp,<CR>"                                                                                                                    \
-#    -c ":autocmd VimEnter * :b unity_main.cpp  | :set filetype=cpp"
+#    -c ":set exrc"
