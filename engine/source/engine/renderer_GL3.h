@@ -21,7 +21,7 @@ inline u32 texture_format_channels(Texture_Format format){
         case TEXTURE_FORMAT_RGB:
             return 3u;
         default:
-            LOG_ERROR("format missing in texture_format_channels");
+            LOG_ERROR("format with value %d missing in texture_format_channels", format);
             assert(false);
             return 0u;
     }

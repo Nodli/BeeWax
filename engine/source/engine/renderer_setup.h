@@ -15,7 +15,7 @@ inline size_t renderer_data_type_bytes(Renderer_Data_Type type){
         case TYPE_UBYTE:
             return 1u;
         default:
-            LOG_ERROR("type missing in renderer_data_type_bytes");
+            LOG_ERROR("type with value %d missing in renderer_data_type_bytes", type);
             assert(false);
             return 0u;
     }
