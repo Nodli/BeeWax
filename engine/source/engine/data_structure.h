@@ -223,9 +223,9 @@ struct dhashmap{
 // NOTE(hugo): the highest priority element is stored at the top such as PRIORITY_PARENT >= PRIORITY_CHILD
 //
 // Compare(CHILD, PARENT) is
-//  < 0 when CHILD has higher priority than PARENT ie switch REQUIRED
-//  = 0 when CHILD is equivalent to         PARENT ie switch NOT REQUIRED
-//  > 0 when CHILD has lower priority than  PARENT ie switch NOT REQUIRED
+//  < 0 when CHILD has higher priority than PARENT ie permutation REQUIRED
+//  = 0 when CHILD is equivalent to         PARENT ie permutation NOT REQUIRED
+//  > 0 when CHILD has lower priority than  PARENT ie permutation NOT REQUIRED
 //
 // ex : a max-heap such as parent (parent >= child) must return parent - child
 // ex : a min-heap such as parent (parent <= child) must return child - parent
