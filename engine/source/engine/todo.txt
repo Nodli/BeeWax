@@ -1,10 +1,12 @@
+
 TODO(jam) -------------
 
 TODO(engine) ----------
 
 - typed quick sort with inlined comparator (sort_search.h)
 - min / max heap setup and tests
-- debug tweakable values
+
+- decouple buffer copy to GPU vs draw
 
 - sprite batching
 
@@ -23,6 +25,14 @@ TODO(engine) ----------
 CURRENT ---------------
 
 DONE ------------------
+
+06/11/2020
+- implement tweakable values in developper mode
+
+05/11/2020
+- clean debug / developper tools
+- renderer samplers
+- fix texture row alignment issues triggered by using TEXTURE_FORMAT_RGB
 
 01/11/2020
 - intrinsics for SIMD and __rdtsc
