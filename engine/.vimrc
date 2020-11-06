@@ -82,4 +82,5 @@ if has('gui_running')
     highlight Pmenu guibg=grey25
     highlight PmenuSel guibg=yellowgreen
     set guioptions=
+    set guifont=Consolas
 endif
