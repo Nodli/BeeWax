@@ -1,13 +1,25 @@
 #ifndef H_RENDERER_USER_DEFINES
 #define H_RENDERER_USER_DEFINES
 
-// ---- setup types
+// ---- setup types and enums
 
 enum Renderer_Data_Type{
     TYPE_FLOAT = GL_FLOAT,
     TYPE_UBYTE = GL_UNSIGNED_BYTE,
     TYPE_NONE
 };
+inline size_t renderer_data_type_bytes(Renderer_Data_Type type){
+    switch(type){
+        case TYPE_FLOAT:
+            return 4u;
+        case TYPE_UBYTE:
+            return 1u;
+        default:
+            LOG_ERROR("type missing in renderer_data_type_bytes");
+            assert(false);
+            return 0u;
+    }
+}
 
 struct Vertex_Format_Attribute{
     Renderer_Data_Type type = TYPE_NONE;
@@ -15,21 +27,42 @@ struct Vertex_Format_Attribute{
     size_t offset = 0u;
 };
 
+enum Renderer_Texture_Parameters{
+    FILTER_DEFAULT = GL_NEAREST_MIPMAP_LINEAR,
+    FILTER_NEAREST = GL_NEAREST,
+    FILTER_LINEAR = GL_LINEAR,
+    // NOTE(hugo): texels from the nearest mipmap
+    FILTER_NEAREST_MIPMAP_NEAREST = GL_NEAREST_MIPMAP_NEAREST,
+    FILTER_LINEAR_MIPMAP_NEAREST = GL_LINEAR_MIPMAP_NEAREST,
+    // NOTE(hugo): texels interpolated from the two nearest mipmap
+    FILTER_NEAREST_MIPMAP_LINEAR = GL_NEAREST_MIPMAP_LINEAR,
+    FILTER_LINEAR_MIPMAP_LINEAR = GL_LINEAR_MIPMAP_LINEAR,
+
+    WRAP_DEFAULT = GL_REPEAT,
+    WRAP_CLAMP = GL_CLAMP_TO_EDGE,
+    WRAP_MIRRORED_REPEAT = GL_MIRRORED_REPEAT,
+    WRAP_REPEAT = GL_REPEAT,
+};
+
 // ----- MANUAL -----
+
+// UNIFORM DECLARATION :
+// - declare a uniform struct /uniform_NAME/
+// - insert NAME in the FOR_EACH_UNIFORM_NAME macro
+// - use the uniform in a shader as : layout (std140) uniform u_NAME { /*/ } NAME;
+// - insert NAME in the FOR_EACH_UNIFORM_SHADER_PAIR macro as (NAME, SHADER_NAME)
 
 // VERTEX FORMAT DECLARATION :
 // - declare a vertex struct /vertex_NAME/
-// - declare and write a static description of the vertex format /vertex_member_descriptors_NAME/
-// - insert NAME in the FOR_EACH_VERTEX_FORMAT macro
-
-// UNIFORM BLOCK DECLARATION :
-// - declare a uniform struct /uniform_format_NAME/
-// - insert NAME in the FOR_EACH_UNIFORM_BLOCK macro
+// - define a static description of the vertex format as /vertex_format_attributes_NAME/
+// - insert NAME in the FOR_EACH_VERTEX_FORMAT_NAME macro
 
 // SHADER DECLARATION :
-// - declare and write the static shaders code as /vertex_NAME/ and /fragment_NAME/
-// - insert NAME in the FOR_EACH_SHADER macro
-// - insert necessary (UNIFORM_BLOCK_NAME, NAME) bindings in the FOR_EACH_UNIFORM_BLOCK_SHADER_PAIR
+// - define the static shader code as /vertex_shader_NAME/ and /fragment_shader_NAME/
+// - insert NAME in the FOR_EACH_SHADER_NAME macro
+
+// SAMPLER DECLARATION :
+// - insert NAME in the FOR_EACH_SAMPLER_NAME macro as (NAME, MIN_FILTER, MAG_FILTER, WRAP_S, WRAP_T, WRAP_R)
 
 // -----------------
 
@@ -133,6 +166,9 @@ FUNCTION(camera_2D, polygon_tex_2D)             \
 #define FOR_EACH_TEXTURE_SHADER_PAIR(FUNCTION)  \
 FUNCTION(texA, 0, polygon_tex_2D)               \
 
+#define FOR_EACH_SAMPLER_NAME(FUNCTION)                                                         \
+FUNCTION(nearest_clamp, FILTER_NEAREST, FILTER_NEAREST, WRAP_CLAMP, WRAP_CLAMP, WRAP_CLAMP)     \
+
 // ---- setup
 
 enum Uniform_Name{
@@ -151,6 +187,12 @@ enum Shader_Name{
     FOR_EACH_SHADER_NAME(ADD_TO_ENUM)
     NUMBER_OF_SHADER_NAMES,
     SHADER_NONE = NUMBER_OF_SHADER_NAMES
+};
+
+enum Sampler_Name{
+    FOR_EACH_SAMPLER_NAME(ADD_TO_ENUM)
+    NUMBER_OF_SAMPLER_NAMES,
+    SAMPLER_NONE = NUMBER_OF_SAMPLER_NAMES
 };
 
 #endif

@@ -10,8 +10,21 @@ enum Renderer_Primitive{
 };
 
 enum Texture_Format{
-    TEXTURE_FORMAT_RGB = GL_RGB,
+    TEXTURE_FORMAT_RGB = GL_RGB, // NOTE(hugo): don't use this one because it's never word-aligned
+    TEXTURE_FORMAT_RGBA = GL_RGBA,
     TEXTURE_FORMAT_NONE
+};
+inline u32 texture_format_channels(Texture_Format format){
+    switch(format){
+        case TEXTURE_FORMAT_RGBA:
+            return 4u;
+        case TEXTURE_FORMAT_RGB:
+            return 3u;
+        default:
+            LOG_ERROR("format missing in texture_format_channels");
+            assert(false);
+            return 0u;
+    }
 };
 
 typedef u32 Vertex_Batch_ID;
@@ -22,7 +35,8 @@ struct Renderer_GL3{
     void setup_resources();
     void free_resources();
 
-    void next_frame();
+    void start_frame();
+    void end_frame();
 
     // ---- stateful interface
 
@@ -44,11 +58,8 @@ struct Renderer_GL3{
     Texture_ID get_texture(Texture_Format format, u32 witdh, u32 height, Renderer_Data_Type data_type = TYPE_UBYTE, void* data = nullptr);
     void free_texture(Texture_ID texture);
     void update_texture(Texture_ID texture, Renderer_Data_Type data_type, void* data);
-    void use_texture(Texture_ID texture, u32 texture_unit);
 
-    Sampler_ID get_sampler();
-    void free_sampler(Sampler_ID sampler);
-    void use_sampler(Sampler_ID sampler, u32 texture_unit);
+    void setup_texture_unit(u32 texture_unit, Texture_ID texture, Sampler_Name sampler_name = Sampler_Name::SAMPLER_NONE);
 
     // ---- data
 
@@ -99,14 +110,6 @@ struct Renderer_GL3{
         darray<Texture_Entry> textures;
     } texture_storage;
 
-    // -- samplers
-    struct Sampler_Entry{
-    };
-    struct{
-        darray<u32> free_samplers;
-        darray<Sampler_Entry> samplers;
-    } sampler_storage;
-
     // -- static storage
 
     struct Uniform_Storage_Entry{
@@ -126,6 +129,11 @@ struct Renderer_GL3{
         size_t vertex_bytesize = 0u;
     };
     Vertex_Format_Entry vertex_format_storage[Vertex_Format_Name::NUMBER_OF_VERTEX_FORMAT_NAMES];
+
+    struct Sampler_Entry{
+        GL::Sampler sampler = 0u;
+    };
+    Sampler_Entry sampler_storage[Sampler_Name::NUMBER_OF_SAMPLER_NAMES];
 };
 
 #endif

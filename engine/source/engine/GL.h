@@ -2,6 +2,7 @@
 #define H_GL
 
 namespace GL{
+    constexpr GLint default_unpack_alignment = 4u;
 
     // NOTE(hugo): typedef does not make a strong typing requirement ie a Shader is automatically cast to any GLuint typedef
     typedef GLuint Handle;
