@@ -6,6 +6,8 @@ char path_separator();
 buffer<u8> read_file(const char* const path); // NOTE(hugo): free required
 char* read_file_cstring(const char* const path); // NOTE(hugo): free required
 
+void write_file(const char* const path, u8* data, size_t bytesize);
+
 struct unpacker{
     template<typename T>
     T get_bytes();

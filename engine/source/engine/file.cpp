@@ -10,6 +10,10 @@ char path_separator(){
 
 buffer<u8> read_file(const char* const path){
     FILE* f = fopen(path, "rb");
+    if(f == NULL){
+        LOG_ERROR("read_file(%s) FAILED - returning buffer with nullptr", path);
+        return {};
+    }
 
     buffer<u8> buffer;
 
@@ -32,6 +36,10 @@ buffer<u8> read_file(const char* const path){
 
 char* read_file_cstring(const char* const path){
     FILE* f = fopen(path, "rb");
+    if(f == NULL){
+        LOG_ERROR("read_file_cstring(%s) FAILED - returning nullptr", path);
+        return nullptr;
+    }
 
     fseek(f, 0, SEEK_END);
     s64 fsize = ftell(f);
@@ -48,4 +56,15 @@ char* read_file_cstring(const char* const path){
     fclose(f);
 
     return data;
+}
+
+void write_file(const char* const path, u8* data, size_t bytesize){
+    FILE* f = fopen(path, "wb");
+    if(f == NULL){
+        LOG_ERROR("write_file(%s) FAILED - aborting write", path);
+        return;
+    }
+
+    fwrite(data, 1, bytesize, f);
+    fclose(f);
 }
