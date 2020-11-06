@@ -15,6 +15,7 @@
         #define DISABLE_WARNING_TYPE_PUNNING
         #define DISABLE_WARNING_UNINITIALIZED
         #define DISABLE_WARNING_SIGN_CONVERSION             MSVC_DISABLE_WARNING(4267)
+        #define DISABLE_WARNING_STATIC_STRING
 
         #define DISABLE_OPTIMIZATIONS                       __pragma(optimize("", off))
         #define ENABLE_OPTIMIZATIONS                        __pragma(optimize("", on))
@@ -36,6 +37,7 @@
         #define DISABLE_WARNING_TYPE_PUNNING                GCC_DISABLE_WARNING(-Wstrict-aliasing)
         #define DISABLE_WARNING_UNINITIALIZED               GCC_DISABLE_WARNING(-Wuninitialized)
         #define DISABLE_WARNING_SIGN_CONVERSION             GCC_DISABLE_WARNING(-Wsign-conversion)
+        #define DISABLE_WARNING_STATIC_STRING               GCC_DISABLE_WARNING(-Wwrite-strings)
 
         #define DISABLE_OPTIMIZATIONS                       GCC_PRAGMA_QUOTE(GCC push_options) GCC_PRAGMA_QUOTE(GCC optimize("O0"))
         #define ENABLE_OPTIMIZATIONS                        GCC_PRAGMA_QUOTE(GCC pop_options)
@@ -83,6 +85,8 @@
     #undef DISABLE_WARNING_UNREFERENCED_FUNCTION
     #undef DISABLE_WARNING_TYPE_PUNNING
     #undef DISABLE_WARNING_UNINITIALIZED
+    #undef DISABLE_WARNING_SIGN_CONVERSION
+    #undef DISABLE_WARNING_STATIC_STRING
 
     #undef DISABLE_OPTIMIZATIONS
     #undef ENABLE_OPTIMIZATIONS
