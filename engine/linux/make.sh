@@ -1,8 +1,5 @@
 #!/bin/bash
 
-clear
-echo "-------- Compilation"
-
 cd $(dirname $0)
 
 mkdir -p bin/
@@ -38,13 +35,16 @@ SanitizeFlags="-fsanitize=address"
 
 cd bin/
 
-# SDL OpenGL STB
-g++ $CompilerFlags                                              \
-    $OptimizationFlags                                          \
-    -DLIB_STB -DPLATFORM_LAYER_SDL -DRENDERER_OPENGL3           \
-    $SourceApplication $SourceGL3W                              \
-    $IncludeGL3W $IncludeSTB                                    \
-    $LinkSTB $IncludeLinkSDL $LinkOpenGL $LinkDynamicLinking    \
-    $DebugFlags                                                 \
-#   $SanitizeFlags                                              \
-#    $WarningFlags $WarningExtraFlags                            \
+# ---- SDL OpenGL STB
+EXIT_CODE= g++                                              \
+$CompilerFlags                                              \
+$OptimizationFlags                                          \
+-DLIB_STB -DPLATFORM_LAYER_SDL -DRENDERER_OPENGL3           \
+$SourceApplication $SourceGL3W                              \
+$IncludeGL3W $IncludeSTB                                    \
+$LinkSTB $IncludeLinkSDL $LinkOpenGL $LinkDynamicLinking    \
+$DebugFlags                                                 \
+#$SanitizeFlags                                              \
+#$WarningFlags $WarningExtraFlags                            \
+
+exit $EXIT_CODE
