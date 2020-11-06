@@ -6,3 +6,6 @@ engine/linux/bin/
 engine/source/session.vim
 engine/.vscode/
 engine/win_x64/*.pdb
+
+# temporary files
+*.swp
