@@ -3,6 +3,7 @@ using namespace bw;
 int main(){
 
 	// ---- initialization ---- //
+
 	if(SDL_Init(SDL_INIT_EVERYTHING) != 0){
 		printf("Failed SDL_Init() %s\n", SDL_GetError());
 	}
@@ -14,6 +15,7 @@ int main(){
 	window_settings.name = window_name;
 	window_settings.width = 1920;
 	window_settings.height = 1080;
+	//window_settings.sync = Window_Settings::SINGLE_BUFFER_NOSYNC;
 
 	Window window;
 	window.initialize(window_settings);
@@ -32,7 +34,7 @@ int main(){
     Font_Rendering font_rendering;
     font_rendering.setup_from_file("./data/Roboto_Font/Roboto-Black.ttf");
 
-    GL::set_debug_message_callback();
+    DEV_DEBUG_RENDERER;
 
     // ---- input
 
@@ -42,8 +44,6 @@ int main(){
     // ---- state
 
 	bool running = true;
-    double saved_time = timer_seconds();
-    UNUSED(saved_time);
 
     // ---- texture generation
 
@@ -56,12 +56,17 @@ int main(){
     Texture_ID perlin_dy_texture = renderer.get_texture(TEXTURE_FORMAT_RGB, 256u, 256u, TYPE_UBYTE, perlin_dy);
     free(perlin_memory);
 
-    u8* simplex_value = generate_noise_texture<simplex_noise>(256u, 256u, 3u, {0.f, 0.f}, 1.f / 32.f);
+    u8* simplex_value = generate_noise_texture<perlin_noise>(256u, 256u, 3u, {0.f, 0.f}, 1.f / 32.f);
     Texture_ID simplex_texture = renderer.get_texture(TEXTURE_FORMAT_RGB, 256u, 256u, TYPE_UBYTE, simplex_value);
     free(simplex_value);
 
+    // ---- developper tools
+
+    DEV_INITIALIZE;
+
 	// ---- main loop ---- //
 	while(running){
+        DEV_LOG_FRAME_TIME;
 
         // ---- update
 
@@ -85,7 +90,7 @@ int main(){
 
         // ---- render
 
-        renderer.next_frame();
+        renderer.start_frame();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         Camera_2D camera;
@@ -134,7 +139,7 @@ int main(){
             noise_vertices[3] = {{0.5f, 0.5f}, {1.f, 1.f}};
 
             renderer.use_shader(polygon_tex_2D);
-            renderer.use_texture(perlin_texture, 0u);
+            renderer.setup_texture_unit(0u, perlin_texture);
             renderer.submit_batch(noise_batch);
             renderer.free_vertex_batch(noise_batch);
 
@@ -146,7 +151,7 @@ int main(){
             dx_vertices[3] = {{-0.5f, 0.5f}, {1.f, 1.f}};
 
             renderer.use_shader(polygon_tex_2D);
-            renderer.use_texture(perlin_dx_texture, 0u);
+            renderer.setup_texture_unit(0u, perlin_dx_texture);
             renderer.submit_batch(dx_batch);
             renderer.free_vertex_batch(dx_batch);
 
@@ -158,13 +163,15 @@ int main(){
             dy_vertices[3] = {{1.5f, 0.5f}, {1.f, 1.f}};
 
             renderer.use_shader(polygon_tex_2D);
-            renderer.use_texture(perlin_dy_texture, 0u);
+            renderer.setup_texture_unit(0u, perlin_dy_texture);
             renderer.submit_batch(dy_batch);
             renderer.free_vertex_batch(dy_batch);
         }
 
+        float tweakable_show_simplex = DEV_TWEAKABLE(bool, "show_simplex", true);
+
         // NOTE(hugo): simplex texture
-        if(false)
+        if(tweakable_show_simplex)
         {
             Vertex_Batch_ID texture_batch = renderer.get_vertex_batch(xyuv, PRIMITIVE_TRIANGLE_STRIP);
             vertex_xyuv* texture_vertices = (vertex_xyuv*)renderer.get_vertices(texture_batch, 4u);
@@ -174,21 +181,18 @@ int main(){
             texture_vertices[3] = {{0.25f, 0.25f}, {1.f, 1.f}};
 
             renderer.use_shader(polygon_tex_2D);
-            renderer.use_texture(simplex_texture, 0u);
+            renderer.setup_texture_unit(0u, simplex_texture, nearest_clamp);
             renderer.submit_batch(texture_batch);
             renderer.free_vertex_batch(texture_batch);
         }
 
         // ---- setup next frame
 
+        renderer.end_frame();
 		window.swap_buffers();
 
-        double current_time = timer_seconds();
-        //LOG_TRACE("nupdates: %d sec/frame: %f fps: %f", nupdates, current_time - saved_time, 1 / (current_time - saved_time));
-        saved_time = current_time;
-
-        debug_display_timing_entries();
-        debug_next_frame();
+        DEV_DISPLAY_TIMING_ENTRIES;
+        DEV_NEXT_FRAME;
 	}
 
     // ---- texture cleanup
@@ -204,7 +208,7 @@ int main(){
 	window.terminate();
 	SDL_Quit();
 
-    debug_free();
+    DEV_TERMINATE;
 
     return 0;
 }

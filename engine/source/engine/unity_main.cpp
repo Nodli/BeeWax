@@ -120,8 +120,8 @@ namespace bw{
 
     // ---- debug
 
-    #define DEBUG_TOOLS
-    #include "debug_tools.h"
+    #define USE_DEVELOPPER_MODE
+    #include "developper_tools.h"
 
     // ---- os layer
 
