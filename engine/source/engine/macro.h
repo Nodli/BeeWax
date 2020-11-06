@@ -50,14 +50,15 @@
     // NOTE(hugo): CONCATENATE must go through CONCATENATE_INTERMEDIATE so that the A and B expressions are expanded
     #define CONCATENATE_INTERMEDIATE(A, B) A ## B
     #define CONCATENATE(A, B) CONCATENATE_INTERMEDIATE(A, B)
-    #define STRINGIFY(string) "\""#string"\""
+    #define STRINGIFY_INTERMEDIATE(string) #string
+    #define STRINGIFY(string) STRINGIFY_INTERMEDIATE(string)
 
     #define UNUSED(VARIABLE) ((void)(VARIABLE))
 
     #define TRUE 1
     #define FALSE 0
 
-    #define ADD_TO_ENUM(entry_name) entry_name,
+    #define ADD_TO_ENUM(entry_name, ...) entry_name,
 
     #define KILOBYTES(nKB)   ((u64) (nKB) << 10)
     #define MEGABYTES(nMB)   ((u64) (nMB) << 20)
