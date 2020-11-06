@@ -63,10 +63,18 @@ int main(){
     // ---- developper tools
 
     DEV_INITIALIZE;
+    DEV_DISPLAY_TWEAKABLE_ENTRIES;
+
+    //bool variableA = DEV_TWEAKABLE(BOOLEAN, "variableA", true);
+    //s32 variableB = DEV_TWEAKABLE(INTEGER, "variableB", 42);
+    //float variableC = DEV_TWEAKABLE(REAL, "variableC", 21.f);
+    //char* variableD = DEV_TWEAKABLE(STRING, "variableD", "THERE BE TWEAKABLE STRINGS");
+    //LOG_TRACE("%d %d %f %s", variableA, variableB, variableC, variableD);
+    //DEV_DISPLAY_TWEAKABLE_ENTRIES;
 
 	// ---- main loop ---- //
 	while(running){
-        DEV_LOG_FRAME_TIME;
+        //DEV_LOG_FRAME_TIME;
 
         // ---- update
 
@@ -168,10 +176,8 @@ int main(){
             renderer.free_vertex_batch(dy_batch);
         }
 
-        float tweakable_show_simplex = DEV_TWEAKABLE(bool, "show_simplex", true);
-
         // NOTE(hugo): simplex texture
-        if(tweakable_show_simplex)
+        if(true)
         {
             Vertex_Batch_ID texture_batch = renderer.get_vertex_batch(xyuv, PRIMITIVE_TRIANGLE_STRIP);
             vertex_xyuv* texture_vertices = (vertex_xyuv*)renderer.get_vertices(texture_batch, 4u);

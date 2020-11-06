@@ -1,4 +1,3 @@
-
 TODO(jam) -------------
 
 TODO(engine) ----------
@@ -28,6 +27,7 @@ DONE ------------------
 
 06/11/2020
 - implement tweakable values in developper mode
+- importing / exporting of tweakable values from / to a config file
 
 05/11/2020
 - clean debug / developper tools
