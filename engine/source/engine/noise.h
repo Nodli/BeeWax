@@ -54,14 +54,15 @@ template<float (*noise_function)(const float x, const float y)>
 u8* generate_noise_texture(u32 width, u32 height, u32 nchannels, vec2 origin, float span){
     u8* texture_data = (u8*)malloc(width * height * nchannels);
 
-    for(u32 iy = 0; iy != 256; ++iy){
+    for(u32 iy = 0u; iy != height; ++iy){
         float coord_iy = origin.y + iy * span;
-        for(u32 ix = 0; ix != 256; ++ix){
+        for(u32 ix = 0u; ix != width; ++ix){
             float noise_value = noise_function(origin.x + ix * span, coord_iy);
             u8 color_value = color_from_float(noise_value, -1.f, 1.f);
 
             for(u32 ichannel = 0u; ichannel != nchannels; ++ichannel){
-                texture_data[index2D(ix, iy, 256u) * nchannels + ichannel] = color_value;
+                size_t byte_index = index2D(ix, iy, width) * nchannels + ichannel;
+                texture_data[byte_index] = color_value;
             }
         }
     }
@@ -78,9 +79,9 @@ void* generate_noise_derivatives_textures(u32 width, u32 height, u32 nchannels, 
     noise_dx = (u8*)memory + texture_size;
     noise_dy = (u8*)memory + 2u * texture_size;
 
-    for(u32 iy = 0; iy != 256; ++iy){
+    for(u32 iy = 0u; iy != height; ++iy){
         float coord_iy = origin.y + iy * span;
-        for(u32 ix = 0; ix != 256; ++ix){
+        for(u32 ix = 0u; ix != width; ++ix){
 
             float value;
             vec2 deriv;
@@ -91,9 +92,9 @@ void* generate_noise_derivatives_textures(u32 width, u32 height, u32 nchannels, 
             u8 dy_value = color_from_float(deriv.y, -1.f, 1.f);
 
             for(u32 ichannel = 0u; ichannel != nchannels; ++ichannel){
-                noise[index2D(ix, iy, 256u) * nchannels + ichannel] = color_value;
-                noise_dx[index2D(ix, iy, 256u) * nchannels + ichannel] = dx_value;
-                noise_dy[index2D(ix, iy, 256u) * nchannels + ichannel] = dy_value;
+                noise[index2D(ix, iy, width) * nchannels + ichannel] = color_value;
+                noise_dx[index2D(ix, iy, width) * nchannels + ichannel] = dx_value;
+                noise_dy[index2D(ix, iy, width) * nchannels + ichannel] = dy_value;
             }
         }
     }
