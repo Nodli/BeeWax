@@ -11,6 +11,8 @@ constexpr bool is_pow2(u64 number);
 // REF: https://stackoverflow.com/questions/466204/rounding-up-to-next-power-of-2
 constexpr u32 next_pow2(u32 number);
 
+constexpr u32 get_rightmost_set_bit(u32 number);
+
 // ---- utilitary functions
 
 template<typename T, u32 size>

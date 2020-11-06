@@ -23,6 +23,10 @@ constexpr u32 next_pow2(u32 number){
     return number;
 }
 
+constexpr u32 get_rightmost_set_bit(u32 number){
+    return number & (~number + 1u);
+}
+
 // ---- useful functions
 
 template<typename T, u32 size>
