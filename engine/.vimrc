@@ -7,6 +7,12 @@ set hlsearch
 " disable line breaking
 set nowrap
 
+" show line numbers
+set number
+
+" enable backspace removal of previous text
+set backspace=indent,eol,start
+
 " insert mode shortcuts
 inoremap jk <ESC>
 
@@ -19,9 +25,6 @@ set wildmenu
 " remove trailing white spaces / tabs when saving
 " e avoids showing an error message when no trailing white spaces / tabs is found
 autocmd BufWritePost * %s/\s\+$//e
-
-" autosave all files on lost focus (ignores complaints for untitled buffers)
-autocmd FocusLost * silent !wa
 
 " allows buffers to be hidden without saving
 set hidden
@@ -78,9 +81,22 @@ inoremap <F2> TODO(hugo):
 
 " gui settings
 if has('gui_running')
+    " set a colorscheme because there is no issue with the terminal one
     colorscheme desert
+
+    " set the autocompletion popup color
     highlight Pmenu guibg=grey25
     highlight PmenuSel guibg=yellowgreen
+
+    " disable the windows menu bar
     set guioptions=
+
+    " override the default font
     set guifont=Consolas
+
+    " autosave all files on lost focus (ignores complaints for untitled buffers)
+    autocmd FocusLost * wa
+
+    " automatically resize buffer windows to match the gvim window width and height
+    autocmd VimResized * wincmd =
 endif
