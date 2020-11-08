@@ -3,10 +3,11 @@
 cd $(dirname $0)
 cd source
 
-executable_path="./../linux/makerun.sh"
-session_path="./session.vim"
+executable_path="../linux/makerun.sh"
+session_path="session.vim"
+vimrc_path="${PWD}/../.vimrc"
 
-gvim -U "./../.vimrc"                                                                                                                                                                       \
+gvim -c ":source ${vimrc_path}"                                                                                                                                                             \
      -c ":nnoremap <F5> :wa<CR> :!${executable_path}<CR>"                                                                                                                                   \
      -c ":nnoremap <F6> :!<CR>"                                                                                                                                                             \
      -c ":autocmd VimEnter * if filereadable(\"${session_path}\") | :source ${session_path} | else | :args **/*.h **/*.cpp **/*.inl **/*.txt | :set filetype=cpp | :b todo.txt | endif"     \
