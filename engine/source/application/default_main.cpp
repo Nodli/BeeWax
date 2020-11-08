@@ -1,6 +1,6 @@
 using namespace bw;
 
-int main(){
+int main(int argc, char* argv[]){
 
 	// ---- initialization ---- //
 
@@ -13,8 +13,8 @@ int main(){
     const char* window_name = "default_main";
 	Window_Settings window_settings;
 	window_settings.name = window_name;
-	window_settings.width = 1920;
-	window_settings.height = 1080;
+	window_settings.width = 1280;
+	window_settings.height = 720;
 	//window_settings.sync = Window_Settings::SINGLE_BUFFER_NOSYNC;
 
 	Window window;

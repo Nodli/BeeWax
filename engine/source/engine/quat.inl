@@ -122,7 +122,7 @@ template<typename T>
 quaternion::quat<T> quat_from_axis(const T angle, const vec::vec3<T> axis){
     const T half_angle = angle / (T)2;
     const T temp_sin = std::sin(half_angle);
-    return (quat){std::cos(half_angle), temp_sin * axis.x, temp_sin * axis.y, temp_sin * axis.z};
+    return {std::cos(half_angle), temp_sin * axis.x, temp_sin * axis.y, temp_sin * axis.z};
 }
 
 template<typename T>

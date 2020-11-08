@@ -29,6 +29,8 @@ DONE ------------------
 - debug_break
 - review data_structure : darena, dchunkarena, darray
 - linsearch and binsearch tests
+- make necessary changes to compile and run on windows (again !)
+- implementation and tests of a constexpr sqrt using newton raphson
 
 07/11/2020
 - DECORATE macro

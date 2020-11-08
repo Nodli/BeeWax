@@ -9,8 +9,8 @@ struct Window_SDL_GL3{
     float aspect_ratio();
 
     // NOTE(hugo): screen coordinates in the OpenGL coordinate system
-    vec2    pixel_to_screen_coordinates(ivec2 pixel);
-    ivec2  screen_to_pixel_coordinates(vec2 screen);
+    vec2 pixel_to_screen_coordinates(ivec2 pixel);
+    ivec2 screen_to_pixel_coordinates(vec2 screen);
 
     // ---- data
 
