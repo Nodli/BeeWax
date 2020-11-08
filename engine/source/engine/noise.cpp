@@ -251,8 +251,8 @@ float simplex_noise(const float x){
 }
 
 float simplex_noise(const float x, const float y){
-    constexpr float skew_factor = (sqrt(3.f) - 1.f) * 0.5f;
-    constexpr float unskew_factor = (3.f - sqrt(3.f)) / 6.f;
+    constexpr float skew_factor = 0.36602540378443864676; // NOTE(hugo): (sqrt(3.f) - 1.f) * 0.5f
+    constexpr float unskew_factor = 0.21132486540518711774; // NOTE(hugo): (3.f - sqrt(3.f)) / 6.f
     constexpr float squared_simplex_height = 0.5f;
 
     // NOTE(hugo): can be used to have a more 'expected' feature density with ~1 simplex per 1.f unit in (x, y)
