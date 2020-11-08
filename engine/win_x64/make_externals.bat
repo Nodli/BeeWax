@@ -7,7 +7,7 @@ echo STB...
 set P=%cd%
 
 set SourcePath=%P%\..\externals\stb
-set FolderPath=%P%\..\externals\stb\static_library\windows_x64
+set FolderPath=%P%\..\externals\stb\static_library\win_x64
 
 if not exist %FolderPath% mkdir %FolderPath%
 pushd %FolderPath%
