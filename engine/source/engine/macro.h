@@ -47,6 +47,9 @@
         #define PUSH_PACK                                   GCC_PRAGMA_QUOTE(pack(push, 1))
         #define PUSH_POP                                    GCC_PRAGMA_QUOTE(pack(pop))
 
+    #else
+        static_assert("macro.h is not implemented for this compiler")
+
     #endif
 
     // NOTE(hugo): CONCATENATE must go through CONCATENATE_INTERMEDIATE so that the A and B expressions are expanded
@@ -65,6 +68,14 @@
     #define KILOBYTES(nKB)   ((u64) (nKB) << 10)
     #define MEGABYTES(nMB)   ((u64) (nMB) << 20)
     #define GIGABYTES(nGB)   ((u64) (nGB) << 20)
+
+    // NOTE(hugo): outputs the same assembly as the raw function calls when using O1 (GCC & MSVC) by using :
+    // - operator,(A, B) returns the rightmost argument even if the types of A and B are different
+    // - shortcircuiting ||
+    #define DECORATE(BEGIN, END)                                            \
+    for(s32 CONCATENATE(DECORATE_variable_at_, __LINE__) = (BEGIN(), 0);    \
+        !CONCATENATE(DECORATE_variable_at_, __LINE__);                      \
+        ++CONCATENATE(DECORATE_variable_at_, __LINE__), END())
 
     #include "defer_macro.h"
 
@@ -106,6 +117,9 @@
     #undef KILOBYTES
     #undef MEGABYTES
     #undef GIGABYTES
+
+    #undef DECORATE
+
     #include "defer_macro.h"
 
 #endif

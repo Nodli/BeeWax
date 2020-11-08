@@ -38,17 +38,8 @@ DEFER_Temporary<DEFER_Action> operator+(DEFER_Creator, DEFER_Action&& action){
 // }
 #define DEFER DEFER_Container CONCATENATE(DEFER_variable_at_, __LINE__) = DEFER_Creator() + [=]() mutable
 
-// NOTE(hugo): outputs the same assembly as the raw function calls when using O1 (GCC & MSVC) by using :
-// - operator,(A, B) returns the rightmost argument even if the types of A and B are different
-// - shortcircuiting ||
-#define DECORATE(BEGIN, END)                                            \
-for(s32 CONCATENATE(DECORATE_variable_at_, __LINE__) = (BEGIN(), 0);    \
-    !CONCATENATE(DECORATE_variable_at_, __LINE__);                      \
-    ++CONCATENATE(DECORATE_variable_at_, __LINE__), END())
-
 #else
 
 #undef DEFER
-#undef DECORATE(BEGIN, END)
 
 #endif
