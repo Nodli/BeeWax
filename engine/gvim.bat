@@ -4,10 +4,11 @@ pushd %cd%\source
 
 set executable_path=%cd%\..\win_x64\make.bat
 set session_path=session.vim
+set vimrc_path=%cd%\..\.vimrc
 set gvim_path="C:\Program Files (x86)\Vim\vim82\gvim.exe"
 
 start /MAX "" /D "." %gvim_path%                                                                                                                                                      	        ^
-     -U "%cd%\..\.vimrc"																		                                                                                                ^
+     -c ":source %vimrc_path%"																		                                                                                            ^
      -c ":nnoremap <F5> :wa<CR> :!%executable_path%<CR>"                                                                                                                		                ^
      -c ":nnoremap <F6> :!<CR>"                                                                                                                                                                 ^
      -c ":autocmd VimEnter * if filereadable(expand(\"%session_path%\")) | :source %session_path% | else | :args **\*.h **\*.cpp **\*.inl **\*.txt | :set filetype=cpp | :b todo.txt | endif"   ^
