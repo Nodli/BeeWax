@@ -30,7 +30,12 @@ autocmd BufWritePost * %s/\s\+$//e
 set hidden
 
 " copy / cut / paste to system clipboard
-set clipboard=unnamedplus
+if has('win64') || has('win32')
+    set clipboard=unnamed
+elseif has('unix')
+    set clipboard=unnamedplus
+endif
+
 
 " inserts spaces instead of a tabulation when Tab is pressed
 set expandtab
