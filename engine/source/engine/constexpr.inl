@@ -114,3 +114,20 @@ template<typename T>
 constexpr T range_normalize(const T x, const T range_min, const T range_max){
     return clamp((x - range_min) / (range_max - range_min), T(0), T(1));
 }
+
+constexpr long double constexpr_sqrt_recursion(const long double x, const long double ycurrent, const long double yprevious){
+    if (ycurrent == yprevious){
+        return ycurrent;
+    }else{
+        return constexpr_sqrt_recursion(x, 0.5 * (ycurrent + x / ycurrent), ycurrent);
+    }
+}
+
+// NOTE(hugo): unnecessary to check against NaN or infinite because this is used at compile time on user provided values
+constexpr long double constexpr_sqrt(const long double x){
+    if(x >= 0.){
+        return constexpr_sqrt_recursion(x, x, 0.);
+    }else{
+        return 0.;
+    }
+}

@@ -697,9 +697,38 @@ namespace bw::utest{
             LOG_INFO("utest::t_binsearch() SUCCESS");
         }
     }
+
+    void t_constexpr_sqrt(){
+        bool success = true;
+
+#define t_constexpr_sqrt_display(VALUE) LOG_TRACE("%.10f %.10f", (float)constexpr_sqrt(VALUE), std::sqrt(VALUE));
+#define t_constexpr_sqrt_unit(VALUE) success = success && almost_equal((float)constexpr_sqrt(VALUE), std::sqrt(VALUE), 0.0000001f, 1);
+
+        t_constexpr_sqrt_unit(3.f);
+        t_constexpr_sqrt_unit(11.f);
+        t_constexpr_sqrt_unit(56.f);
+        t_constexpr_sqrt_unit(78.f);
+        t_constexpr_sqrt_unit(110.f);
+        t_constexpr_sqrt_unit(1510.f);
+        t_constexpr_sqrt_unit(10256.f);
+        t_constexpr_sqrt_unit(198256.f);
+        t_constexpr_sqrt_unit(1980256.f);
+        t_constexpr_sqrt_unit(12030256.f);
+        t_constexpr_sqrt_unit(112030256.f);
+        t_constexpr_sqrt_unit(1009128256.f);
+
+#undef t_constexpr_sqrt_display
+#undef t_constexpr_sqrt_unit
+
+        if(!success){
+            LOG_ERROR("utest::t_constexpr_sqrt() FAILED");
+        }else{
+            LOG_INFO("utest::t_constexpr_sqrt() SUCCESS");
+        }
+    }
 }
 
-int main(){
+int main(int argc, char* argv[]){
     //bw::utest::t_find_noise_magic_normalizer();
     //bw::utest::t_detect_vector_capacilities();
 
@@ -715,5 +744,8 @@ int main(){
     bw::utest::t_align();
     bw::utest::t_isort();
     bw::utest::t_binsearch();
+    bw::utest::t_constexpr_sqrt();
     //bw::utest::t_heap();
+
+    return 0;
 }
