@@ -25,6 +25,16 @@ CURRENT ---------------
 
 DONE ------------------
 
+08/11/2020
+- debug_break
+- review data_structure : darena, dchunkarena, darray
+- linsearch and binsearch tests
+
+07/11/2020
+- DECORATE macro
+- insertion sort implementation and tests
+- bugfix data_structure implementation
+
 06/11/2020
 - implement tweakable values in developper mode
 - importing / exporting of tweakable values from / to a config file
@@ -54,7 +64,7 @@ DONE ------------------
 
 24/08/2020
 - data unpacking with LE / BE conversions optimized depending on the compiler
-- started implementing ttf parser
+- documentation on font parsing / rendering
 
 22/08/2020
 - bugfix data structures
