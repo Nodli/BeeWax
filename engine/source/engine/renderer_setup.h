@@ -107,7 +107,7 @@ static const char* vertex_shader_polygon_2D = R"(
     }
 )";
 static const char* fragment_shader_polygon_2D = R"(
-    #version 450
+    #version 330
 
     in vec4 fragment_color;
     out vec4 output_color;
@@ -136,7 +136,7 @@ static const char* vertex_shader_polygon_tex_2D = R"(
     }
 )";
 static const char* fragment_shader_polygon_tex_2D = R"(
-    #version 450
+    #version 330
 
     uniform sampler2D texA;
 
