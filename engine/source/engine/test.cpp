@@ -1,4 +1,4 @@
-#include <memory> // NOTE(hugo): t_align compares results with std::align
+#include <memory>       // NOTE(hugo): t_align compares results with std::align
 
 namespace bw::utest{
 
@@ -48,6 +48,8 @@ namespace bw::utest{
     void t_darena(){
         bool success = true;
 
+        size_t bytesize = 0u;
+
         darena arena;
         arena.reserve(10u);
         success &= (arena.memory && arena.memory_bytesize == 10u && arena.position == 0u);
@@ -70,9 +72,10 @@ namespace bw::utest{
         *v2u32 = 3u;
         success &= (arena.memory && arena.memory_bytesize == 10u && arena.position == sizeof(u32) + sizeof(s32));
         success &= (arena.extension_head != nullptr);
+        bytesize += sizeof(u32);
         {
             darena::extension_header* extension = (darena::extension_header*)arena.extension_head;
-            success &= (extension->extension_bytesize == sizeof(u32) && extension->next == nullptr);
+            success &= (arena.extension_bytesize == bytesize && extension->next == nullptr);
         }
 
         u8* vu8 = (u8*)arena.push<u8>();
@@ -82,7 +85,7 @@ namespace bw::utest{
         success &= (arena.extension_head != nullptr);
         {
             darena::extension_header* extension = (darena::extension_header*)arena.extension_head;
-            success &= (extension->extension_bytesize == sizeof(u32) && extension->next == nullptr);
+            success &= (arena.extension_bytesize == bytesize && extension->next == nullptr);
         }
 
         u64* vu64 = (u64*)arena.push<u64>();
@@ -90,11 +93,12 @@ namespace bw::utest{
         *vu64 = 5u;
         success &= (arena.memory && arena.memory_bytesize == 10u && arena.position == sizeof(u32) + sizeof(s32) + sizeof(u8));
         success &= (arena.extension_head != nullptr);
+        bytesize += sizeof(u64);
         {
             darena::extension_header* extension = (darena::extension_header*)arena.extension_head;
-            success &= (extension->extension_bytesize == sizeof(u64) && extension->next != nullptr);
+            success &= (arena.extension_bytesize == bytesize && extension->next != nullptr);
             extension = (darena::extension_header*)extension->next;
-            success &= (extension->extension_bytesize == sizeof(u32) && extension->next == nullptr);
+            success &= (extension->next == nullptr);
         }
 
         u8* v2u8 = (u8*)arena.push<u8>();
@@ -104,9 +108,9 @@ namespace bw::utest{
         success &= (arena.extension_head != nullptr);
         {
             darena::extension_header* extension = (darena::extension_header*)arena.extension_head;
-            success &= (extension->extension_bytesize == sizeof(u64) && extension->next != nullptr);
+            success &= (arena.extension_bytesize == bytesize && extension->next != nullptr);
             extension = (darena::extension_header*)extension->next;
-            success &= (extension->extension_bytesize == sizeof(u32) && extension->next == nullptr);
+            success &= (extension->next == nullptr);
         }
 
         arena.clear();
@@ -620,9 +624,87 @@ namespace bw::utest{
         LOG_INFO("SSE4.1    %s", vector_capabilities > 4 ? "YES" : "NO");
         LOG_INFO("SSE4.2    %s", vector_capabilities > 5 ? "YES" : "NO");
     }
+
+    void t_isort(){
+        bool success = true;
+
+        constexpr u32 ntest = 10u;
+        constexpr u32 array_size = 50u;
+
+        s32 array_isort[array_size];
+        seed_random_with_time();
+
+        for(u32 itest = 0u; itest != ntest; ++itest){
+            // NOTE(hugo): generate a random array
+            for(u32 inumber = 0u; inumber != array_size; ++inumber){
+                array_isort[inumber] = random_s32();
+            }
+
+            isort(&array_isort[0], array_size);
+
+            for(u32 inumber = 0u; inumber != array_size - 1u; ++inumber){
+                success = success && array_isort[inumber] <= array_isort[inumber + 1u];
+            }
+        }
+
+        if(!success){
+            LOG_ERROR("utest::t_isort() FAILED");
+        }else{
+            LOG_INFO("utest::t_isort() SUCCESS");
+        }
+    }
+
+    void t_binsearch(){
+        bool success = true;
+
+        constexpr u32 ntest = 10u;
+        constexpr u32 array_size = 50u;
+
+        s32 array[array_size];
+        seed_random_with_time();
+
+        for(u32 itest = 0u; itest != ntest; ++itest){
+            for(u32 inumber = 0u; inumber != array_size; ++inumber){
+                array[inumber] = random_s32();
+            }
+
+            qsort(array, array_size);
+
+            for(u32 isearch = 0u; isearch != 10u * array_size; ++isearch){
+                u32 item_index = random_u32_range_uniform(array_size);
+                s32& item_value = array[item_index];
+
+                s32* lin_ptr = linsearch_lower(array, array_size, item_value);
+                s32* bin_ptr = binsearch_lower(array, array_size, item_value);
+
+                success = success && lin_ptr && bin_ptr && (lin_ptr == bin_ptr) && *lin_ptr == item_value;
+            }
+
+            for(u32 iinsert = 0u; iinsert != 10u * array_size; ++iinsert){
+                s32 item_value = random_s32();
+
+                u32 lin_ins = lininsert_lower(array, array_size, item_value);
+                u32 bin_ins = lininsert_lower(array, array_size, item_value);
+
+                success = success && (lin_ins == bin_ins);
+                success = success && ((lin_ins == array_size && item_value > array[array_size - 1u]) || (array[lin_ins] >= item_value));
+            }
+        }
+
+        if(!success){
+            LOG_ERROR("utest::t_binsearch() FAILED");
+        }else{
+            LOG_INFO("utest::t_binsearch() SUCCESS");
+        }
+    }
 }
 
 int main(){
+    //bw::utest::t_find_noise_magic_normalizer();
+    //bw::utest::t_detect_vector_capacilities();
+
+    // ---- regression tests
+
     bw::utest::t_quat_rot();
     bw::utest::t_defer();
     bw::utest::t_darena();
@@ -631,7 +713,7 @@ int main(){
     bw::utest::t_dpool();
     bw::utest::t_dhashmap();
     bw::utest::t_align();
-    //bw::utest::t_find_noise_magic_normalizer();
+    bw::utest::t_isort();
+    bw::utest::t_binsearch();
     //bw::utest::t_heap();
-    bw::utest::t_detect_vector_capacilities();
 }

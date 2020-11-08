@@ -20,23 +20,27 @@ struct darena{
     void reserve(size_t arena_bytesize);
     void free();
 
+    // NOTE(hugo): memory is not initialized
     void* push(size_t bytesize, size_t alignment);
+
+    // NOTE(hugo): elements are initialized
     template<typename T>
     void* push();
 
-    // NOTE(hugo): free extensions and extend memory if necessary
+    // NOTE(hugo): extensions are freed and base memory is extended to fit them
     void clear();
 
     // ---- data
-    void* memory = nullptr;
+    u8* memory = nullptr;
     size_t memory_bytesize = 0u;
     size_t position = 0u;
 
+    // NOTE(hugo): extensions are allocated with the following layout : [header] | [padding] | [data]
     struct extension_header{
-        size_t extension_bytesize = 0u;
-        void* next = nullptr;
+        extension_header* next = nullptr;
     };
-    void* extension_head = nullptr;
+    size_t extension_bytesize = 0u;
+    extension_header* extension_head = nullptr;
 };
 
 // ---- dchunkarena
@@ -222,14 +226,14 @@ struct dhashmap{
 
 // NOTE(hugo): the highest priority element is stored at the top such as PRIORITY_PARENT >= PRIORITY_CHILD
 //
-// Compare(CHILD, PARENT) is
-//  < 0 when CHILD has higher priority than PARENT ie permutation REQUIRED
-//  = 0 when CHILD is equivalent to         PARENT ie permutation NOT REQUIRED
-//  > 0 when CHILD has lower priority than  PARENT ie permutation NOT REQUIRED
+// compare(PARENT, CHILD) is
+//  < 0 when PARENT has lower  priority than CHILD ie permutation REQUIRED
+//  = 0 when PARENT has equal  priority with CHILD ie permutation NOT REQUIRED
+//  > 0 when PARENT has higher priority than CHILD ie permutation NOT REQUIRED
 //
-// ex : a max-heap such as parent (parent >= child) must return parent - child
-// ex : a min-heap such as parent (parent <= child) must return child - parent
-template<u32 D, typename T, s32 (*Compare)(const T& A, const T& B)>
+// ex : a max-heap such as parent (parent >= child) means compare(PARENT, CHILD) = comparison_increasing_order
+// ex : a min-heap such as parent (parent <= child) means compare(PARENT, CHILD) = comparison_decreasing_order
+template<u32 D, typename T, s32 (*compare)(const T& A, const T& B)>
 struct daryheap{
     static_assert(D > 1u);
 

@@ -49,8 +49,9 @@
     #include <sysinfoapi.h>
 
 #elif defined(PLATFORM_LINUX)
-    #include <sys/mman.h> // NOTE(hugo): os.h / os.cpp
-    #include <unistd.h>
+    #include <sys/mman.h>   // NOTE(hugo): os.h / os.cpp
+    #include <unistd.h>     // NOTE(hugo): intrinsics.h
+    #include <signal.h>     // NOTE(hugo): debug_break.h
 
 #endif
 
@@ -120,6 +121,8 @@ namespace bw{
 
     // ---- debug
 
+    #include "debug_break.h"
+
     #define USE_DEVELOPPER_MODE
     #include "developper_tools.h"
 
@@ -129,6 +132,8 @@ namespace bw{
     #include "os.cpp"
 
     // ---- core
+
+    #include "sort_search.h"
 
     #include "random_custom.h"
     #include "random_custom.cpp"
@@ -211,11 +216,11 @@ namespace bw{
 
 // ---- unit testing
 
-//#include "test.cpp"
+#include "test.cpp"
 
 // ---- application
 
-#include "../application/default_main.cpp"
+//#include "../application/default_main.cpp"
 
 // NOTE(hugo): WIP audio
 #if 0
