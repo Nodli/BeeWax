@@ -10,6 +10,15 @@ set nowrap
 " show line numbers
 set number
 
+" always show the status line
+set laststatus=2
+" show column numbers
+" %f : file
+" %= : switch to the right side
+" %c : column number
+" %l : total lines
+set statusline=%f%=%c\ \|\ %L
+
 " enable backspace removal of previous text
 set backspace=indent,eol,start
 
