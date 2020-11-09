@@ -36,14 +36,9 @@ constexpr u32 carray_size(T(&)[size]){
 
 template<typename T>
 constexpr void swap(T& A, T& B){
-
-    // NOTE(hugo): avoids calling ~T()
-    uchar temp_memory[sizeof(T)];
-    T* temp = (T*)temp_memory;
-
-    memcpy((void*)temp, (void*)&A, sizeof(T));
-    memcpy((void*)&A, (void*)&B, sizeof(T));
-    memcpy((void*)&B, (void*)temp, sizeof(T));
+    T temp = A;
+    A = B;
+    B = temp;
 }
 
 // ---- math functions

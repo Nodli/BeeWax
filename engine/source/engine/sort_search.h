@@ -9,10 +9,6 @@ namespace BEEWAX_INTERNAL{
     template<typename T>
     s32 comparison_increasing_order(const T& A, const T& B);
 
-    // NOTE(hugo): type-specific optimizations
-    s32 comparison_increasing_order(const float& A, const float& B);
-    s32 comparison_increasing_order(const char*& A, const char*& B);
-
     template<typename T>
     s32 comparison_decreasing_order(const T& A, const T& B);
 }

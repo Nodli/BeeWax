@@ -2,28 +2,28 @@ TODO(jam) -------------
 
 TODO(engine) ----------
 
-- typed quick sort with inlined comparator (sort_search.h)
-- min / max heap setup and tests
-
-- decouple buffer copy to GPU vs draw
-
-- sprite batching
-
 - simplex derivatives
 - other noise functions: voronoise, worley, ...
-
+- sprite batching
+- decouple buffer copy to GPU vs draw
 - renderer static buffers
-- backend-independant interface
-
 - vulkan renderer
 
+FUTURE(engine) --------
+
+- backend-independant interface
+- make Frame_Timing more dynamic instead of using static variables
+- typed quick sort with inlined comparator (sort_search.h)
 - small-buffer-optimized vector (based of sarray)
 - data structures template of the bytesize as a base with a template of the typename as frontend
-- make Frame_Timing more dynamic instead of using static variables
 
 CURRENT ---------------
 
 DONE ------------------
+
+09/11/2020
+- review data_structure : daryheap
+- daryheap unit test
 
 08/11/2020
 - debug_break
@@ -34,7 +34,7 @@ DONE ------------------
 
 07/11/2020
 - DECORATE macro
-- insertion sort implementation and tests
+- insertion sort implementation and unit test
 - bugfix data_structure implementation
 
 06/11/2020

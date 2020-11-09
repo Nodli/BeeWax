@@ -9,14 +9,6 @@ namespace BEEWAX_INTERNAL{
         return (A > B) - (A < B);
     }
 
-    s32 comparison_increasing_order(const float& A, const float& B){
-        return A - B;
-    }
-
-    s32 comparison_increasing_order(const char*& A, const char*& B){
-        return strcmp(A, B);
-    }
-
     template<typename T>
     s32 comparison_decreasing_order(const T& A, const T& B){
         return - comparison_increasing_order<T>(A, B);

@@ -117,6 +117,7 @@ namespace bw{
     #include "logprint.cpp"
     #include "logprint_typemacro.h"
 
+    #include "sort_search.h"
     #include "data_structure.h"
 
     // ---- debug
@@ -132,8 +133,6 @@ namespace bw{
     #include "os.cpp"
 
     // ---- core
-
-    #include "sort_search.h"
 
     #include "random_custom.h"
     #include "random_custom.cpp"

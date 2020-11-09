@@ -107,10 +107,10 @@ void deep_copy(darray<T>& dest, darray<T>& src);
 template<typename T>
 bool deep_compare(const darray<T>& A, const darray<T>& src);
 
-// ---- dqueue
+// ---- dring
 
 template<typename T>
-struct dqueue{
+struct dring{
 
     T& operator[](u32 index);
     const T& operator[](u32 index) const;
@@ -222,7 +222,7 @@ struct dhashmap{
     dpool<entry> storage;
 };
 
-// ---- daryheap
+// ---- daryheap : mindheap, maxdheap
 
 // NOTE(hugo): the highest priority element is stored at the top such as PRIORITY_PARENT >= PRIORITY_CHILD
 //
@@ -231,17 +231,20 @@ struct dhashmap{
 //  = 0 when PARENT has equal  priority with CHILD ie permutation NOT REQUIRED
 //  > 0 when PARENT has higher priority than CHILD ie permutation NOT REQUIRED
 //
-// ex : a max-heap such as parent (parent >= child) means compare(PARENT, CHILD) = comparison_increasing_order
-// ex : a min-heap such as parent (parent <= child) means compare(PARENT, CHILD) = comparison_decreasing_order
+// ex : a max-heap such as PARENT has higher priority than CHILD means compare(PARENT, CHILD) = comparison_increasing_order
+// ex : a min-heap such as PARENT has lower  priority than CHILD means compare(PARENT, CHILD) = comparison_decreasing_order
 template<u32 D, typename T, s32 (*compare)(const T& A, const T& B)>
 struct daryheap{
     static_assert(D > 1u);
 
-    u32 push(T element);
+    u32 push(const T& element);
     void pop(u32 index);
 
     T& get_top();
     void pop_top();
+
+    void clear();
+    void free();
 
     // ----
 
@@ -250,23 +253,39 @@ struct daryheap{
     T* data = nullptr;
 };
 
-#if 0
-template<typename PriorityType, typename DataType>
-struct daryheap_internal_pair{
-    PriorityType type;
-    DataType data;
-};
+template<typename T, u32 D = 4u>
+using maxdheap = daryheap<D, T, &BEEWAX_INTERNAL::comparison_increasing_order>;
 
-template<typename PriorityType>
-s32 daryheap_compare_increase_proxy(const T& A, const T& B){
-    return A > B;
+template<typename T, u32 D = 4u>
+using mindheap = daryheap<D, T, &BEEWAX_INTERNAL::comparison_decreasing_order>;
+
+// ---- priodheap : minpriodheap, maxpriodheap
+
+// TODO(hugo): compare performances with a custom type associating a daryheap<PriorityType> and a dpool<DataType>
+
+namespace BEEWAX_INTERNAL{
+    template<typename PriorityType, typename DataType>
+    struct priodheap_pair{
+        PriorityType priority;
+        DataType data;
+    };
+
+    template<typename PriorityType, typename DataType, s32 (*function)(const PriorityType& A, const PriorityType& B)>
+    s32 priodheap_pair_comparison_wrapper(
+            const priodheap_pair<PriorityType, DataType>& A,
+            const priodheap_pair<PriorityType, DataType>& B){
+        return function(A.priority, B.priority);
+    }
 }
 
-template<typename PriorityType>
-s32 daryheap_compare_decrease_proxy(const T& A, const T& B){
-    return A < B;
-}
-#endif
+template<u32 D, typename PriorityType, typename DataType, s32 (*compare)(const PriorityType& A, const PriorityType& B)>
+using priodheap = daryheap<D, BEEWAX_INTERNAL::priodheap_pair<PriorityType, DataType>, &BEEWAX_INTERNAL::priodheap_pair_comparison_wrapper<PriorityType, DataType, compare>>;
+
+template<typename PriorityType, typename DataType, u32 D = 4u>
+using minpriodheap = priodheap<D, PriorityType, DataType, &BEEWAX_INTERNAL::comparison_increasing_order>;
+
+template<typename PriorityType, typename DataType, u32 D = 4u>
+using maxpriodheap = priodheap<D, PriorityType, DataType, &BEEWAX_INTERNAL::comparison_increasing_order>;
 
 #include "data_structure.inl"
 

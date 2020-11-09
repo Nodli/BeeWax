@@ -218,10 +218,10 @@ namespace bw::utest{
         }
     }
 
-    void t_dqueue(){
+    void t_dring(){
         bool success = true;
 
-        dqueue<u32> queue;
+        dring<u32> queue;
 
         queue.push_back(1u);
         success &= (queue.data && queue.size == 1u && queue.capacity == 2u && queue.head_index == 0u);
@@ -281,9 +281,9 @@ namespace bw::utest{
         success &= (queue.data == nullptr && queue.size == 0u && queue.capacity == 0u && queue.head_index == 0u);
 
         if(!success){
-            LOG_ERROR("utest::t_dqueue() FAILED");
+            LOG_ERROR("utest::t_dring() FAILED");
         }else{
-            LOG_INFO("utest::t_dqueue() SUCCESS");
+            LOG_INFO("utest::t_dring() SUCCESS");
         }
     }
 
@@ -502,13 +502,78 @@ namespace bw::utest{
         }
     }
 
+    template<u32 D, typename T, s32 (*compare)(const T& A, const T& B)>
+    bool is_daryheap_valid(const daryheap<D, T, compare>& heap){
+        bool success = true;
+
+        for(u32 ielement = 1u; ielement < heap.size; ++ielement){
+            u32 parent_index = daryheap_get_parent<D>(ielement);
+            success = success && !(compare(heap.data[parent_index], heap.data[ielement]) < 0);
+        }
+
+        return success;
+    }
+
+    void t_daryheap(){
+        bool success = true;
+
+        constexpr u32 ntest = 100u;
+        constexpr u32 heap_size = 1000u;
+
+        seed_random_with_time();
+
+#define t_daryheap_validation(HEAP)                                     \
+        for(u32 itest = 0u; itest != ntest; ++itest){                   \
+            for(u32 inumber = 0u; inumber != heap_size; ++inumber)      \
+                HEAP.push(random_s32());                                \
+            success = success && is_daryheap_valid(HEAP);               \
+            for(u32 inumber = 0u; inumber != heap_size / 2u; ++inumber) \
+                HEAP.pop(random_u32_range_uniform(HEAP.size));          \
+            success = success && is_daryheap_valid(HEAP);               \
+            HEAP.clear();                                               \
+        }
+
+        {
+            maxdheap<s32, 2u> heap;
+            t_daryheap_validation(heap);
+        }
+        {
+            maxdheap<s32, 3u> heap;
+            t_daryheap_validation(heap);
+        }
+        {
+            maxdheap<s32, 4u> heap;
+            t_daryheap_validation(heap);
+        }
+        {
+            maxdheap<s32, 5u> heap;
+            t_daryheap_validation(heap);
+        }
+        {
+            maxdheap<s32, 6u> heap;
+            t_daryheap_validation(heap);
+        }
+        {
+            mindheap<s32, 2u> heap;
+            t_daryheap_validation(heap);
+        }
+
+#undef t_daryheap_validation
+
+        if(!success){
+            LOG_ERROR("utest::t_daryheap() FAILED");
+        }else{
+            LOG_INFO("utest::t_daryheap() SUCCESS");
+        }
+    }
+
     void t_align(){
         bool success = true;
 
         u64 seed;
         seed_random_with_time(seed);
-        u32 ntest = 16;
-        u32 max_alignment_pow2 = 7; // 2^7 == 128
+        constexpr u32 ntest = 16;
+        constexpr u32 max_alignment_pow2 = 7; // 2^7 == 128
 
         for(u32 itest = 0u; itest != ntest; ++itest){
             u64 random = random_u64(seed);
@@ -587,34 +652,6 @@ namespace bw::utest{
         LOG_INFO("utest::t_find_noise_magic_normalize() simplex_noise(x, y)  max_value: %f  MAGIC_NORMALIZER = %.10f", max_value, magic_normalizer);
     }
 
-#if 0
-    void t_heap(){
-        bool success = true;
-
-        Min_Heap<s32, s32> heap;
-        heap.push(2, 1);
-        heap.push(1, 0);
-        LOG_Binary_Heap(&heap);
-        heap.push(1, 7);
-        LOG_Binary_Heap(&heap);
-        heap.push(2, 6);
-        heap.push(4, 2);
-        LOG_Binary_Heap(&heap);
-        heap.push(8, 5);
-        heap.push(6, 3);
-        LOG_Binary_Heap(&heap);
-        heap.push(3, 4);
-        heap.push(3, 8);
-        LOG_Binary_Heap(&heap);
-
-        if(!success){
-            LOG_ERROR("utest::t_heap() FAILED");
-        }else{
-            LOG_INFO("utest::t_heap() SUCCESS");
-        }
-    }
-#endif
-
     void t_detect_vector_capacilities(){
         s32 vector_capabilities = detect_vector_capabilities();
         LOG_INFO("SSE       %s", vector_capabilities > 0 ? "YES" : "NO");
@@ -640,6 +677,7 @@ namespace bw::utest{
                 array_isort[inumber] = random_s32();
             }
 
+            // NOTE(hugo): sort and validate
             isort(&array_isort[0], array_size);
 
             for(u32 inumber = 0u; inumber != array_size - 1u; ++inumber){
@@ -738,14 +776,14 @@ int main(int argc, char* argv[]){
     bw::utest::t_defer();
     bw::utest::t_darena();
     bw::utest::t_darray();
-    bw::utest::t_dqueue();
+    bw::utest::t_dring();
     bw::utest::t_dpool();
     bw::utest::t_dhashmap();
+    bw::utest::t_daryheap();
     bw::utest::t_align();
     bw::utest::t_isort();
     bw::utest::t_binsearch();
     bw::utest::t_constexpr_sqrt();
-    //bw::utest::t_heap();
 
     return 0;
 }

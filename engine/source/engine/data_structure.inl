@@ -127,9 +127,9 @@ T* dchunkarena<T, chunk_capacity>::get(){
 template<typename T, u16 chunk_capacity>
 void dchunkarena<T, chunk_capacity>::clear(){
     while(head){
-        for(u32 iT = 0u; iT != chunk_capacity; ++iT){
-            head->data[iT].~T();
-        }
+        //for(u32 iT = 0u; iT != chunk_capacity; ++iT){
+        //    head->data[iT].~T();
+        //}
 
         chunk* next_head = head->next;
         head->next = storage_head;
@@ -143,9 +143,9 @@ void dchunkarena<T, chunk_capacity>::free(){
     while(head){
         chunk* next_head = head->next;
 
-        for(u32 iT = 0u; iT != chunk_capacity; ++iT){
-            head->data[iT].~T();
-        }
+        //for(u32 iT = 0u; iT != chunk_capacity; ++iT){
+        //    head->data[iT].~T();
+        //}
 
         ::free(head);
         head = next_head;
@@ -230,7 +230,7 @@ void darray<T>::insert_multi(u32 index, u32 nelement){
 template<typename T>
 void darray<T>::remove(u32 index){
     assert(index < size);
-    data[index].~T();
+    //data[index].~T();
 
     // NOTE(hugo): prevents undefined behavior due to invalid pointers when removing at the end
     if(index < size - 1u){
@@ -244,9 +244,9 @@ template<typename T>
 void darray<T>::remove_multi(u32 index, u32 nelement){
     assert(index + nelement - 1u < size);
 
-    for(u32 ielement = 0u; ielement != nelement; ++ielement){
-        data[index + ielement].~T();
-    }
+    //for(u32 ielement = 0u; ielement != nelement; ++ielement){
+    //    data[index + ielement].~T();
+    //}
 
     // NOTE(hugo): prevents undefined behavior due to invalid pointers when removing at the end
     //     source_index < current_size
@@ -262,7 +262,7 @@ template<typename T>
 void darray<T>::remove_swap(u32 index){
     // NOTE(hugo): implies that size > 0
     assert(index < size);
-    data[index].~T();
+    //data[index].~T();
     data[index] = data[size - 1u];
     --size;
 }
@@ -295,16 +295,16 @@ void darray<T>::push_multi(u32 nelement){
 template<typename T>
 void darray<T>::pop(){
     assert(size);
-    data[size].~T();
+    //data[size].~T();
     --size;
 }
 
 template<typename T>
 void darray<T>::pop_multi(u32 nelement){
     assert(nelement <= size);
-    for(u32 ielement = size - nelement; ielement != size; ++ielement){
-        data[ielement].~T();
-    }
+    //for(u32 ielement = size - nelement; ielement != size; ++ielement){
+    //    data[ielement].~T();
+    //}
     size -= nelement;
 }
 
@@ -315,9 +315,9 @@ void darray<T>::set_size(u32 new_size){
         darray_reallocate_to_capacity(*this);
     }
 
-    for(u32 ielement = new_size; ielement < size; ++ielement){
-        data[ielement].~T();
-    }
+    //for(u32 ielement = new_size; ielement < size; ++ielement){
+    //    data[ielement].~T();
+    //}
 
     size = new_size;
 }
@@ -342,18 +342,18 @@ void darray<T>::set_min_capacity(u32 new_capacity){
 
 template<typename T>
 void darray<T>::clear(){
-    for(u32 ielement = 0u; ielement != size; ++ielement){
-        data[ielement].~T();
-    }
+    //for(u32 ielement = 0u; ielement != size; ++ielement){
+    //    data[ielement].~T();
+    //}
 
     size = 0u;
 }
 
 template<typename T>
 void darray<T>::free(){
-    for(u32 ielement = 0u; ielement != size; ++ielement){
-        data[ielement].~T();
-    }
+    //for(u32 ielement = 0u; ielement != size; ++ielement){
+    //    data[ielement].~T();
+    //}
 
     ::free((void*)data);
 
@@ -386,10 +386,10 @@ bool deep_compare(const darray<T>& A, const darray<T>& B){
         && memcmp(&A, &B, sizeof(T) * A.size);
 }
 
-// ---- dqueue
+// ---- dring
 
 template<typename T>
-static inline void dqueue_increase_capacity(dqueue<T>& dr, u32 new_capacity){
+static inline void dring_increase_capacity(dring<T>& dr, u32 new_capacity){
     assert(new_capacity > 0u);
 
     void* new_data = realloc((void*)dr.data, new_capacity * sizeof(T));
@@ -410,7 +410,7 @@ static inline void dqueue_increase_capacity(dqueue<T>& dr, u32 new_capacity){
 }
 
 template<typename T>
-static inline void dqueue_decrease_capacity(dqueue<T>& dr, u32 new_capacity){
+static inline void dring_decrease_capacity(dring<T>& dr, u32 new_capacity){
     assert(new_capacity > 0u);
 
     // NOTE(hugo): translate the head over the end of the tail before reducing memory
@@ -432,120 +432,120 @@ static inline void dqueue_decrease_capacity(dqueue<T>& dr, u32 new_capacity){
     }
 }
 
-static inline u32 dqueue_data_index_under(u32 queue_index_negative, u32 head_index, u32 capacity){
+static inline u32 dring_data_index_under(u32 queue_index_negative, u32 head_index, u32 capacity){
     u32 data_index = head_index + (queue_index_negative > head_index) * capacity;
     data_index = data_index - queue_index_negative;
     return data_index;
 }
 
-static inline u32 dqueue_data_index_over(u32 queue_index_positive, u32 head_index, u32 capacity){
+static inline u32 dring_data_index_over(u32 queue_index_positive, u32 head_index, u32 capacity){
     u32 data_index = head_index + queue_index_positive;
     data_index = data_index - (data_index >= capacity) * capacity;
     return data_index;
 }
 
 template<typename T>
-T& dqueue<T>::operator[](u32 index){
+T& dring<T>::operator[](u32 index){
     assert(index < size);
 
-    u32 data_index = dqueue_data_index_over(index, head_index, capacity);
+    u32 data_index = dring_data_index_over(index, head_index, capacity);
     return data[data_index];
 }
 
 template<typename T>
-const T& dqueue<T>::operator[](u32 index) const{
+const T& dring<T>::operator[](u32 index) const{
     assert(index < size);
 
-    u32 data_index = dqueue_data_index_over(index, head_index, capacity);
+    u32 data_index = dring_data_index_over(index, head_index, capacity);
     return data[data_index];
 }
 
 template<typename T>
-void dqueue<T>::push_front(const T& value){
+void dring<T>::push_front(const T& value){
     if(size == capacity){
-        dqueue_increase_capacity(*this, max(1u, capacity) * 2u);
+        dring_increase_capacity(*this, max(1u, capacity) * 2u);
     }
 
-    u32 insert_index = dqueue_data_index_under(1u, head_index, capacity);
+    u32 insert_index = dring_data_index_under(1u, head_index, capacity);
     data[insert_index] = value;
     head_index = insert_index;
     ++size;
 }
 
 template<typename T>
-void dqueue<T>::pop_front(){
+void dring<T>::pop_front(){
     assert(size);
     --size;
-    data[head_index].~T();
-    head_index = dqueue_data_index_over(1u, head_index, capacity);
+    //data[head_index].~T();
+    head_index = dring_data_index_over(1u, head_index, capacity);
 }
 
 template<typename T>
-void dqueue<T>::push_back(const T& value){
+void dring<T>::push_back(const T& value){
     if(size == capacity){
-        dqueue_increase_capacity(*this, max(1u, capacity) * 2u);
+        dring_increase_capacity(*this, max(1u, capacity) * 2u);
     }
 
-    u32 insert_index = dqueue_data_index_over(size, head_index, capacity);
+    u32 insert_index = dring_data_index_over(size, head_index, capacity);
     data[insert_index] = value;
     ++size;
 }
 
 template<typename T>
-void dqueue<T>::pop_back(){
+void dring<T>::pop_back(){
     assert(size);
-    operator[](size - 1u).~T();
+    //operator[](size - 1u).~T();
     --size;
 }
 
 template<typename T>
-void dqueue<T>::set_capacity(u32 new_capacity){
+void dring<T>::set_capacity(u32 new_capacity){
     if(new_capacity > capacity){
-        dqueue_increase_capacity(*this, new_capacity);
+        dring_increase_capacity(*this, new_capacity);
     }else if(new_capacity < capacity){
-        for(u32 ielement = new_capacity; ielement != capacity; ++ielement){
-            operator[](ielement).~T();
-        }
+        //for(u32 ielement = new_capacity; ielement != capacity; ++ielement){
+        //    operator[](ielement).~T();
+        //}
 
-        dqueue_decrease_capacity(*this, new_capacity);
+        dring_decrease_capacity(*this, new_capacity);
     }
 }
 
 template<typename T>
-void dqueue<T>::set_min_capacity(u32 new_capacity){
+void dring<T>::set_min_capacity(u32 new_capacity){
     if(new_capacity > capacity){
-        dqueue_increase_capacity(*this, new_capacity);
+        dring_increase_capacity(*this, new_capacity);
     }
 }
 
 template<typename T>
-void dqueue<T>::clear(){
-    for(u32 ielement = 0u; ielement != size; ++ielement){
-        operator[](ielement).~T();
-    }
+void dring<T>::clear(){
+    //for(u32 ielement = 0u; ielement != size; ++ielement){
+    //    operator[](ielement).~T();
+    //}
 
     size = 0u;
     head_index = 0u;
 }
 
 template<typename T>
-void dqueue<T>::free(){
-    for(u32 ielement = 0u; ielement != size; ++ielement){
-        operator[](ielement).~T();
-    }
+void dring<T>::free(){
+    //for(u32 ielement = 0u; ielement != size; ++ielement){
+    //    operator[](ielement).~T();
+    //}
 
     ::free((void*)data);
 
-    *this = dqueue<T>();
+    *this = dring<T>();
 }
 
 template<typename T>
-size_t dqueue<T>::size_in_bytes(){
+size_t dring<T>::size_in_bytes(){
     return size * sizeof(T);
 }
 
 template<typename T>
-size_t dqueue<T>::capacity_in_bytes(){
+size_t dring<T>::capacity_in_bytes(){
     return capacity * sizeof(T);
 }
 
@@ -690,7 +690,7 @@ template<typename T>
 void dpool<T>::remove(u32 identifier){
     assert(is_active(identifier));
     set_inactive(identifier);
-    memory[identifier].type.~T();
+    //memory[identifier].type.~T();
 
 #ifdef DPOOL_KEEP_AVAILABLE_LIST_SORTED
     // NOTE(hugo): everything works because dpool_no_element_available > identifier
@@ -729,19 +729,19 @@ void dpool<T>::clear(){
 
         available_element = 0u;
         for(u32 ielement = 0; ielement < (capacity - 1u); ++ielement){
-            memory[ielement].type.~T();
+            //memory[ielement].type.~T();
             memory[ielement].next_element = ielement + 1;
         }
-        memory[capacity - 1u].type.~T();
+        //memory[capacity - 1u].type.~T();
         memory[capacity - 1u].next_element = dpool_no_element_available;
     }
 }
 
 template<typename T>
 void dpool<T>::free(){
-    for(u32 ielement = 0; ielement != capacity; ++ielement){
-        memory[ielement].type.~T();
-    }
+    //for(u32 ielement = 0; ielement != capacity; ++ielement){
+    //    memory[ielement].type.~T();
+    //}
 
     ::free(memory);
 
@@ -958,9 +958,9 @@ size_t dhashmap<K, T>::capacity_in_bytes(){
 // ---- daryheap
 
 template<u32 D, typename T, s32 (*compare)(const T& A, const T& B)>
-static inline void resize_daryheap(daryheap<D, T, compare>* heap, u32 new_capacity){
+static inline void daryheap_reallocate_to_capacity(daryheap<D, T, compare>* heap){
     // NOTE(hugo): realloc may reallocate & memcpy even if the requested size is the same
-    void* new_ptr = realloc(heap->data, sizeof(T) * new_capacity);
+    void* new_ptr = realloc(heap->data, sizeof(T) * heap->capacity);
     if(new_ptr){
         heap->data = (T*)new_ptr;
     }else{
@@ -968,105 +968,119 @@ static inline void resize_daryheap(daryheap<D, T, compare>* heap, u32 new_capaci
     }
 }
 
+// NOTE(hugo): !WARNING! underflow when /index/ = 0u ie user code has to work with that
 template<u32 D>
 static inline u32 daryheap_get_parent(u32 index){
     return (index - 1u) / D;
 }
 
 template<u32 D, typename T, s32 (*compare)(const T& A, const T& B)>
-u32 daryheap<D, T, compare>::push(T element){
+u32 daryheap<D, T, compare>::push(const T& element){
     if(size == capacity){
-        u32 new_capacity = max(1u, 2u * capacity);
-        resize_daryheap(this, new_capacity);
+        capacity = 2u * max(1u, capacity);
+        daryheap_reallocate_to_capacity(this);
     }
 
-    // NOTE(hugo): swap everything down until at the right spot for the new element
     u32 index_current = size;
-    ++size;
-    u32 index_parent = daryheap_get_parent<D>(index_current);
 
-    while(index_current && compare(data[index_parent], element) < 0){
+    // NOTE(hugo): /element/ (as a CHILD) may have higher priority than some of its PARENTs
+    // ie swap each invalid PARENT down until the heap condition is verified
+    // NOTE(hugo): /index_current/ != 0u ensures that /index_parent/ did not underflow in daryheap_get_parent
+    // NOTE(hugo): using the comma operator outputs smaller assembly
+    u32 index_parent;
+    while(index_current != 0u
+    && (index_parent = daryheap_get_parent<D>(index_current), (compare(data[index_parent], element) < 0))){
+
         data[index_current] = data[index_parent];
         index_current = index_parent;
-        index_parent = daryheap_get_parent<D>(index_current);
     }
 
     data[index_current] = element;
+    ++size;
 
     return index_current;
 }
 
 template<u32 D, typename T, s32 (*compare)(const T& A, const T& B)>
 static inline u32 daryheap_get_highest_priority_child(daryheap<D, T, compare>* heap, u32 index_start){
-    if constexpr (D == 2){
-        u32 index_next = min(index_start + 1u, heap->size);
-        return index_start + (u32)(compare(heap->data[index_start], heap->data[index_next]) <= 0);
+    static_assert(D != 0u && D != 1u);
 
-    }else if constexpr (D == 3){
-        u32 index_next = min(index_start + 1u, heap->size);
-        u32 temp_max = index_start + (u32)(compare(heap->data[index_start], heap->data[index_next]) <= 0);
+    // TODO(hugo): compare performances with a switch(number of children to check) at runtime to replace min()
 
-        index_next = min(index_start + 2u, heap->size);
-        return (compare(heap->data[temp_max], heap->data[index_next]) <= 0) ? index_next : temp_max;
+    u32 max_index = heap->size - 1u;
+    if constexpr (D == 2u){
+        u32 index_next = min(index_start + 1u, max_index);
+        return index_start + (u32)(compare(heap->data[index_start], heap->data[index_next]) < 0);
 
-    }else if constexpr (D == 4){
-        u32 index_next = min(index_start + 1u, heap->size);
-        u32 temp_max = index_start + (u32)(compare(heap->data[index_start], heap->data[index_next]) <= 0);
+    }else if constexpr (D == 3u){
+        u32 index_next = min(index_start + 1u, max_index);
+        u32 temp_max = index_start + (u32)(compare(heap->data[index_start], heap->data[index_next]) < 0);
 
-        index_next = min(index_start + 2u, heap->size);
-        temp_max = (compare(heap->data[temp_max], heap->data[index_next]) <= 0) ? index_next : temp_max;
+        index_next = min(index_start + 2u, max_index);
+        return (compare(heap->data[temp_max], heap->data[index_next]) < 0) ? index_next : temp_max;
 
-        index_next = min(index_start + 3u, heap->size);
-        return (compare(heap->data[temp_max], heap->data[index_next]) <= 0) ? index_next : temp_max;
+    }else if constexpr (D == 4u){
+        // TODO(hugo): compare with a more pipelining-friendly version that may be faster
+        // REF(hugo): https://probablydance.com/2020/08/31/on-modern-hardware-the-min-max-heap-beats-a-binary-heap/
+        // current version : min(1, min(2, min(3, 4)))
+        // reduced dependency chain version : min(min(1, 2), min(3, 4))
+
+        u32 index_next = min(index_start + 1u, max_index);
+        u32 temp_max = index_start + (u32)(compare(heap->data[index_start], heap->data[index_next]) < 0);
+
+        index_next = min(index_start + 2u, max_index);
+        temp_max = (compare(heap->data[temp_max], heap->data[index_next]) < 0) ? index_next : temp_max;
+
+        index_next = min(index_start + 3u, max_index);
+        return (compare(heap->data[temp_max], heap->data[index_next]) < 0) ? index_next : temp_max;
 
     }else{
         u32 index_end = min(index_start + D, heap->size);
-        u32 index_max = index_start;
+        u32 temp_max = index_start;
 
         for(u32 index_current = index_start + 1u; index_current < index_end; ++index_current){
-            if(compare(heap->data[index_max], heap->data[index_current]) <= 0){
-                index_max = index_current;
-            }
+            temp_max = (compare(heap->data[temp_max], heap->data[index_current]) < 0) ? index_current : temp_max;
         }
 
-        return index_max;
+        return temp_max;
     }
 }
 
 template<u32 D, typename T, s32 (*compare)(const T& A, const T& B)>
 void daryheap<D, T, compare>::pop(u32 index){
-    assert(size);
+    // NOTE(hugo): implies that size != 0
+    assert(index < size);
 
-    --size;
-    T& element = data[size];
+    T element = data[index];
 
     u32 index_current = index;
 
-    // NOTE(hugo): element (CHILD) has higher priority than its parents (PARENT)
-    // ie swap them down until at the right spot
-    u32 index_parent = daryheap_get_parent<D>(index_current);
-    while(index_current && (compare(data[index_parent], element) < 0)){
+    // NOTE(hugo): case 1 : /element/ (as a CHILD) has higher priority than some of its PARENTs
+    // ie swap each invalid PARENT down until the heap condition is verified
+    // NOTE(hugo): /index_current/ != 0u ensures that /index_parent/ did not underflow in daryheap_get_parent
+    // NOTE(hugo): using the comma operator outputs smaller assembly
+    u32 index_parent;
+    while(index_current != 0u
+    && (index_parent = daryheap_get_parent<D>(index_current), (compare(data[index_parent], element) < 0))){
+
         data[index_current] = data[index_parent];
         index_current = index_parent;
-        index_parent = daryheap_get_parent<D>(index_current);
     }
 
-    // NOTE(hugo): element (PARENT) has lower priority than its children (CHILD)
-    // ie swap the highest priority child up until at the right spot
-    u32 index_start_children = index_current * D + 1u;
-    while(index_start_children < size){
-        u32 index_comp_child = daryheap_get_highest_priority_child<D, T, compare>(this, index_start_children);
-
-        if(!(compare(element, data[index_comp_child]) < 0)){
-            break;
-        }
+    // NOTE(hugo): case 2 : /element/ (as a PARENT) has lower priority than its highest priority CHILD
+    // ie swap each invalid CHILD up until the heap condition is verified
+    // NOTE(hugo): using the comma operator outputs smaller assembly
+    u32 index_start_children;
+    u32 index_comp_child;
+    while((index_start_children = index_current * D + 1u, index_start_children < size)
+    && (index_comp_child = daryheap_get_highest_priority_child<D, T, compare>(this, index_start_children), compare(element, data[index_comp_child]) < 0)){
 
         data[index_current] = data[index_comp_child];
         index_current = index_comp_child;
-        index_start_children = index_current * D + 1u;
     }
 
     data[index_current] = element;
+    --size;
 }
 
 template<u32 D, typename T, s32 (*compare)(const T& A, const T& B)>
@@ -1077,4 +1091,24 @@ T& daryheap<D, T, compare>::get_top(){
 template<u32 D, typename T, s32 (*compare)(const T& A, const T& B)>
 void daryheap<D, T, compare>::pop_top(){
     pop(0u);
+}
+
+template<u32 D, typename T, s32 (*compare)(const T& A, const T& B)>
+void daryheap<D, T, compare>::clear(){
+    //for(u32 ielement = 0u; ielement != size; ++ielement){
+    //    data[ielement].~T();
+    //}
+
+    size = 0u;
+}
+
+template<u32 D, typename T, s32 (*compare)(const T& A, const T& B)>
+void daryheap<D, T, compare>::free(){
+    //for(u32 ielement = 0u; ielement != size; ++ielement){
+    //    data[ielement].~T();
+    //}
+
+    ::free((void*)data);
+
+    *this = daryheap<D, T, compare>();
 }
