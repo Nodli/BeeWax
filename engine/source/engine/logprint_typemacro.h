@@ -1,7 +1,7 @@
 #ifndef H_LOG_CUSTOM
 #define H_LOG_CUSTOM
 
-// NOTE(hugo): using macros to keep __FILE__ and __LINE__ at the LOG location and not in the function
+// NOTE(hugo): using macros to keep __FILE__ and __LINE__ at the log site
 
 #define LOG_vec3(variable) LOG_TRACE("vec3(x, y, z) = (%f, %f, %f)", variable.x, variable.y, variable.z)
 #define LOG_vec4(variable) LOG_TRACE("vec4(x, y, z, w) = (%f, %f, %f %f)", variable.x, variable.y, variable.z, variable.w)
@@ -29,14 +29,6 @@ do{                                                                             
 
 #define LOG_quat(variable) LOG_TRACE("quat(s, i, j, k) = (%f %f %f %f)", variable.s, variable.i, variable.j, variable.k)
 
-#define LOG_Mesh_2D_position(variable)                                                                      \
-do{                                                                                                         \
-    LOG_TRACE("struct Mesh : nvertices %d", variable.nvertices);                                            \
-    for(u32 ivertex = 0; ivertex != variable.nvertices; ++ivertex){                                         \
-        LOG_TRACE(" vertices[%d] = %f %f", mesh.vertices[2 * ivertex], mesh.vertices[2 * ivertex + 1]);     \
-    }                                                                                                       \
-}while(0)
-
 #define LOG_inotify_event(variable_ptr)                                             \
 do{                                                                                 \
     LOG_TRACE("struct inotify_event {");                                            \
@@ -61,36 +53,6 @@ do{                                                                             
     LOG_TRACE("    len     = %d", variable_ptr->len);                               \
     LOG_TRACE("    name    = %s", variable_ptr->name);                              \
     LOG_TRACE("}");                                                                 \
-}while(0)
-
-#define LOG_sarray(variable)                                \
-do{                                                         \
-    LOG_TRACE("struct sarray {");                           \
-    LOG_TRACE("    size     = %d", variable.size);          \
-    LOG_TRACE("    capacity = %d", variable.capacity);      \
-    for(u32 i = 0; i != variable.size; ++i){                \
-        LOG_TRACE("    data[%d] = %d", i, variable[i]);     \
-    }                                                       \
-    LOG_TRACE("}");                                         \
-}while(0)
-
-#define LOG_daryheap(heap)                                                              \
-do{                                                                                     \
-    LOG_TRACE("struct heap {");                                                         \
-    LOG_TRACE("    size     = %d", heap.size);                                          \
-    LOG_TRACE("    capacity = %d", heap.capacity);                                      \
-    u32 heap_level_current = 0u;                                                        \
-    u32 index_current = 0u;                                                             \
-    while(index_current != heap->size){                                                 \
-        u32 index_end = min(index_current + (1u << heap_level_current++), heap->size);  \
-        printf("    LEVEL %d: ", heap_level_current);                                   \
-        for(u32 index = index_current; index != index_end; ++index){                    \
-            printf("%d ", heap->data[index]);                                           \
-        }                                                                               \
-        index_current = index_end;                                                      \
-        printf("\n");                                                                   \
-    }                                                                                   \
-    LOG_TRACE("}");                                                                     \
 }while(0)
 
 #endif
