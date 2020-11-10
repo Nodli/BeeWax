@@ -14,6 +14,7 @@ struct Mouse_State{
         motion.previous_position = motion.position;
         motion.amplitude = {0u, 0u};
     }
+
     void register_event(SDL_Event& event){
         if(event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP){
             auto register_button = [&](Device_Button& button){
@@ -68,7 +69,7 @@ struct Mouse_State{
 
     u64 state_generation = 0u;
     union{
-        Device_Button storage[5];
+        Device_Button storage[5] = {};
         struct{
             Device_Button left;
             Device_Button middle;
