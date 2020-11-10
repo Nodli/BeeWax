@@ -9,8 +9,10 @@ mkdir %P%\win_x64\bin
 xcopy %P%\data %P%\win_x64\bin\data /E /Q /I /D /Y
 xcopy %P%\externals\SDL2-2.0.10\x64\SDL2.dll %P%\win_x64\bin /Q /I /D /Y
 
-set PathOBJ=%P%\win_x64\bin\obj
+set PathOBJ=%P%\win_x64\bin\obj\
 if not exist %PathOBJ% mkdir %PathOBJ%
+
+set PathPDB=%P%\win_x64\bin\
 
 set ExecutableName=Application
 
@@ -27,12 +29,13 @@ set LinkSDL=/LIBPATH:%P%\externals\SDL2-2.0.10\x64 SDL2.lib SDL2main.lib
 
 set LinkWindows=user32.lib gdi32.lib opengl32.lib
 
-set CompilerFlags=/nologo /Fe%Executablename% /FC /EHsc /std:c++17 /O2 /cgthreads4 /Fo%PathOBJ%\
-set DebugFlags=/Z7
+set CompilerFlags=/nologo /Fe%Executablename% /FC /EHsc /std:c++17 /O2 /cgthreads4 /Fo%PathOBJ%
+set DebugFlags=/Zi /Fd%PathPDB%
 
 pushd %P%\win_x64\bin
 
 cl  %CompilerFlags%                                     ^
+	%DebugFlags%                                        ^
 	/DLIB_STB /DPLATFORM_LAYER_SDL /DRENDERER_OPENGL3   ^
 	%IncludeGL3W% %IncludeSTB% %IncludeSDL%             ^
 	%SourceApplication% %SourceGL3W%                    ^

@@ -65,13 +65,6 @@ int main(int argc, char* argv[]){
     DEV_INITIALIZE;
     DEV_DISPLAY_TWEAKABLE_ENTRIES;
 
-    //bool variableA = DEV_TWEAKABLE(BOOLEAN, "variableA", true);
-    //s32 variableB = DEV_TWEAKABLE(INTEGER, "variableB", 42);
-    //float variableC = DEV_TWEAKABLE(REAL, "variableC", 21.f);
-    //char* variableD = DEV_TWEAKABLE(STRING, "variableD", "THERE BE TWEAKABLE STRINGS");
-    //LOG_TRACE("%d %d %f %s", variableA, variableB, variableC, variableD);
-    //DEV_DISPLAY_TWEAKABLE_ENTRIES;
-
 	// ---- main loop ---- //
 	while(running){
         //DEV_LOG_FRAME_TIME;
@@ -178,7 +171,8 @@ int main(int argc, char* argv[]){
         }
 
         // NOTE(hugo): simplex texture
-        if(true)
+        bool show_simplex = DEV_TWEAKABLE(BOOLEAN, "show_simplex", true);
+        if(show_simplex)
         {
             Vertex_Batch_ID texture_batch = renderer.get_vertex_batch(xyuv, PRIMITIVE_TRIANGLE_STRIP);
             vertex_xyuv* texture_vertices = (vertex_xyuv*)renderer.get_vertices(texture_batch, 4u);
@@ -195,6 +189,12 @@ int main(int argc, char* argv[]){
 
         // ---- setup next frame
 
+        if(keyboard.function_F1.npressed > 0u){
+            DEV_RELOAD_TWEAKABLE_ENTRIES;
+        }
+
+        keyboard.reset();
+        mouse.reset();
         renderer.end_frame();
 		window.swap_buffers();
 
