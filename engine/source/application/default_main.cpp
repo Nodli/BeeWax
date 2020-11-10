@@ -56,7 +56,7 @@ int main(int argc, char* argv[]){
     Texture_ID perlin_dy_texture = renderer.get_texture(TEXTURE_FORMAT_RGB, 256u, 256u, TYPE_UBYTE, perlin_dy);
     free(perlin_memory);
 
-    u8* simplex_value = generate_noise_texture<perlin_noise>(256u, 256u, 3u, {0.f, 0.f}, 1.f / 32.f);
+    u8* simplex_value = generate_noise_texture<simplex_noise>(256u, 256u, 3u, {0.f, 0.f}, 1.f / 32.f);
     Texture_ID simplex_texture = renderer.get_texture(TEXTURE_FORMAT_RGB, 256u, 256u, TYPE_UBYTE, simplex_value);
     free(simplex_value);
 

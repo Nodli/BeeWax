@@ -45,6 +45,7 @@ void perlin_noise_and_derivatives(const float x, const float y, float& value, ve
 float simplex_noise(const float x);
 float simplex_noise(const float x, const float y);
 vec2 simplex_derivatives(const float x, const float y);
+void simplex_noise_and_derivatives(const float x, const float y, float& value, vec2& derivatives);
 
 // REF(hugo): http://weber.itn.liu.se/~stegu/TNM084-2019/bridson-siggraph2007-curlnoise.pdf
 template<float (*noise_derivatives_function)(const float x, const float y)>

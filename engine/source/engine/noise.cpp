@@ -86,7 +86,9 @@ constexpr float perlin_noise_2D_MAGIC_NORMALIZER = 1.414213562373095; // NOTE(hu
 // NOTE(hugo): gradient must be an array of size 4
 //             extrap must be an array of size 4
 static inline void setup_perlin_noise_2D(const float x, const float y,
-        float& x_decimal, float& y_decimal, vec2* gradient, float* extrap, float& x_interpolator, float& y_interpolator){
+        float& x_decimal, float& y_decimal,
+        vec2* gradient, float* extrap,
+        float& x_interpolator, float& y_interpolator){
 
     float x_integral = floorf(x);
     x_decimal = x - x_integral;
@@ -250,7 +252,12 @@ float simplex_noise(const float x){
     return MAGIC_NORMALIZER * output;
 }
 
-float simplex_noise(const float x, const float y){
+static inline void setup_simplex_noise_2D(const float x, const float y,
+        s32& grid_x_origin, s32& grid_y_origin, float& origin_to_point_x, float& origin_to_point_y, float& weight_origin,
+        s32& grid_x_corner, s32& grid_y_corner, float& corner_to_point_x, float& corner_to_point_y, float& weight_corner,
+        float& opposite_to_point_x, float& opposite_to_point_y, float& weight_opposite
+    ){
+
     constexpr float skew_factor = 0.36602540378443864676; // NOTE(hugo): (sqrt(3.f) - 1.f) * 0.5f
     constexpr float unskew_factor = 0.21132486540518711774; // NOTE(hugo): (3.f - sqrt(3.f)) / 6.f
     constexpr float squared_simplex_height = 0.5f;
@@ -264,21 +271,19 @@ float simplex_noise(const float x, const float y){
     float grid_x = x + skew_temp;
     float grid_y = y + skew_temp;
 
-    s32 grid_x_origin = (s32)fast_floor<float, s32>(grid_x);
-    s32 grid_y_origin = (s32)fast_floor<float, s32>(grid_y);
+    grid_x_origin = (s32)fast_floor<float, s32>(grid_x);
+    grid_y_origin = (s32)fast_floor<float, s32>(grid_y);
 
     float unskew_temp = (float)(grid_x_origin + grid_y_origin) * unskew_factor;
     float origin_x = grid_x_origin - unskew_temp;
     float origin_y = grid_y_origin - unskew_temp;
 
-    float origin_to_point_x = x - origin_x;
-    float origin_to_point_y = y - origin_y;
+    origin_to_point_x = x - origin_x;
+    origin_to_point_y = y - origin_y;
 
     // NOTE(hugo): simplicial subdivision
     // in 2D we need to know if the triangle is the top (dy > dx) or bottom (dx > dy) triangle of
     // the skewed square with a diagonal [(0, 0), (1, 1)]
-    s32 grid_x_corner;
-    s32 grid_y_corner;
     if(origin_to_point_x > origin_to_point_y){
         grid_x_corner = 1;
         grid_y_corner = 0;
@@ -287,57 +292,184 @@ float simplex_noise(const float x, const float y){
         grid_y_corner = 1;
     }
 
-    float corner_to_point_x = origin_to_point_x - (float)grid_x_corner + unskew_factor;
-    float corner_to_point_y = origin_to_point_y - (float)grid_y_corner + unskew_factor;
-    float opposite_to_point_x = origin_to_point_x - 1.f + 2.f * unskew_factor;
-    float opposite_to_point_y = origin_to_point_y - 1.f + 2.f * unskew_factor;
+    corner_to_point_x = origin_to_point_x - (float)grid_x_corner + unskew_factor;
+    corner_to_point_y = origin_to_point_y - (float)grid_y_corner + unskew_factor;
+    opposite_to_point_x = origin_to_point_x - 1.f + 2.f * unskew_factor;
+    opposite_to_point_y = origin_to_point_y - 1.f + 2.f * unskew_factor;
 
     // NOTE(hugo): kernel summation ie summing weights * contributions over the simplex vertices
     // gradient selection is delayed until needed
+    weight_origin = squared_simplex_height - (origin_to_point_x * origin_to_point_x + origin_to_point_y * origin_to_point_y);
+    weight_corner = squared_simplex_height - (corner_to_point_x * corner_to_point_x + corner_to_point_y * corner_to_point_y);
+    weight_opposite = squared_simplex_height - (opposite_to_point_x * opposite_to_point_x + opposite_to_point_y * opposite_to_point_y);
+}
+
+float simplex_noise(const float x, const float y){
+    s32 grid_x_origin, grid_y_origin;
+    float origin_to_point_x, origin_to_point_y, weight_origin;
+    s32 grid_x_corner, grid_y_corner;
+    float corner_to_point_x, corner_to_point_y, weight_corner;
+    float opposite_to_point_x, opposite_to_point_y, weight_opposite;
+    setup_simplex_noise_2D(x, y,
+            grid_x_origin, grid_y_origin, origin_to_point_x, origin_to_point_y, weight_origin,
+            grid_x_corner, grid_y_corner, corner_to_point_x, corner_to_point_y, weight_corner,
+            opposite_to_point_x, opposite_to_point_y, weight_opposite);
+
     float output = 0.f;
 
-    float weight_origin = squared_simplex_height - (origin_to_point_x * origin_to_point_x + origin_to_point_y * origin_to_point_y);
     if(weight_origin > 0.f){
-        weight_origin *= weight_origin;
-        weight_origin *= weight_origin;
+        float weight_origin_pow2 = weight_origin * weight_origin;
+        float weight_origin_pow4 = weight_origin_pow2 * weight_origin_pow2;
+        s32 hash_data_origin[2] = {grid_x_origin, grid_y_origin};
+        u32 hash_origin = combined_hash_32<fibonacci_hash>((u32*)hash_data_origin, 2u);
+        vec2 gradient_origin = perlin_gradient_2D_cache(hash_origin);
+        float extrap_origin = origin_to_point_x * gradient_origin.x + origin_to_point_y * gradient_origin.y;
 
-        s32 hash_data[2] = {grid_x_origin, grid_y_origin};
-        u32 hash = combined_hash_32<fibonacci_hash>((u32*)hash_data, 2u);
-        vec2 gradient = perlin_gradient_2D_cache(hash);
-
-        float extrap_origin = origin_to_point_x * gradient.x + origin_to_point_y * gradient.y;
-        output += weight_origin * extrap_origin;
+        output += weight_origin_pow4 * extrap_origin;
     }
 
-    float weight_corner = squared_simplex_height - (corner_to_point_x * corner_to_point_x + corner_to_point_y * corner_to_point_y);
     if(weight_corner > 0.f){
-        weight_corner *= weight_corner;
-        weight_corner *= weight_corner;
+        float weight_corner_pow2 = weight_corner * weight_corner;
+        float weight_corner_pow4 = weight_corner_pow2 * weight_corner_pow2;
+        s32 hash_data_corner[2] = {grid_x_origin + grid_x_corner, grid_y_origin + grid_y_corner};
+        u32 hash_corner = combined_hash_32<fibonacci_hash>((u32*)hash_data_corner, 2u);
+        vec2 gradient_corner = perlin_gradient_2D_cache(hash_corner);
+        float extrap_corner = corner_to_point_x * gradient_corner.x + corner_to_point_y * gradient_corner.y;
 
-        s32 hash_data[2] = {grid_x_origin + grid_x_corner, grid_y_origin + grid_y_corner};
-        u32 hash = combined_hash_32<fibonacci_hash>((u32*)hash_data, 2u);
-        vec2 gradient = perlin_gradient_2D_cache(hash);
-
-        float extrap_corner = corner_to_point_x * gradient.x + corner_to_point_y * gradient.y;
-        output += weight_corner * extrap_corner;
+        output += weight_corner_pow4 * extrap_corner;
     }
 
-    float weight_opposite = squared_simplex_height - (opposite_to_point_x * opposite_to_point_x + opposite_to_point_y * opposite_to_point_y);
     if(weight_opposite > 0.f){
-        weight_opposite *= weight_opposite;
-        weight_opposite *= weight_opposite;
+        float weight_opposite_pow2 = weight_opposite * weight_opposite;
+        float weight_opposite_pow4 = weight_opposite_pow2 * weight_opposite_pow2;
+        s32 hash_data_opposite[2] = {grid_x_origin + 1, grid_y_origin + 1};
+        u32 hash_opposite = combined_hash_32<fibonacci_hash>((u32*)hash_data_opposite, 2u);
+        vec2 gradient_opposite = perlin_gradient_2D_cache(hash_opposite);
+        float extrap_opposite = opposite_to_point_x * gradient_opposite.x + opposite_to_point_y * gradient_opposite.y;
 
-        s32 hash_data[2] = {grid_x_origin + 1, grid_y_origin + 1};
-        u32 hash = combined_hash_32<fibonacci_hash>((u32*)hash_data, 2u);
-        vec2 gradient = perlin_gradient_2D_cache(hash);
-
-        float extrap_opposite = opposite_to_point_x * gradient.x + opposite_to_point_y * gradient.y;
-        output += weight_opposite * extrap_opposite;
+        output += weight_opposite_pow4 * extrap_opposite;
     }
 
     // NOTE(hugo): output scaling to [-1, 1]
     constexpr float MAGIC_NORMALIZER = 99.204334582718712;
-    return MAGIC_NORMALIZER * output;
+    output *= MAGIC_NORMALIZER;
+
+    return output;
+}
+
+vec2 simplex_derivatives(const float x, const float y){
+    s32 grid_x_origin, grid_y_origin;
+    float origin_to_point_x, origin_to_point_y, weight_origin;
+    s32 grid_x_corner, grid_y_corner;
+    float corner_to_point_x, corner_to_point_y, weight_corner;
+    float opposite_to_point_x, opposite_to_point_y, weight_opposite;
+    setup_simplex_noise_2D(x, y,
+            grid_x_origin, grid_y_origin, origin_to_point_x, origin_to_point_y, weight_origin,
+            grid_x_corner, grid_y_corner, corner_to_point_x, corner_to_point_y, weight_corner,
+            opposite_to_point_x, opposite_to_point_y, weight_opposite);
+
+    vec2 derivatives = {0.f, 0.f};
+
+    if(weight_origin > 0.f){
+        float weight_origin_pow2 = weight_origin * weight_origin;
+        float weight_origin_pow4 = weight_origin_pow2 * weight_origin_pow2;
+        s32 hash_data_origin[2] = {grid_x_origin, grid_y_origin};
+        u32 hash_origin = combined_hash_32<fibonacci_hash>((u32*)hash_data_origin, 2u);
+        vec2 gradient_origin = perlin_gradient_2D_cache(hash_origin);
+        float extrap_origin = origin_to_point_x * gradient_origin.x + origin_to_point_y * gradient_origin.y;
+
+        derivatives.x += gradient_origin.x * weight_origin_pow4 - 8.f * origin_to_point_x * weight_origin_pow2 * weight_origin * extrap_origin;
+        derivatives.y += gradient_origin.y * weight_origin_pow4 - 8.f * origin_to_point_y * weight_origin_pow2 * weight_origin * extrap_origin;
+    }
+
+    if(weight_corner > 0.f){
+        float weight_corner_pow2 = weight_corner * weight_corner;
+        float weight_corner_pow4 = weight_corner_pow2 * weight_corner_pow2;
+        s32 hash_data_corner[2] = {grid_x_origin + grid_x_corner, grid_y_origin + grid_y_corner};
+        u32 hash_corner = combined_hash_32<fibonacci_hash>((u32*)hash_data_corner, 2u);
+        vec2 gradient_corner = perlin_gradient_2D_cache(hash_corner);
+        float extrap_corner = corner_to_point_x * gradient_corner.x + corner_to_point_y * gradient_corner.y;
+
+        derivatives.x += gradient_corner.x * weight_corner_pow4 - 8.f * corner_to_point_x * weight_corner_pow2 * weight_corner * extrap_corner;
+        derivatives.y += gradient_corner.y * weight_corner_pow4 - 8.f * corner_to_point_y * weight_corner_pow2 * weight_corner * extrap_corner;
+    }
+
+    if(weight_opposite > 0.f){
+        float weight_opposite_pow2 = weight_opposite * weight_opposite;
+        float weight_opposite_pow4 = weight_opposite_pow2 * weight_opposite_pow2;
+        s32 hash_data_opposite[2] = {grid_x_origin + 1, grid_y_origin + 1};
+        u32 hash_opposite = combined_hash_32<fibonacci_hash>((u32*)hash_data_opposite, 2u);
+        vec2 gradient_opposite = perlin_gradient_2D_cache(hash_opposite);
+        float extrap_opposite = opposite_to_point_x * gradient_opposite.x + opposite_to_point_y * gradient_opposite.y;
+
+        derivatives.x += gradient_opposite.x * weight_opposite_pow4 - 8.f * opposite_to_point_x * weight_opposite_pow2 * weight_opposite * extrap_opposite;
+        derivatives.y += gradient_opposite.y * weight_opposite_pow4 - 8.f * opposite_to_point_y * weight_opposite_pow2 * weight_opposite * extrap_opposite;
+    }
+
+    // NOTE(hugo): output scaling to [-1, 1]
+    constexpr float MAGIC_NORMALIZER = 99.204334582718712;
+    derivatives *= MAGIC_NORMALIZER;
+
+    return derivatives;
+}
+
+void simplex_noise_and_derivatives(const float x, const float y, float& value, vec2& derivatives){
+    s32 grid_x_origin, grid_y_origin;
+    float origin_to_point_x, origin_to_point_y, weight_origin;
+    s32 grid_x_corner, grid_y_corner;
+    float corner_to_point_x, corner_to_point_y, weight_corner;
+    float opposite_to_point_x, opposite_to_point_y, weight_opposite;
+    setup_simplex_noise_2D(x, y,
+            grid_x_origin, grid_y_origin, origin_to_point_x, origin_to_point_y, weight_origin,
+            grid_x_corner, grid_y_corner, corner_to_point_x, corner_to_point_y, weight_corner,
+            opposite_to_point_x, opposite_to_point_y, weight_opposite);
+
+    value = 0.f;
+    derivatives = {0.f, 0.f};
+
+    if(weight_origin > 0.f){
+        float weight_origin_pow2 = weight_origin * weight_origin;
+        float weight_origin_pow4 = weight_origin_pow2 * weight_origin_pow2;
+        s32 hash_data_origin[2] = {grid_x_origin, grid_y_origin};
+        u32 hash_origin = combined_hash_32<fibonacci_hash>((u32*)hash_data_origin, 2u);
+        vec2 gradient_origin = perlin_gradient_2D_cache(hash_origin);
+        float extrap_origin = origin_to_point_x * gradient_origin.x + origin_to_point_y * gradient_origin.y;
+
+        value += weight_origin_pow4 * extrap_origin;
+        derivatives.x += gradient_origin.x * weight_origin_pow4 - 8.f * origin_to_point_x * weight_origin_pow2 * weight_origin * extrap_origin;
+        derivatives.y += gradient_origin.y * weight_origin_pow4 - 8.f * origin_to_point_y * weight_origin_pow2 * weight_origin * extrap_origin;
+    }
+
+    if(weight_corner > 0.f){
+        float weight_corner_pow2 = weight_corner * weight_corner;
+        float weight_corner_pow4 = weight_corner_pow2 * weight_corner_pow2;
+        s32 hash_data_corner[2] = {grid_x_origin + grid_x_corner, grid_y_origin + grid_y_corner};
+        u32 hash_corner = combined_hash_32<fibonacci_hash>((u32*)hash_data_corner, 2u);
+        vec2 gradient_corner = perlin_gradient_2D_cache(hash_corner);
+        float extrap_corner = corner_to_point_x * gradient_corner.x + corner_to_point_y * gradient_corner.y;
+
+        value += weight_corner_pow4 * extrap_corner;
+        derivatives.x += gradient_corner.x * weight_corner_pow4 - 8.f * corner_to_point_x * weight_corner_pow2 * weight_corner * extrap_corner;
+        derivatives.y += gradient_corner.y * weight_corner_pow4 - 8.f * corner_to_point_y * weight_corner_pow2 * weight_corner * extrap_corner;
+    }
+
+    if(weight_opposite > 0.f){
+        float weight_opposite_pow2 = weight_opposite * weight_opposite;
+        float weight_opposite_pow4 = weight_opposite_pow2 * weight_opposite_pow2;
+        s32 hash_data_opposite[2] = {grid_x_origin + 1, grid_y_origin + 1};
+        u32 hash_opposite = combined_hash_32<fibonacci_hash>((u32*)hash_data_opposite, 2u);
+        vec2 gradient_opposite = perlin_gradient_2D_cache(hash_opposite);
+        float extrap_opposite = opposite_to_point_x * gradient_opposite.x + opposite_to_point_y * gradient_opposite.y;
+
+        value += weight_opposite_pow4 * extrap_opposite;
+        derivatives.x += gradient_opposite.x * weight_opposite_pow4 - 8.f * opposite_to_point_x * weight_opposite_pow2 * weight_opposite * extrap_opposite;
+        derivatives.y += gradient_opposite.y * weight_opposite_pow4 - 8.f * opposite_to_point_y * weight_opposite_pow2 * weight_opposite * extrap_opposite;
+    }
+
+    // NOTE(hugo): output scaling to [-1, 1]
+    constexpr float MAGIC_NORMALIZER = 99.204334582718712;
+    value *= MAGIC_NORMALIZER;
+    derivatives *= MAGIC_NORMALIZER;
 }
 
 template<float (*noise_derivatives_function)(const float x, const float y)>
