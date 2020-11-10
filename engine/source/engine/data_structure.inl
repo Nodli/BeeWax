@@ -111,7 +111,7 @@ T* dchunkarena<T, chunk_capacity>::get(){
         }
 
         for(u32 iT = 0u; iT != chunk_capacity; ++iT){
-            new((void*)&(new_chunk->data[iT])) T;
+            new((void*)&(new_chunk->data[iT])) T{};
         }
 
         new_chunk->next = head;
@@ -213,7 +213,7 @@ void darray<T>::insert_multi(u32 index, u32 nelement){
     }
 
     for(u32 ielement = 0u; ielement != nelement; ++ielement){
-        new((void*)&data[size + ielement]) T;
+        new((void*)&data[size + ielement]) T{};
     }
 
     // NOTE(hugo): prevents undefined behavior due to invalid pointers when inserting at the end
@@ -286,7 +286,7 @@ void darray<T>::push_multi(u32 nelement){
     }
 
     for(u32 ielement = 0u; ielement != nelement; ++ielement){
-        new((void*)&data[size + ielement]) T;
+        new((void*)&data[size + ielement]) T{};
     }
 
     size += nelement;
@@ -674,7 +674,7 @@ u32 dpool<T>::insert_empty(){
     u32 insertion_index = available_element;
     available_element = memory[insertion_index].next_element;
     set_active(insertion_index);
-    new((void*)&memory[insertion_index].type) T;
+    new((void*)&memory[insertion_index].type) T{};
 
     return insertion_index;
 }
@@ -826,7 +826,6 @@ static u32 dhashmap_hash_key(const s32& key){
     return wang_hash(*(u32*)&key);
 }
 
-
 template<typename K, typename T>
 static void dhashmap_reallocate_to_capacity(dhashmap<K, T>& dhm){
     u32 table_capacity = dhm.table_capacity_minus_one + 1u;
@@ -876,9 +875,10 @@ void dhashmap<K, T>::set_min_capacity(u32 min_capacity){
     }
 
 template<typename K, typename T>
-T* dhashmap<K, T>::get(const K& key){
+T* dhashmap<K, T>::get(const K& key, bool& was_entry_created){
     u32 hash = dhashmap_hash_key(key);
     u32 table_index = hash & table_capacity_minus_one;
+    was_entry_created = false;
 
     if(table != nullptr){
         DHASHMAP_GET_SEARCH_COMMON
@@ -888,14 +888,19 @@ T* dhashmap<K, T>::get(const K& key){
     if(table == nullptr || (float)nentries / (float)(table_capacity_minus_one + 1u) > 0.5f){
         table_capacity_minus_one = (table_capacity_minus_one << 1u) | 1u;
         dhashmap_reallocate_to_capacity(*this);
+
+        // NOTE(hugo): rehashing the element to insert
+        table_index = hash & table_capacity_minus_one;
     }
 
     // NOTE(hugo): create a new entry
-    ++nentries;
     u32 new_index = storage.insert_empty();
+    ++nentries;
+
     storage[new_index].key = key;
     storage[new_index].next = table[table_index];
     table[table_index] = new_index;
+    was_entry_created = true;
     return &storage[new_index].value;
 }
 

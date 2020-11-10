@@ -85,6 +85,7 @@ struct darray{
     void pop_multi(u32 nelement);
 
     void set_size(u32 new_size);
+    // NOTE(hugo): elements are removed from the tail when reducing capacity
     void set_capacity(u32 new_capacity);
     void set_min_capacity(u32 new_capacity);
 
@@ -198,7 +199,7 @@ template<typename K, typename T>
 struct dhashmap{
 
     // NOTE(hugo): returned pointers are temporary references ie may change after any other operation
-    T* get(const K& key);
+    T* get(const K& key, bool& was_entry_created);
     T* search(const K& key);
     void remove(const K& key);
 

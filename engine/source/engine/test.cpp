@@ -221,64 +221,64 @@ namespace bw::utest{
     void t_dring(){
         bool success = true;
 
-        dring<u32> queue;
+        dring<u32> ring;
 
-        queue.push_back(1u);
-        success &= (queue.data && queue.size == 1u && queue.capacity == 2u && queue.head_index == 0u);
-        success &= (queue[0] == 1u);
+        ring.push_back(1u);
+        success &= (ring.data && ring.size == 1u && ring.capacity == 2u && ring.head_index == 0u);
+        success &= (ring[0] == 1u);
 
-        queue.push_front(2u);
-        success &= (queue.data && queue.size == 2u && queue.capacity == 2u && queue.head_index == 1u);
-        success &= (queue[0] == 2u);
-        success &= (queue[1] == 1u);
+        ring.push_front(2u);
+        success &= (ring.data && ring.size == 2u && ring.capacity == 2u && ring.head_index == 1u);
+        success &= (ring[0] == 2u);
+        success &= (ring[1] == 1u);
 
-        queue.pop_back();
-        success &= (queue.data && queue.size == 1u && queue.capacity == 2u && queue.head_index == 1u);
-        success &= (queue[0] == 2u);
+        ring.pop_back();
+        success &= (ring.data && ring.size == 1u && ring.capacity == 2u && ring.head_index == 1u);
+        success &= (ring[0] == 2u);
 
-        queue.set_min_capacity(3u);
-        success &= (queue.data && queue.size == 1u && queue.capacity == 3u && queue.head_index == 1u);
-        success &= (queue[0] == 2u);
+        ring.set_min_capacity(3u);
+        success &= (ring.data && ring.size == 1u && ring.capacity == 3u && ring.head_index == 1u);
+        success &= (ring[0] == 2u);
 
-        queue.push_back(3u);
-        queue.push_back(4u);
-        success &= (queue.data && queue.size == 3u && queue.capacity == 3u && queue.head_index == 1u);
-        success &= (queue[0] == 2u);
-        success &= (queue[1] == 3u);
-        success &= (queue[2] == 4u);
+        ring.push_back(3u);
+        ring.push_back(4u);
+        success &= (ring.data && ring.size == 3u && ring.capacity == 3u && ring.head_index == 1u);
+        success &= (ring[0] == 2u);
+        success &= (ring[1] == 3u);
+        success &= (ring[2] == 4u);
 
-        queue.push_back(5u);
-        success &= (queue.data && queue.size == 4u && queue.capacity == 6u && queue.head_index == 4u);
-        success &= (queue[0] == 2u);
-        success &= (queue[1] == 3u);
-        success &= (queue[2] == 4u);
-        success &= (queue[3] == 5u);
+        ring.push_back(5u);
+        success &= (ring.data && ring.size == 4u && ring.capacity == 6u && ring.head_index == 4u);
+        success &= (ring[0] == 2u);
+        success &= (ring[1] == 3u);
+        success &= (ring[2] == 4u);
+        success &= (ring[3] == 5u);
 
-        queue.push_front(6u);
-        queue.push_front(7u);
-        success &= (queue.data && queue.size == 6u && queue.capacity == 6u && queue.head_index == 2u);
-        success &= (queue[0] == 7u);
-        success &= (queue[1] == 6u);
-        success &= (queue[2] == 2u);
-        success &= (queue[3] == 3u);
-        success &= (queue[4] == 4u);
-        success &= (queue[5] == 5u);
+        ring.push_front(6u);
+        ring.push_front(7u);
+        success &= (ring.data && ring.size == 6u && ring.capacity == 6u && ring.head_index == 2u);
+        success &= (ring[0] == 7u);
+        success &= (ring[1] == 6u);
+        success &= (ring[2] == 2u);
+        success &= (ring[3] == 3u);
+        success &= (ring[4] == 4u);
+        success &= (ring[5] == 5u);
 
-        queue.push_front(8u);
-        success &= (queue.data && queue.size == 7u && queue.capacity == 12u && queue.head_index == 7u);
-        success &= (queue[0] == 8u);
-        success &= (queue[1] == 7u);
-        success &= (queue[2] == 6u);
-        success &= (queue[3] == 2u);
-        success &= (queue[4] == 3u);
-        success &= (queue[5] == 4u);
-        success &= (queue[6] == 5u);
+        ring.push_front(8u);
+        success &= (ring.data && ring.size == 7u && ring.capacity == 12u && ring.head_index == 7u);
+        success &= (ring[0] == 8u);
+        success &= (ring[1] == 7u);
+        success &= (ring[2] == 6u);
+        success &= (ring[3] == 2u);
+        success &= (ring[4] == 3u);
+        success &= (ring[5] == 4u);
+        success &= (ring[6] == 5u);
 
-        queue.clear();
-        success &= (queue.data && queue.size == 0u && queue.capacity == 12u && queue.head_index == 0u);
+        ring.clear();
+        success &= (ring.data && ring.size == 0u && ring.capacity == 12u && ring.head_index == 0u);
 
-        queue.free();
-        success &= (queue.data == nullptr && queue.size == 0u && queue.capacity == 0u && queue.head_index == 0u);
+        ring.free();
+        success &= (ring.data == nullptr && ring.size == 0u && ring.capacity == 0u && ring.head_index == 0u);
 
         if(!success){
             LOG_ERROR("utest::t_dring() FAILED");
@@ -412,10 +412,83 @@ namespace bw::utest{
         }
     }
 
+    void t_dhashmap_randomized(){
+        bool success = true;
+
+        constexpr u32 ntest = 100u;
+        constexpr u32 nvalues = 100u;
+        constexpr u32 noperations = 10000u;
+
+        s32 status_counter[nvalues];
+        memset(status_counter, 0, nvalues * sizeof(s32));
+
+        seed_random_with_time();
+        u64 seed_copy = BEEWAX_INTERNAL::seed.seed64;
+
+        dhashmap<u32, s32> hmap;
+
+        for(u32 itest = 0u; itest != ntest; ++itest){
+            for(u32 ioperation = 0u; ioperation != noperations; ++ioperation){
+                u32 random_key = random_u32_range_uniform(nvalues);
+                u32 random_operation = random_u32() % 3u;
+
+                switch(random_operation){
+                    default:
+                    case 0:
+                        {
+                            bool was_created;
+                            s32* hmap_counter = hmap.get(random_key, was_created);
+                            //LOG_TRACE("get[%d] %d %d was_created: %d", random_key, *hmap_counter, status_counter[random_key], was_created);
+                            success = success && *hmap_counter == status_counter[random_key];
+                            ++(*hmap_counter);
+                            ++status_counter[random_key];
+                            break;
+                        }
+                    case 1:
+                        {
+                            s32* hmap_counter = hmap.search(random_key);
+                            if(hmap_counter){
+                                //LOG_TRACE("search[%d] %d %d", random_key, *hmap_counter, status_counter[random_key]);
+                                success = success && status_counter[random_key] > 0 && *hmap_counter == status_counter[random_key];
+                                ++(*hmap_counter);
+                                ++status_counter[random_key];
+                            }else{
+                                //LOG_TRACE("search[%d] X %d", random_key, status_counter[random_key]);
+                                success = success && status_counter[random_key] == 0;
+                            }
+                            break;
+                        }
+                    case 2:
+                        {
+                            hmap.remove(random_key);
+                            s32* searched = hmap.search(random_key);
+                            //LOG_TRACE("remove[%d] %d", random_key, status_counter[random_key]);
+                            success = success && searched == nullptr;
+                            status_counter[random_key] = 0;
+                            break;
+                        }
+                }
+            }
+
+            memset(status_counter, 0, nvalues * sizeof(s32));
+            hmap.clear();
+        }
+
+        hmap.free();
+
+        if(!success){
+            LOG_ERROR("utest::t_dhashmap_randomized() FAILED");
+            LOG_TRACE("utest::t_dhashmap_randomized() seed: %" PRId64, seed_copy);
+        }else{
+            LOG_INFO("utest::t_dhashmap_randomized() SUCCESS");
+        }
+    }
+
     void t_dhashmap(){
         bool success = true;
 
         dhashmap<s32, s32> hmap;
+        bool was_created;
 
         {
             s32* search = hmap.search(1);
@@ -425,8 +498,8 @@ namespace bw::utest{
         }
 
         {
-            s32* get = hmap.get(1);
-            success &= (get != nullptr);
+            s32* get = hmap.get(1, was_created);
+            success &= (get != nullptr && was_created);
             *get = -1;
             success &= (hmap.table != nullptr && hmap.table_capacity_minus_one == 1u);
             success &= (hmap.nentries == 1u && hmap.storage.memory != nullptr && hmap.storage.capacity == 2u && hmap.storage.get_first() == 0u);
@@ -439,8 +512,8 @@ namespace bw::utest{
             iter = hmap.storage.get_next(iter);
             success &= (iter == hmap.storage.capacity);
 
-            s32* get_second = hmap.get(1);
-            success &= (get_second == get && *get_second == -1);
+            s32* get_second = hmap.get(1, was_created);
+            success &= (get_second == get && *get_second == -1 && !was_created);
             success &= (hmap.table != nullptr && hmap.table_capacity_minus_one == 1u);
             success &= (hmap.nentries == 1u && hmap.storage.memory != nullptr && hmap.storage.capacity == 2u && hmap.storage.get_first() == 0u);
         }
@@ -455,9 +528,9 @@ namespace bw::utest{
         }
 
         {
-            *hmap.get(2) = -2;
-            *hmap.get(3) = -3;
-            *hmap.get(4) = -4;
+            *hmap.get(2, was_created) = -2;
+            *hmap.get(3, was_created) = -3;
+            *hmap.get(4, was_created) = -4;
 
             success &= (*hmap.search(2) == -2);
             success &= (*hmap.search(3) == -3);
@@ -495,6 +568,8 @@ namespace bw::utest{
             success &= (iter == hmap.storage.capacity);
         }
 
+        hmap.free();
+
         if(!success){
             LOG_ERROR("utest::t_dhashmap() FAILED");
         }else{
@@ -521,6 +596,7 @@ namespace bw::utest{
         constexpr u32 heap_size = 1000u;
 
         seed_random_with_time();
+        u64 seed_copy = BEEWAX_INTERNAL::seed.seed64;
 
 #define t_daryheap_validation(HEAP)                                     \
         for(u32 itest = 0u; itest != ntest; ++itest){                   \
@@ -562,6 +638,7 @@ namespace bw::utest{
 
         if(!success){
             LOG_ERROR("utest::t_daryheap() FAILED");
+            LOG_TRACE("utest::t_daryheap seed: %" PRId64, seed_copy);
         }else{
             LOG_INFO("utest::t_daryheap() SUCCESS");
         }
@@ -570,13 +647,14 @@ namespace bw::utest{
     void t_align(){
         bool success = true;
 
-        u64 seed;
-        seed_random_with_time(seed);
+        seed_random_with_time();
+        u64 seed_copy = BEEWAX_INTERNAL::seed.seed64;
+
         constexpr u32 ntest = 16;
         constexpr u32 max_alignment_pow2 = 7; // 2^7 == 128
 
         for(u32 itest = 0u; itest != ntest; ++itest){
-            u64 random = random_u64(seed);
+            u64 random = random_u64();
             void* adress = (void*)random;
 
             for(u32 ialign = 1u; ialign != max_alignment_pow2; ++ialign){
@@ -595,6 +673,7 @@ namespace bw::utest{
 
         if(!success){
             LOG_ERROR("utest::t_align() FAILED");
+            LOG_TRACE("utest::t_align() seed: %" PRId64, seed_copy);
         }else{
             LOG_INFO("utest::t_align() SUCCESS");
         }
@@ -670,6 +749,7 @@ namespace bw::utest{
 
         s32 array_isort[array_size];
         seed_random_with_time();
+        u64 seed_copy = BEEWAX_INTERNAL::seed.seed64;
 
         for(u32 itest = 0u; itest != ntest; ++itest){
             // NOTE(hugo): generate a random array
@@ -687,6 +767,7 @@ namespace bw::utest{
 
         if(!success){
             LOG_ERROR("utest::t_isort() FAILED");
+            LOG_TRACE("utest::t_isort seed: %" PRId64, seed_copy);
         }else{
             LOG_INFO("utest::t_isort() SUCCESS");
         }
@@ -700,6 +781,7 @@ namespace bw::utest{
 
         s32 array[array_size];
         seed_random_with_time();
+        u64 seed_copy = BEEWAX_INTERNAL::seed.seed64;
 
         for(u32 itest = 0u; itest != ntest; ++itest){
             for(u32 inumber = 0u; inumber != array_size; ++inumber){
@@ -731,6 +813,7 @@ namespace bw::utest{
 
         if(!success){
             LOG_ERROR("utest::t_binsearch() FAILED");
+            LOG_TRACE("utest::t_binsearch seed: %" PRId64, seed_copy);
         }else{
             LOG_INFO("utest::t_binsearch() SUCCESS");
         }
@@ -779,6 +862,7 @@ int main(int argc, char* argv[]){
     bw::utest::t_dring();
     bw::utest::t_dpool();
     bw::utest::t_dhashmap();
+    bw::utest::t_dhashmap_randomized();
     bw::utest::t_daryheap();
     bw::utest::t_align();
     bw::utest::t_isort();
