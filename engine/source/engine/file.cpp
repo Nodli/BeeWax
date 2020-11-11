@@ -12,7 +12,7 @@ buffer<u8> read_file(const char* const path){
     FILE* f = fopen(path, "rb");
     if(f == NULL){
         LOG_ERROR("read_file(%s) FAILED - returning buffer with nullptr", path);
-        return {};
+        return {nullptr, 0u};
     }
 
     buffer<u8> buffer;

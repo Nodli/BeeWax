@@ -17,7 +17,11 @@ void BEEWAX_INTERNAL::log_function(const char* file, uint line, uint level, cons
             size_t time_length = strftime(time_string, sizeof(time_string), "%H:%M:%S", local_time);
             time_string[time_length] = '\0';
 
-            fprintf(stderr, "\x1b[0m" "%s %s%-7s" "\x1b[0m" "\x1b[93m"  " %s:%-5d: " "\x1b[0m", time_string, log_levels_colors[level], log_levels_names[level], file, line);
+            #if defined(LOG_USE_COLOR)
+                fprintf(stderr, "\x1b[0m" "%s %s%-7s" "\x1b[0m" "\x1b[93m"  " %s:%-5d: " "\x1b[0m", time_string, log_levels_colors[level], log_levels_names[level], file, line);
+            #else
+                fprintf(stderr, "%s %-7s %s:%-5d: ", time_string, log_levels_names[level], file, line);
+            #endif
 
             va_list args;
             va_start(args, format);
