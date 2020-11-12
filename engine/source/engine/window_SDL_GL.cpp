@@ -108,9 +108,15 @@ float Window_SDL_GL3::aspect_ratio(){
 }
 
 vec2 Window_SDL_GL3::pixel_to_screen_coordinates(ivec2 pixel){
-    return {(float)pixel.x / (float)width, (float)pixel.y / (float)height};
+    return {
+        ((float)pixel.x / (float)width) * 2.f - 1.f,
+        ((float)pixel.y / (float)height) * 2.f - 1.f
+    };
 }
 
 ivec2 Window_SDL_GL3::screen_to_pixel_coordinates(vec2 screen){
-    return {(int)(screen.x * (float)width), (int)(screen.y * (float)height)};
+    return {
+        (int)((screen.x + 1.f) * 0.5f * (float)width),
+        (int)((screen.y + 1.f) * 0.5f * (float)height)
+    };
 }

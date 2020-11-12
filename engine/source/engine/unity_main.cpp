@@ -113,6 +113,9 @@ namespace bw{
     #include "hash.h"
     #include "hash.cpp"
 
+    #if defined(PLATFORM_LINUX)
+        #define LOG_USE_COLOR
+    #endif
     #include "logprint.h"
     #include "logprint.cpp"
     #include "logprint_typemacro.h"
@@ -215,11 +218,11 @@ namespace bw{
 
 // ---- unit testing
 
-#include "test.cpp"
+//#include "test.cpp"
 
 // ---- application
 
-//#include "../application/default_main.cpp"
+#include "../application/default_main.cpp"
 
 // NOTE(hugo): WIP audio
 #if 0

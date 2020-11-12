@@ -1,34 +1,53 @@
 #ifndef H_FONT
 #define H_FONT
 
+#define ASCII_PRINTABLE R"(' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';)"
+
+// REF(hugo):
 // https://medium.com/@evanwallace/easy-scalable-text-rendering-on-the-gpu-c3f4d782c5ac
-// NOTE(hugo): http://chanae.walon.org/pub/ttf/ttf_glyphs.htm
-struct Font_Rendering{
-    void setup_from_file(const char* ttf_file);
-    void terminate();
+// http://chanae.walon.org/pub/ttf/ttf_glyphs.htm
+// https://github.com/justinmeiners/stb-truetype-example/blob/master/main.c
 
-    void batch_string(Renderer* renderer, Vertex_Batch_ID batch, const char* string, vec2 baseline_position, float font_scale, vec4 color);
+struct Font_Renderer{
+    // NOTE: glyph_edge_value and glyph_padding are hard coded in the shader
+    void make_bitmap_from_file(const char* filename, const char* string, float font_size, s32 glyph_padding, s32 glyph_edge_value);
+    void free();
 
-    // ---- data
+    void start_frame();
+    void end_frame();
 
-    buffer<u8> font_file;
-    stbtt_fontinfo font_info;
+    // NOTE(hugo): returns baseline_x at the end of the string
+    float batch_string(const char* string, float baseline_x, float baseline_y, float font_size);
+    void render();
 
-    float font_scaling = 0.f;
-    float font_ascend = 0.f;
-    float font_descent = 0.f;
-    float font_baseline_to_baseline = 0.f;
-    darray<vec2> font_vertices;
+    // ---- font data
 
     struct codepoint_info{
-        s32 glyph_index = 0;
-        float glyph_advance_width = 0.f;
-        float glyph_left_side_bearing = 0.f;
-
-        u32 vertex_offset = 0u;
-        u32 number_of_vertices = 0u;
+        vec2 uv_min;
+        vec2 uv_max;
+        s16 quad_offset_x;
+        s16 quad_offset_y;
+        s16 quad_width;
+        s16 quad_height;
+        float cursor_advance;
     };
-    codepoint_info ascii[256u];
+
+    buffer<u8> file;
+    stbtt_fontinfo info;
+
+    float bitmap_font_size = 0.f;
+    u32 bitmap_width = 0u;
+    u32 bitmap_height = 0u;
+    u8* bitmap_data = nullptr;
+
+    dhashmap<char, codepoint_info> codepoint_to_info;
+
+    // ---- rendering data
+
+    Window* window = nullptr;
+    Renderer* renderer = nullptr;
+    Texture_ID texture;
+    Vertex_Batch_ID batch;
 };
 
 #endif

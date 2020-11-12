@@ -79,7 +79,7 @@ static void renderer_free_texture_shader_binding(Renderer_GL3* renderer){
 
 static void renderer_setup_vertex_format_storage(Renderer_GL3* renderer){
     UNUSED(renderer);
-#define SETUP_VERTEX_FORMAT_STORAGE(VERTEX_FORMAT_NAME)                                                                                                             \
+#define SETUP_VERTEX_FORMAT_STORAGE(VERTEX_FORMAT_NAME)                                                                                                         \
     {                                                                                                                                                           \
         renderer->vertex_format_storage[VERTEX_FORMAT_NAME].number_of_attributes = carray_size(CONCATENATE(vertex_format_attributes_, VERTEX_FORMAT_NAME));     \
         renderer->vertex_format_storage[VERTEX_FORMAT_NAME].attributes = CONCATENATE(vertex_format_attributes_, VERTEX_FORMAT_NAME);                            \
@@ -259,8 +259,10 @@ static void use_vertex_format(Renderer_GL3* renderer, Vertex_Format_Name name){
     }
 }
 
-Vertex_Batch_ID Renderer_GL3::get_vertex_batch(Vertex_Format_Name name, Renderer_Primitive primitive){
-    // NOTE(hugo): trying to find a free batch
+Vertex_Batch_ID Renderer_GL3::get_vertex_batch(Vertex_Format_Name name, Renderer_Primitive primitive, u32 required_capacity){
+    size_t required_bytesize = required_capacity * vertex_format_storage[name].vertex_bytesize;
+
+    // NOTE(hugo): trying to find a free batch for this format
     for(u32 ifree_batch = 0u; ifree_batch != vertex_batch_storage.free_batches.size; ++ifree_batch){
         u32 free_batch_index = vertex_batch_storage.free_batches[ifree_batch];
         Vertex_Batch_Entry* entry = &vertex_batch_storage.batches[free_batch_index];
@@ -270,6 +272,9 @@ Vertex_Batch_ID Renderer_GL3::get_vertex_batch(Vertex_Format_Name name, Renderer
 
             entry->primitive = primitive;
             entry->vbo_position = 0u;
+
+            // NOTE(hugo): buffer orphaning because the expected use case is data streaming
+            entry->vbo_bytesize = max(entry->vbo_bytesize, required_bytesize);
             if(entry->vbo_bytesize){
                 glBindBuffer(GL_ARRAY_BUFFER, entry->vbo);
                 glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)entry->vbo_bytesize, NULL, GL_STREAM_DRAW);
@@ -281,7 +286,7 @@ Vertex_Batch_ID Renderer_GL3::get_vertex_batch(Vertex_Format_Name name, Renderer
         }
     }
 
-    // NOTE(hugo): creating a new batch, nothing to map because the buffer is empty
+    // NOTE(hugo): creating a new batch
     Vertex_Batch_Entry new_batch;
     new_batch.format = name;
     new_batch.primitive = primitive;
@@ -292,6 +297,14 @@ Vertex_Batch_ID Renderer_GL3::get_vertex_batch(Vertex_Format_Name name, Renderer
     glBindVertexArray(new_batch.vao);
     glBindBuffer(GL_ARRAY_BUFFER, new_batch.vbo);
     use_vertex_format(this, name);
+
+    // NOTE(hugo): allocating and mapping the buffer when a capacity is required
+    if(required_bytesize != 0u){
+        new_batch.vbo_bytesize = required_bytesize;
+        glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)new_batch.vbo_bytesize, NULL, GL_STREAM_DRAW);
+        new_batch.vbo_mapping = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    }
+
     glBindBuffer(GL_ARRAY_BUFFER, 0u);
     glBindVertexArray(0u);
 
@@ -304,6 +317,7 @@ Vertex_Batch_ID Renderer_GL3::get_vertex_batch(Vertex_Format_Name name, Renderer
 void Renderer_GL3::free_vertex_batch(Vertex_Batch_ID batch){
     Vertex_Batch_Entry* entry = &vertex_batch_storage.batches[batch];
 
+    // NOTE(hugo): unmapping a buffer in case it was not submitted
     if(entry->vbo_bytesize && entry->vbo_mapping){
         glBindBuffer(GL_ARRAY_BUFFER, entry->vbo);
         glUnmapBuffer(GL_ARRAY_BUFFER);
@@ -311,13 +325,15 @@ void Renderer_GL3::free_vertex_batch(Vertex_Batch_ID batch){
         entry->vbo_mapping = nullptr;
     }
 
-    // NOTE(hugo): update bytesize and free extensions and draw data
+    // NOTE(hugo): update the bytesize to fit the extension next time
     entry->vbo_bytesize = max(entry->vbo_bytesize, entry->vbo_position + entry->extension_data.size);
     entry->vbo_position = 0u;
 
-    // TODO(hugo): use clear() to avoid allocations
-    entry->first.free();
-    entry->count.free();
+    // NOTE(hugo): clear draw data
+    entry->first.clear();
+    entry->count.clear();
+
+    // NOTE(hugo): free the extension because the buffer will be big enough next time
     entry->extension_data.free();
     entry->extension_first.free();
     entry->extension_count.free();
@@ -331,7 +347,7 @@ void* Renderer_GL3::get_vertices(Vertex_Batch_ID batch, u32 nvertices){
     Vertex_Format_Entry* format_entry = &vertex_format_storage[entry->format];
     size_t requested_bytesize = (size_t)nvertices * format_entry->vertex_bytesize;
 
-    // NOTE(hugo): get from the buffer mapping
+    // NOTE(hugo): get vertice from the buffer mapping
     if(entry->vbo_position + requested_bytesize <= entry->vbo_bytesize){
         void* output_ptr = (void*)((u8*)entry->vbo_mapping + entry->vbo_position);
         entry->first.push((GLint)(entry->vbo_position / format_entry->vertex_bytesize));
@@ -339,7 +355,7 @@ void* Renderer_GL3::get_vertices(Vertex_Batch_ID batch, u32 nvertices){
         entry->vbo_position = entry->vbo_position + requested_bytesize;
         return output_ptr;
 
-    // NOTE(hugo): get from the extension
+    // NOTE(hugo): resize the extension to fit the vertices
     }else{
         u32 extension_index = entry->extension_data.size;
         entry->extension_data.set_size((u32)(extension_index + requested_bytesize));
@@ -349,10 +365,12 @@ void* Renderer_GL3::get_vertices(Vertex_Batch_ID batch, u32 nvertices){
     }
 }
 
-void Renderer_GL3::submit_batch(Vertex_Batch_ID batch){
+void Renderer_GL3::submit_vertex_batch(Vertex_Batch_ID batch){
     Vertex_Batch_Entry* entry = &vertex_batch_storage.batches[batch];
 
+    // NOTE(hugo): draw the content of the buffer
     if(entry->vbo_bytesize){
+        // NOTE(hugo): unmapping the buffer is required before drawing
         if(entry->vbo_mapping){
             glBindBuffer(GL_ARRAY_BUFFER, entry->vbo);
             glUnmapBuffer(GL_ARRAY_BUFFER);
@@ -364,14 +382,17 @@ void Renderer_GL3::submit_batch(Vertex_Batch_ID batch){
         glMultiDrawArrays(entry->primitive, entry->first.data, entry->count.data, (GLsizei)entry->first.size);
     }
 
-    // TODO(hugo): tag what's inside the shared vao using generations to avoid reuploading
+    // NOTE(hugo): stream and draw the content of the extension
     if(entry->extension_data.size){
         glBindVertexArray(vertex_batch_storage.shared_vao);
         glBindBuffer(GL_ARRAY_BUFFER, vertex_batch_storage.shared_vbo);
+
+        // TODO(hugo): tag the shared vao to avoid restreaming the extension when submitting the batch multiple times
         if(vertex_batch_storage.shared_format != entry->format){
             use_vertex_format(this, entry->format);
             vertex_batch_storage.shared_format = entry->format;
         }
+
         glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)entry->extension_data.size, entry->extension_data.data, GL_STREAM_DRAW);
         glMultiDrawArrays(entry->primitive, entry->extension_first.data, entry->extension_count.data, (GLsizei)entry->extension_first.size);
         glBindBuffer(GL_ARRAY_BUFFER, 0u);

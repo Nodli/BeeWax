@@ -10,7 +10,9 @@ enum Renderer_Primitive{
 };
 
 enum Texture_Format{
-    TEXTURE_FORMAT_RGB = GL_RGB, // NOTE(hugo): don't use this one because it's never word-aligned
+    TEXTURE_FORMAT_R = GL_RED,
+    // NOTE(hugo): GL_RGBA should be prefered because GPUs don't like 24-byte alignment
+    TEXTURE_FORMAT_RGB = GL_RGB,
     TEXTURE_FORMAT_RGBA = GL_RGBA,
     TEXTURE_FORMAT_NONE
 };
@@ -20,6 +22,8 @@ inline u32 texture_format_channels(Texture_Format format){
             return 4u;
         case TEXTURE_FORMAT_RGB:
             return 3u;
+        case TEXTURE_FORMAT_R:
+            return 1u;
         default:
             LOG_ERROR("format with value %d missing in texture_format_channels", format);
             assert(false);
@@ -48,11 +52,11 @@ struct Renderer_GL3{
     // NOTE(hugo):
     // same primitive and vertex format for everyone
     // pipeline state must be setup before drawing
-    // !WARNING! vertices will be taken from extensions after submitting once
-    Vertex_Batch_ID get_vertex_batch(Vertex_Format_Name name, Renderer_Primitive primitive);
+    // !WARNING! vertices in the extensions will need to be reuploaded every time another batch is drawn
+    Vertex_Batch_ID get_vertex_batch(Vertex_Format_Name name, Renderer_Primitive primitive, u32 required_capacity = 0u);
     void free_vertex_batch(Vertex_Batch_ID batch);
     void* get_vertices(Vertex_Batch_ID batch, u32 nvertices);
-    void submit_batch(Vertex_Batch_ID batch);
+    void submit_vertex_batch(Vertex_Batch_ID batch);
 
     // NOTE(hugo): data_type & data are optional if texture data are unknown at creation
     Texture_ID get_texture(Texture_Format format, u32 witdh, u32 height, Renderer_Data_Type data_type = TYPE_UBYTE, void* data = nullptr);

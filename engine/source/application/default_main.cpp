@@ -31,8 +31,10 @@ int main(int argc, char* argv[]){
     Renderer renderer;
     renderer.setup_resources();
 
-    Font_Rendering font_rendering;
-    font_rendering.setup_from_file("./data/Roboto_Font/Roboto-Black.ttf");
+    Font_Renderer font_renderer;
+    font_renderer.window = &window;
+    font_renderer.renderer = &renderer;
+    font_renderer.make_bitmap_from_file("./data/Roboto_Font/Roboto-Italic.ttf", ASCII_PRINTABLE, window_settings.height / 10.f, 5, 180);
 
     DEV_DEBUG_RENDERER;
 
@@ -93,6 +95,7 @@ int main(int argc, char* argv[]){
         // ---- render
 
         renderer.start_frame();
+        font_renderer.start_frame();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         Camera_2D camera;
@@ -105,7 +108,7 @@ int main(int argc, char* argv[]){
         renderer.submit_uniform(camera_2D);
 
         // NOTE(hugo): red square
-        if(true)
+        if(false)
         {
             Vertex_Batch_ID vertex_batch = renderer.get_vertex_batch(xyrgba, PRIMITIVE_TRIANGLE_STRIP);
             vertex_xyrgba* vertices = (vertex_xyrgba*)renderer.get_vertices(vertex_batch, 4u);
@@ -115,23 +118,36 @@ int main(int argc, char* argv[]){
             vertices[3] = {{0.1f, 0.1f}, {1.f, 0.f, 0.f, 1.f}};
 
             renderer.use_shader(polygon_2D);
-            renderer.submit_batch(vertex_batch);
+            renderer.submit_vertex_batch(vertex_batch);
             renderer.free_vertex_batch(vertex_batch);
         }
 
         // NOTE(hugo): font rendering
         if(true)
         {
-            Vertex_Batch_ID font_batch = renderer.get_vertex_batch(xyrgba, PRIMITIVE_LINES);
-            font_rendering.batch_string(&renderer, font_batch, "I", {-1.15f, -0.f}, 0.20f, {1.f, 0.f, 0.f, 1.f});
+            vec2 baseline = {300.f, 300.f};
+            float baseline_end_x = font_renderer.batch_string("Asobisof", baseline.x, baseline.y, 500.f / 2.f);
+            font_renderer.render();
 
-            renderer.use_shader(polygon_2D);
-            renderer.submit_batch(font_batch);
-            renderer.free_vertex_batch(font_batch);
+            float underline_height = 10.f;
+            Vertex_Batch_ID vertex_batch = renderer.get_vertex_batch(xyrgba, PRIMITIVE_TRIANGLE_STRIP);
+            vertex_xyrgba* vertices = (vertex_xyrgba*)renderer.get_vertices(vertex_batch, 4u);
+            ivec2 imin = {(int)baseline.x, (int)(baseline.y - 2.f * underline_height)};
+            ivec2 imax = {(int)baseline_end_x, (int)(baseline.y - underline_height)};
+            vec2 min = window.pixel_to_screen_coordinates(imin);
+            vec2 max = window.pixel_to_screen_coordinates(imax);
+            vertices[0] = {min, {1.f, 0.f, 0.f, 1.f}};
+            vertices[1] = {{max.x, min.y}, {1.f, 0.f, 0.f, 1.f}};
+            vertices[2] = {{min.x, max.y}, {1.f, 0.f, 0.f, 1.f}};
+            vertices[3] = {max, {1.f, 0.f, 0.f, 1.f}};
+
+            renderer.use_shader(screen_polygon_2D);
+            renderer.submit_vertex_batch(vertex_batch);
+            renderer.free_vertex_batch(vertex_batch);
         }
 
         // NOTE(hugo): perlin textures
-        if(true)
+        if(false)
         {
             Vertex_Batch_ID noise_batch = renderer.get_vertex_batch(xyuv, PRIMITIVE_TRIANGLE_STRIP);
             vertex_xyuv* noise_vertices = (vertex_xyuv*)renderer.get_vertices(noise_batch, 4u);
@@ -142,7 +158,7 @@ int main(int argc, char* argv[]){
 
             renderer.use_shader(polygon_tex_2D);
             renderer.setup_texture_unit(0u, perlin_texture);
-            renderer.submit_batch(noise_batch);
+            renderer.submit_vertex_batch(noise_batch);
             renderer.free_vertex_batch(noise_batch);
 
             Vertex_Batch_ID dx_batch = renderer.get_vertex_batch(xyuv, PRIMITIVE_TRIANGLE_STRIP);
@@ -154,7 +170,7 @@ int main(int argc, char* argv[]){
 
             renderer.use_shader(polygon_tex_2D);
             renderer.setup_texture_unit(0u, perlin_dx_texture);
-            renderer.submit_batch(dx_batch);
+            renderer.submit_vertex_batch(dx_batch);
             renderer.free_vertex_batch(dx_batch);
 
             Vertex_Batch_ID dy_batch = renderer.get_vertex_batch(xyuv, PRIMITIVE_TRIANGLE_STRIP);
@@ -166,12 +182,12 @@ int main(int argc, char* argv[]){
 
             renderer.use_shader(polygon_tex_2D);
             renderer.setup_texture_unit(0u, perlin_dy_texture);
-            renderer.submit_batch(dy_batch);
+            renderer.submit_vertex_batch(dy_batch);
             renderer.free_vertex_batch(dy_batch);
         }
 
         // NOTE(hugo): simplex texture
-        bool show_simplex = DEV_TWEAKABLE(BOOLEAN, "show_simplex", true);
+        bool show_simplex = DEV_TWEAKABLE(BOOLEAN, "show_simplex", false);
         if(show_simplex)
         {
             Vertex_Batch_ID texture_batch = renderer.get_vertex_batch(xyuv, PRIMITIVE_TRIANGLE_STRIP);
@@ -183,7 +199,7 @@ int main(int argc, char* argv[]){
 
             renderer.use_shader(polygon_tex_2D);
             renderer.setup_texture_unit(0u, simplex_texture, nearest_clamp);
-            renderer.submit_batch(texture_batch);
+            renderer.submit_vertex_batch(texture_batch);
             renderer.free_vertex_batch(texture_batch);
         }
 
@@ -195,6 +211,8 @@ int main(int argc, char* argv[]){
 
         keyboard.reset();
         mouse.reset();
+
+        font_renderer.end_frame();
         renderer.end_frame();
 		window.swap_buffers();
 
@@ -210,7 +228,7 @@ int main(int argc, char* argv[]){
     renderer.free_texture(simplex_texture);
 
 	// ---- termination ---- //
-    font_rendering.terminate();
+    font_renderer.free();
     renderer.free_resources();
 	window.terminate();
 	SDL_Quit();

@@ -117,6 +117,21 @@ static const char* fragment_shader_polygon_2D = R"(
     }
 )";
 
+static const char* vertex_shader_screen_polygon_2D =  R"(
+    #version 330
+
+    layout(location = 0) in vec2 vposition;
+    layout(location = 1) in vec4 vcolor;
+
+    out vec4 fragment_color;
+
+    void main(){
+        gl_Position = vec4(vposition, 0., 1.);
+        fragment_color = vcolor;
+    }
+)";
+static const char* fragment_shader_screen_polygon_2D = fragment_shader_polygon_2D;
+
 static const char* vertex_shader_polygon_tex_2D = R"(
     #version 330
 
@@ -148,6 +163,42 @@ static const char* fragment_shader_polygon_tex_2D = R"(
     }
 )";
 
+static const char* vertex_shader_screen_polygon_tex_2D = R"(
+    #version 330
+
+    layout(location = 0) in vec2 vposition;
+    layout(location = 1) in vec2 vtexcoord;
+
+    out vec2 fragment_texcoord;
+
+    void main(){
+        gl_Position = vec4(vposition, 0., 1.);
+        fragment_texcoord = vtexcoord;
+    }
+)";
+static const char* fragment_shader_screen_polygon_tex_2D = fragment_shader_polygon_tex_2D;
+
+static const char* vertex_shader_font_2D = vertex_shader_screen_polygon_tex_2D;
+static const char* fragment_shader_font_2D = R"(
+    #version 330
+
+    uniform sampler2D font_bitmap;
+
+    in vec2 fragment_texcoord;
+    out vec4 output_color;
+
+    float edge_value = 180. / 255.;
+    float smoothing_value = edge_value - 0.1;
+
+    void main(){
+        float font_sample = texture(font_bitmap, fragment_texcoord).r;
+        font_sample = smoothstep(smoothing_value, edge_value, font_sample);
+        if(font_sample == 0.)
+            discard;
+        output_color = vec4(font_sample);
+    }
+)";
+
 #define FOR_EACH_UNIFORM_NAME(FUNCTION)         \
 FUNCTION(camera_2D)                             \
 
@@ -157,7 +208,10 @@ FUNCTION(xyuv)                                  \
 
 #define FOR_EACH_SHADER_NAME(FUNCTION)          \
 FUNCTION(polygon_2D)                            \
+FUNCTION(screen_polygon_2D)                     \
 FUNCTION(polygon_tex_2D)                        \
+FUNCTION(screen_polygon_tex_2D)                 \
+FUNCTION(font_2D)                               \
 
 #define FOR_EACH_UNIFORM_SHADER_PAIR(FUNCTION)  \
 FUNCTION(camera_2D, polygon_2D)                 \
@@ -165,9 +219,11 @@ FUNCTION(camera_2D, polygon_tex_2D)             \
 
 #define FOR_EACH_TEXTURE_SHADER_PAIR(FUNCTION)  \
 FUNCTION(texA, 0, polygon_tex_2D)               \
+FUNCTION(font_bitmap, 0, font_2D)               \
 
 #define FOR_EACH_SAMPLER_NAME(FUNCTION)                                                         \
 FUNCTION(nearest_clamp, FILTER_NEAREST, FILTER_NEAREST, WRAP_CLAMP, WRAP_CLAMP, WRAP_CLAMP)     \
+FUNCTION(linear_clamp, FILTER_LINEAR, FILTER_LINEAR, WRAP_CLAMP, WRAP_CLAMP, WRAP_CLAMP)        \
 
 // ---- setup
 

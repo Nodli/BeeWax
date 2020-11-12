@@ -1,136 +1,189 @@
-void Font_Rendering::setup_from_file(const char* ttf_tile){
-    font_file = read_file("./data/Roboto_Font/Roboto-Black.ttf");
+namespace BEEWAX_INTERNAL{
+    struct stbtt_glyph_data{
+        u8* bitmap;
+        s32 x_offset;
+        s32 y_offset;
+        s32 width;
+        s32 height;
+        float advance;
+        char codepoint;
+    };
+}
 
-    if(!stbtt_InitFont(&font_info, (const unsigned char*)font_file.data, 0)){
-        LOG_ERROR("Failed stbtt_InitFont()");
+void Font_Renderer::make_bitmap_from_file(const char* filename, const char* string, float font_size, s32 glyph_padding, s32 glyph_edge_value){
+    buffer<u8> file = read_file(filename);
+    if(!file.data || file.size == 0u){
+        LOG_ERROR("stbtt_InitFont() - FAILED for filename: %s", filename);
         return;
     }
 
-    font_scaling = stbtt_ScaleForMappingEmToPixels(&font_info, 1.f);
-
-    s32 integer_ascend;
-    s32 integer_descent;
-    s32 integer_line_gap;
-    stbtt_GetFontVMetrics(&font_info, &integer_ascend, &integer_descent, &integer_line_gap);
-    font_ascend = (float)integer_ascend * font_scaling;
-    font_descent = (float)integer_descent * font_scaling;
-    font_baseline_to_baseline = font_ascend - font_descent + (float)integer_line_gap * font_scaling;
-
-    for(u32 icodepoint = 0u; icodepoint != 256; ++icodepoint){
-        unsigned char codepoint = icodepoint;
-        codepoint_info& info = ascii[codepoint];
-        info.glyph_index = stbtt_FindGlyphIndex(&font_info, codepoint);
-
-        s32 integer_advance_width;
-        s32 integer_left_side_bearing;
-        stbtt_GetGlyphHMetrics(&font_info, info.glyph_index, &integer_advance_width, &integer_left_side_bearing);
-        info.glyph_advance_width = integer_advance_width * font_scaling;
-        info.glyph_left_side_bearing = integer_left_side_bearing * font_scaling;
-
-        // TODO(hugo): use scratch memory here
-        stbtt_vertex* glyph_vertices;
-        s32 glyph_nvertices = stbtt_GetGlyphShape(&font_info, info.glyph_index, &glyph_vertices);
-
-        // NOTE(hugo): count the number of vertices we need in the vertex buffer
-        info.number_of_vertices = 0u;
-        for(u32 ivertex = 0u; ivertex != glyph_nvertices; ++ivertex){
-            if(glyph_vertices[ivertex].type == STBTT_vline){
-                info.number_of_vertices += 2u;
-            }else if(glyph_vertices[ivertex].type == STBTT_vcurve){
-                info.number_of_vertices += 4u;
-            }else if(glyph_vertices[ivertex].type == STBTT_vcubic){
-                info.number_of_vertices += 8u;
-            }
-        }
-
-        // NOTE(hugo): copy the vertices in the vertex buffer
-        info.vertex_offset = font_vertices.size;
-
-        if(info.number_of_vertices != 0u){
-            font_vertices.set_size(font_vertices.size + info.number_of_vertices);
-
-            vec2* output_vertices = &font_vertices[info.vertex_offset];
-            u32 output_ivertex = 0u;
-
-            vec2 previous;
-            vec2 current;
-            for(u32 ivertex = 0u; ivertex != glyph_nvertices; ++ivertex){
-                stbtt_vertex* glyph_vertex = glyph_vertices + ivertex;
-                if(glyph_vertex->type == STBTT_vline){
-                    current.x = glyph_vertex->x * font_scaling;
-                    current.y = glyph_vertex->y * font_scaling;
-
-                    output_vertices[output_ivertex++] = previous;
-                    output_vertices[output_ivertex++] = current;
-
-                    previous = current;
-
-                }else if(glyph_vertex->type == STBTT_vcurve){
-                    vec2 control = {glyph_vertex->cx * font_scaling, glyph_vertex->cy * font_scaling};
-
-                    current.x = glyph_vertex->x * font_scaling;
-                    current.y = glyph_vertex->y * font_scaling;
-
-                    output_vertices[output_ivertex++] = previous;
-                    output_vertices[output_ivertex++] = control;
-                    output_vertices[output_ivertex++] = control;
-                    output_vertices[output_ivertex++] = current;
-
-                    previous = current;
-
-                }else if(glyph_vertex->type == STBTT_vcubic){
-                    vec2 controlA = {glyph_vertex->cx * font_scaling, glyph_vertex->cy * font_scaling};
-                    vec2 controlB = {glyph_vertex->cx1 * font_scaling, glyph_vertex->cy1 * font_scaling};
-                    vec2 intermediate = (controlA + controlB) / 2.f;
-
-                    current.x = glyph_vertex->x * font_scaling;
-                    current.y = glyph_vertex->y * font_scaling;
-
-                    output_vertices[output_ivertex++] = previous;
-                    output_vertices[output_ivertex++] = controlA;
-                    output_vertices[output_ivertex++] = controlA;
-                    output_vertices[output_ivertex++] = intermediate;
-                    output_vertices[output_ivertex++] = intermediate;
-                    output_vertices[output_ivertex++] = controlB;
-                    output_vertices[output_ivertex++] = controlB;
-                    output_vertices[output_ivertex++] = current;
-
-                    previous = current;
-
-                }else if(glyph_vertex->type == STBTT_vmove){
-                    previous.x = glyph_vertex->x * font_scaling;
-                    previous.y = glyph_vertex->y * font_scaling;
-                }
-            }
-        }
-
-        stbtt_FreeShape(&font_info, glyph_vertices);
+    stbtt_fontinfo info;
+    if(!stbtt_InitFont(&info, (const u8*)file.data, 0)){
+        LOG_ERROR("stbtt_InitFont() - FAILED for filename: %s", filename);
+        return;
     }
+
+    assert(*string != '\0');
+
+    bitmap_font_size = font_size;
+
+    // ----
+
+    float font_scale = stbtt_ScaleForPixelHeight(&info, font_size);
+    float glyph_value_delta = (float)glyph_edge_value / (float)glyph_padding;
+
+    u32 string_size = strlen(string);
+
+    // NOTE(hugo): generating an sdf bitmap for each codepoint
+    darray<BEEWAX_INTERNAL::stbtt_glyph_data> glyph_data;
+    glyph_data.set_min_capacity(string_size);
+
+    s32 width_total = 0u;
+    s32 height_max = 0u;
+    for(u32 icodepoint = 0u; icodepoint != string_size; ++icodepoint){
+        BEEWAX_INTERNAL::stbtt_glyph_data data;
+        data.codepoint = string[icodepoint];
+        data.bitmap = stbtt_GetCodepointSDF(&info,
+                font_scale, string[icodepoint], glyph_padding, glyph_edge_value, glyph_value_delta,
+                &data.width, &data.height, &data.x_offset, &data.y_offset);
+
+        data.y_offset = - data.y_offset - data.height;
+
+        s32 temp_advance;
+        stbtt_GetCodepointHMetrics(&info, string[icodepoint], &temp_advance, nullptr);
+        data.advance = (float)temp_advance * font_scale;
+
+        glyph_data.push(data);
+
+        width_total += data.width;
+        height_max = max(height_max, data.height);
+    }
+
+    // NOTE(hugo): determine the atlas dimensions
+    bitmap_width = width_total;
+    bitmap_height = height_max;
+    bitmap_data = (u8*)calloc(bitmap_width * bitmap_height, sizeof(u8));
+
+    // NOTE(hugo): copy the glyph bitmaps in the atlas
+    //             cursor starts at the top left of the bitmap
+    u32 cursor_x = 0u;
+    u32 cursor_y = 0u;
+    for(u32 icodepoint = 0u; icodepoint != glyph_data.size; ++icodepoint){
+        BEEWAX_INTERNAL::stbtt_glyph_data& glyph = glyph_data[icodepoint];
+
+        // NOTE(hugo): stbtt_GetCodepointSDF returns nullptr for empty codepoints
+        //             glyph bitmaps need to be flipped
+        if(glyph.bitmap){
+            u32 dest_offset = cursor_y * bitmap_width + cursor_x;
+            u32 src_offset = 0u;
+            for(u32 codepoint_y = 0; codepoint_y != glyph.height; ++codepoint_y){
+                memcpy(bitmap_data + dest_offset, glyph.bitmap + src_offset, glyph.width);
+                dest_offset += bitmap_width;
+                src_offset += glyph.width;
+            }
+            stbtt_FreeSDF(glyph.bitmap, nullptr);
+        }
+
+        // NOTE(hugo): adding the codepoint to the hashmap
+        bool entry_created;
+        codepoint_info* cp_info = codepoint_to_info.get(glyph.codepoint, entry_created);
+        cp_info->uv_min = {
+            (float)cursor_x / (float)bitmap_width,
+            (float)(cursor_y + glyph.height) / (float)bitmap_height
+        };
+        cp_info->uv_max = {
+            (float)(cursor_x + glyph.width) / (float)bitmap_width,
+            (float)cursor_y / (float)bitmap_height
+        };
+        cp_info->quad_offset_x = glyph.x_offset;
+        cp_info->quad_offset_y = glyph.y_offset;
+        cp_info->quad_width = glyph.width;
+        cp_info->quad_height = glyph.height;
+        cp_info->cursor_advance = glyph.advance;
+
+        cursor_x += glyph.width;
+    }
+
+    texture = renderer->get_texture(TEXTURE_FORMAT_R, bitmap_width, bitmap_height, TYPE_UBYTE, bitmap_data);
+
+    // TODO(hugo): use a better atlas size determination method to have a square atlas
+#if 0
+    auto stbtt_glyph_data_height_compare = [](const BEEWAX_INTERNAL::stbtt_glyph_data& A, const BEEWAX_INTERNAL::stbtt_glyph_data& B){
+        return BEEWAX_INTERNAL::comparison_decreasing_order(A.height, B.height);
+    };
+    qsort<BEEWAX_INTERNAL::stbtt_glyph_data, stbtt_glyph_data_height_compare>(sdf_bitmaps.data, sdf_bitmaps.size);
+
+    u32 width_midpoint = width_total / 2u;
+    u32 width_midpoint_index = 0u;
+    u32 temp_width_sum = 0u;
+    while(width_midpoint_index < sdf_bitmaps.size && temp_width_sum < width_midpoint){
+        ++width_midpoint_index;
+    }
+
+    for(u32 isdf = 0u; isdf != sdf_bitmaps.size; ++isdf){
+        LOG_TRACE("%c %d %d", sdf_bitmaps[isdf].codepoint, sdf_bitmaps[isdf].width, sdf_bitmaps[isdf].height);
+    }
+#endif
 }
 
-void Font_Rendering::terminate(){
-    free(font_file.data);
-    font_vertices.free();
-    *this = Font_Rendering();
+void Font_Renderer::free(){
+    renderer->free_texture(texture);
+    ::free(file.data);
+    ::free(bitmap_data);
+    codepoint_to_info.free();
 }
 
-void Font_Rendering::batch_string(Renderer* renderer, Vertex_Batch_ID batch, const char* string, vec2 baseline_origin, float font_scale, vec4 color){
-    while(*string != '\0'){
-        codepoint_info& info = ascii[*string];
+void Font_Renderer::start_frame(){
+    batch = renderer->get_vertex_batch(xyuv, PRIMITIVE_TRIANGLES);
+}
 
-        vec2* codepoint_vertices = &font_vertices[info.vertex_offset];
-        vertex_xyrgba* batch_vertices = (vertex_xyrgba*)renderer->get_vertices(batch, info.number_of_vertices);
+void Font_Renderer::end_frame(){
+    renderer->free_vertex_batch(batch);
+}
 
-        for(u32 ivertex = 0u; ivertex != info.number_of_vertices; ++ivertex){
-            batch_vertices[ivertex].vposition = (codepoint_vertices[ivertex] * font_scale) + baseline_origin;
-            batch_vertices[ivertex].vcolor = color;
+float Font_Renderer::batch_string(const char* string, float baseline_x, float baseline_y, float font_size){
+    float relative_font_scale = font_size / bitmap_font_size;
+    u32 string_size = strlen(string);
+
+    vertex_xyuv* vertices = (vertex_xyuv*)renderer->get_vertices(batch, 6u * string_size);
+
+    for(u32 icodepoint = 0u; icodepoint != string_size; ++icodepoint){
+        char cp = string[icodepoint];
+        codepoint_info* cp_info = codepoint_to_info.search(cp);
+        if(!cp_info){
+            cp_info = codepoint_to_info.search(' ');
+            assert(cp_info);
         }
 
-        float kerning = 0.f;
-        codepoint_info& next_info = ascii[*(string + 1u)];
-        kerning = stbtt_GetGlyphKernAdvance(&font_info, info.glyph_index, next_info.glyph_index) * font_scaling;
+        ivec2 iquad_min = {
+            fast_floor<s32, float>(baseline_x + (float)cp_info->quad_offset_x * relative_font_scale),
+            fast_floor<s32, float>(baseline_y + (float)cp_info->quad_offset_y * relative_font_scale)
+        };
+        ivec2 iquad_max = {
+            fast_floor<s32, float>((float)iquad_min.x + (float)cp_info->quad_width * relative_font_scale),
+            fast_floor<s32, float>((float)iquad_min.y + (float)cp_info->quad_height * relative_font_scale)
+        };
 
-        baseline_origin.x += (info.glyph_advance_width + kerning) * font_scale;
-        ++string;
+        vec2 quad_min = window->pixel_to_screen_coordinates(iquad_min);
+        vec2 quad_max = window->pixel_to_screen_coordinates(iquad_max);
+
+        vertices[0] = {{quad_min.x, quad_min.y}, cp_info->uv_min};
+        vertices[1] = {{quad_max.x, quad_min.y}, {cp_info->uv_max.x, cp_info->uv_min.y}};
+        vertices[2] = {{quad_min.x, quad_max.y}, {cp_info->uv_min.x, cp_info->uv_max.y}};
+        vertices[3] = {{quad_min.x, quad_max.y}, {cp_info->uv_min.x, cp_info->uv_max.y}};
+        vertices[4] = {{quad_max.x, quad_min.y}, {cp_info->uv_max.x, cp_info->uv_min.y}};
+        vertices[5] = {{quad_max.x, quad_max.y}, cp_info->uv_max};
+
+        vertices = vertices + 6u;
+
+        baseline_x += cp_info->cursor_advance * relative_font_scale;
     }
+
+    return baseline_x;
+}
+
+void Font_Renderer::render(){
+    renderer->use_shader(font_2D);
+    renderer->setup_texture_unit(0u, texture, linear_clamp);
+    renderer->submit_vertex_batch(batch);
 }
