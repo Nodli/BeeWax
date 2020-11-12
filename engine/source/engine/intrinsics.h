@@ -1,3 +1,17 @@
+// ---- atomic operations
+
+// NOTE(hugo): memory order acquire = memory read / write after the instruction are kept after
+//             memory order release = memory read / write before the instruction are kept before
+// NOTE(hugo): those have acquire & release memory barriers
+template<typename T>
+inline T atomic_compare_exchange(volatile T* atomic, T new_value, T previous_value, bool can_fail_exchange = false);
+template<typename T>
+inline T atomic_exchange(volatile T* atomic, T new_value);
+template<typename T>
+inline T atomic_get(volatile T* atomic);
+template<typename T>
+inline void atomic_set(volatile T* atomic, T new_value);
+
 // ---- cycle counter
 
 u64 cycle_counter();
