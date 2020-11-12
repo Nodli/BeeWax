@@ -1,9 +1,8 @@
 #ifndef H_DEFER_MACRO
 #define H_DEFER_MACRO
 
-// NOTE(hugo): passing the action by copy is
-// - the same when using O2 (GCC & MSVC)
-// - faster when compiling without optimizations
+// NOTE(hugo): DEFER is optimized away when using optimizations (assembly checked for gcc & msvc)
+//             copying /action/ outputs smaller assembly than by ref. without optimizations
 
 struct DEFER_Creator{
 };

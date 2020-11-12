@@ -29,8 +29,8 @@ constexpr u32 get_rightmost_set_bit(u32 number){
 
 // ---- useful functions
 
-template<typename T, u32 size>
-constexpr u32 carray_size(T(&)[size]){
+template<typename T, size_t size>
+constexpr size_t carray_size(T(&)[size]){
     return size;
 }
 
