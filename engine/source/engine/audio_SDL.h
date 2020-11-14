@@ -292,7 +292,7 @@ static void audio_callback(void* user_ptr, u8* out_stream, s32 out_stream_size){
 
     // NOTE(hugo): nothing provided - zero memory
     }else{
-        LOG_TRACE("!WARNING! nothing provided - audio dropout !WARNING!");
+        //LOG_TRACE("!WARNING! nothing provided - audio dropout !WARNING!");
         memset(out_stream, 0, out_samples * sample_bytesize);
     }
 }
