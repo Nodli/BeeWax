@@ -36,7 +36,12 @@ int main(int argc, char* argv[]){
     font_renderer.renderer = &renderer;
     font_renderer.make_bitmap_from_file("./data/Roboto_Font/Roboto-Italic.ttf", ASCII_PRINTABLE, window_settings.height / 10.f, 5, 180);
 
-    DEV_DEBUG_RENDERER;
+    //DEV_DEBUG_RENDERER;
+
+    // ---- audio
+
+    Audio_Manager audio;
+    audio.setup();
 
     // ---- input
 
@@ -62,6 +67,11 @@ int main(int argc, char* argv[]){
     Texture_ID simplex_texture = renderer.get_texture(TEXTURE_FORMAT_RGB, 256u, 256u, TYPE_UBYTE, simplex_value);
     free(simplex_value);
 
+    // ---- audio loading
+
+    Audio_Buffer_ID audio_imperial_march = audio.load_wav("./data/audio/ImperialMarch60.wav");
+    audio.play_buffer(audio_imperial_march);
+
     // ---- developper tools
 
     DEV_INITIALIZE;
@@ -75,7 +85,6 @@ int main(int argc, char* argv[]){
 
         u32 nupdates = timing.nupdates_before_render();
         for(u32 iupdate = 0; iupdate != nupdates; ++iupdate){
-
             SDL_Event event;
             while(SDL_PollEvent(&event)){
                 switch(event.type){
@@ -87,9 +96,16 @@ int main(int argc, char* argv[]){
                     default:
                         break;
                 }
+
+                keyboard.register_event(event);
+                mouse.register_event(event);
             }
-            keyboard.register_event(event);
-            mouse.register_event(event);
+
+            // ---- setup the next game frame
+
+            keyboard.reset();
+            mouse.reset();
+            audio.next_frame();
         }
 
         // ---- render
@@ -203,14 +219,7 @@ int main(int argc, char* argv[]){
             renderer.free_vertex_batch(texture_batch);
         }
 
-        // ---- setup next frame
-
-        if(keyboard.function_F1.npressed > 0u){
-            DEV_RELOAD_TWEAKABLE_ENTRIES;
-        }
-
-        keyboard.reset();
-        mouse.reset();
+        // ---- setup the next rendering frame
 
         font_renderer.end_frame();
         renderer.end_frame();
@@ -227,7 +236,12 @@ int main(int argc, char* argv[]){
     renderer.free_texture(perlin_dy_texture);
     renderer.free_texture(simplex_texture);
 
+    // ---- audio cleanup
+
+    audio.unload_buffer(audio_imperial_march);
+
 	// ---- termination ---- //
+    audio.terminate();
     font_renderer.free();
     renderer.free_resources();
 	window.terminate();
