@@ -1,3 +1,12 @@
+template<typename T>
+T* new_struct(){
+    void* ptr = malloc(sizeof(T));
+    if(!ptr){
+        LOG_ERROR("malloc FAILED");
+    }
+    return (T*)(new(ptr) T{});
+};
+
 // ---- buffer
 
 template<typename T>

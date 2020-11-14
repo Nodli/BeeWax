@@ -1,6 +1,9 @@
 #ifndef H_DATA_STRUCTURE
 #define H_DATA_STRUCTURE
 
+template<typename T>
+T* new_struct();
+
 // ---- buffer
 
 template<typename T>
