@@ -3,17 +3,17 @@
 template<typename T>
 inline T atomic_compare_exchange(volatile T* atomic, T new_value, T previous_value, bool can_fail_exchange){
 #if defined(COMPILER_MSVC)
-    if constexpr (sizeof(T) == 8u)
+    if constexpr (sizeof(T) == 1u)
         return _InterlockedCompareExchange8(atomic, new_value, previous_value);
-    else if constexpr (sizeof(T) == 16u)
+    else if constexpr (sizeof(T) == 2u)
         return _InterlockedCompareExchange16(atomic, new_value, previous_value);
-    else if constexpr (sizeof(T) == 32u)
+    else if constexpr (sizeof(T) == 4u)
         return _InterlockedCompareExchange(atomic, new_value, previous_value);
-    else if constexpr (sizeof(T) == 64u)
+    else if constexpr (sizeof(T) == 8u)
         return _InterlockedCompareExchange64(atomic, new_value, previous_value);
     else
 #elif defined(COMPILER_GCC)
-    if constexpr (sizeof(T) == 8u || sizeof(T) == 16u || sizeof(T) == 32u || sizeof(T) == 64u){
+    if constexpr (sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u){
         T output;
         __atomic_compare_exchange(atomic, &new_value, &output, can_fail_exchange, __ATOMIC_ACQ_REL, __ATOMIC_ACQ_REL);
         return output;
@@ -26,17 +26,17 @@ inline T atomic_compare_exchange(volatile T* atomic, T new_value, T previous_val
 template<typename T>
 inline T atomic_exchange(volatile T* atomic, T new_value){
 #if defined(COMPILER_MSVC)
-    if constexpr (sizeof(T) == 8u)
+    if constexpr (sizeof(T) == 1u)
         return _InterlockedExchange8(atomic, new_value);
-    else if constexpr (sizeof(T) == 16u)
+    else if constexpr (sizeof(T) == 2u)
         return _InterlockedExchange16(atomic, new_value);
-    else if constexpr (sizeof(T) == 32u)
+    else if constexpr (sizeof(T) == 4u)
         return _InterlockedExchange(atomic, new_value);
-    else if constexpr (sizeof(T) == 64u)
-        return _InterlockedExchange64(atomic, new_value);
+    else if constexpr (sizeof(T) == 8u)
+        return _InterlockedExchange64((LONG64*)atomic, (LONG64)new_value);
     else
 #elif defined(COMPILER_GCC)
-    if constexpr (sizeof(T) == 8u || sizeof(T) == 16u || sizeof(T) == 32u || sizeof(T) == 64u){
+    if constexpr (sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u){
         T output;
         __atomic_exchange(atomic, &new_value, &output, __ATOMIC_ACQ_REL);
         return output;
@@ -49,11 +49,11 @@ inline T atomic_exchange(volatile T* atomic, T new_value){
 template<typename T>
 inline T atomic_get(volatile T* atomic){
 #if defined(COMPILER_MSVC)
-    if constexpr (sizeof(T) == 8u || sizeof(T) == 16u || sizeof(T) == 32u || sizeof(T) == 64u, "")
+    if constexpr (sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u, "")
         return *atomic;
     else
 #elif defined(COMPILER_GCC)
-    if constexpr (sizeof(T) == 8u || sizeof(T) == 16u || sizeof(T) == 32u || sizeof(T) == 64u, "")
+    if constexpr (sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u, "")
         return __atomic_load_n(atomic, __ATOMIC_ACQ_REL);
     else
 #endif
@@ -63,7 +63,7 @@ inline T atomic_get(volatile T* atomic){
 template<typename T>
 inline void atomic_set(volatile T* atomic, T value){
 #if defined(COMPILER_GCC)
-    static_assert(sizeof(T) == 8u || sizeof(T) == 16u || sizeof(T) == 32u || sizeof(T) == 64u, "")
+    static_assert(sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u, "")
     __atomic_store(atomic, &value, __ATOMIC_ACQ_REL);
 #else
     atomic_exchange(atomic, value);
