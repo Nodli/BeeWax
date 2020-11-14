@@ -73,9 +73,9 @@ constexpr T clamp(const T x, const T min, const T max){
     return (x > max) ? max : ((x < min) ? min : x);
 };
 
-template<typename T, typename U>
-constexpr T fast_floor(const U x){
-    return (x < U(0)) ? T(x - U(1)) : T(x);
+template<typename T>
+constexpr T fast_floor(const T x){
+    return (x < T(0)) ? T(x - T(1)) : T(x);
 };
 
 template<typename T>
@@ -126,3 +126,9 @@ constexpr long double constexpr_sqrt(const long double x){
         return 0.;
     }
 }
+
+constexpr u32 time_to_frames(float duration_in_seconds, u32 frames_per_second){
+    float frame_duration = 1. / (float)frames_per_second;
+    return fast_floor<float>(duration_in_seconds / frame_duration);
+}
+

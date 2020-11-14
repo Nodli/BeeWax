@@ -62,8 +62,8 @@ constexpr T max(const T A, const T B);
 template<typename T>
 constexpr T clamp(const T x, const T min, const T max);
 
-template<typename T, typename U>
-constexpr T fast_floor(const U x);
+template<typename T>
+constexpr T fast_floor(const T x);
 
 template<typename T>
 constexpr T divide_ceil(const T dividend, const T divisor);
@@ -88,6 +88,8 @@ constexpr T map_to_range_normalized(const T x, const T range_min, const T range_
 
 // REF(hugo): https://en.wikipedia.org/wiki/Newton%27s_method#Square_root
 constexpr long double constexpr_sqrt(const long double x);
+
+constexpr u32 time_to_frames(float duration_in_seconds, u32 frames_per_second);
 
 #include "constexpr.inl"
 

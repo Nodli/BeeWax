@@ -271,8 +271,8 @@ static inline void setup_simplex_noise_2D(const float x, const float y,
     float grid_x = x + skew_temp;
     float grid_y = y + skew_temp;
 
-    grid_x_origin = (s32)fast_floor<float, s32>(grid_x);
-    grid_y_origin = (s32)fast_floor<float, s32>(grid_y);
+    grid_x_origin = (s32)fast_floor<float>(grid_x);
+    grid_y_origin = (s32)fast_floor<float>(grid_y);
 
     float unskew_temp = (float)(grid_x_origin + grid_y_origin) * unskew_factor;
     float origin_x = grid_x_origin - unskew_temp;

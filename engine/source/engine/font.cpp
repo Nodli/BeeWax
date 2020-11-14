@@ -156,12 +156,12 @@ float Font_Renderer::batch_string(const char* string, float baseline_x, float ba
         }
 
         ivec2 iquad_min = {
-            fast_floor<s32, float>(baseline_x + (float)cp_info->quad_offset_x * relative_font_scale),
-            fast_floor<s32, float>(baseline_y + (float)cp_info->quad_offset_y * relative_font_scale)
+            (s32)fast_floor<float>(baseline_x + (float)cp_info->quad_offset_x * relative_font_scale),
+            (s32)fast_floor<float>(baseline_y + (float)cp_info->quad_offset_y * relative_font_scale)
         };
         ivec2 iquad_max = {
-            fast_floor<s32, float>((float)iquad_min.x + (float)cp_info->quad_width * relative_font_scale),
-            fast_floor<s32, float>((float)iquad_min.y + (float)cp_info->quad_height * relative_font_scale)
+            (s32)fast_floor<float>((float)iquad_min.x + (float)cp_info->quad_width * relative_font_scale),
+            (s32)fast_floor<float>((float)iquad_min.y + (float)cp_info->quad_height * relative_font_scale)
         };
 
         vec2 quad_min = window->pixel_to_screen_coordinates(iquad_min);
