@@ -197,8 +197,8 @@ namespace bw{
         #include "keyboard_SDL.h"
         #include "mouse_SDL.h"
 
-        #include "sound_SDL.h"
-        #include "sound_SDL.cpp"
+        #include "audio_SDL.h"
+        #include "audio_SDL.cpp"
 
         #if defined(RENDERER_OPENGL3)
             #include "GL.h"
@@ -232,6 +232,7 @@ namespace bw{
 
 //#include "test.cpp"
 
-// ---- application
+// ----
 
-#include "../application/default_main.cpp"
+//#include "../application/default_main.cpp"
+#include "../application/minijam67_void.cpp"

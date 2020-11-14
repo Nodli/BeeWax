@@ -69,7 +69,7 @@ struct Keyboard_State{
 #undef DECLARE_KEYBOARD_REGISTRATION
 
                 default:
-                    LOG_TRACE("Keyboard event with an undetected keycode: %d", event.key.keysym.sym);
+                    //LOG_TRACE("Keyboard event with an undetected keycode: %d", event.key.keysym.sym);
                     break;
             }
         }
