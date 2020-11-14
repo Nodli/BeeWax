@@ -48,12 +48,23 @@
     #undef NOMINMAX
     #include <sysinfoapi.h>
 
+    // NOTE(hugo): suggests laptop drivers to use a dedicated gpu
+    // REF(hugo): https://stackoverflow.com/questions/16823372/forcing-machine-to-use-dedicated-graphics-card
+    extern "C" {
+        __declspec(dllexport) unsigned int NvOptimusEnablement = 1;
+        __declspec(dllexport) unsigned int AmdPowerXpressRequestHighPerformance = 1;
+    }
+
+
 #elif defined(PLATFORM_LINUX)
     #include <sys/mman.h>   // NOTE(hugo): os.h / os.cpp
     #include <unistd.h>     // NOTE(hugo): intrinsics.h
     #include <signal.h>     // NOTE(hugo): debug_break.h
 
 #endif
+
+// ---- force dedicated gpu
+
 
 // ---- compiler includes
 
@@ -187,6 +198,7 @@ namespace bw{
         #include "mouse_SDL.h"
 
         #include "sound_SDL.h"
+        #include "sound_SDL.cpp"
 
         #if defined(RENDERER_OPENGL3)
             #include "GL.h"
@@ -223,75 +235,3 @@ namespace bw{
 // ---- application
 
 #include "../application/default_main.cpp"
-
-// NOTE(hugo): WIP audio
-#if 0
-int main(){
-    SDL_Init(SDL_INIT_AUDIO);
-
-    // ---- detect
-
-    detect_audio_devices();
-    detect_audio_drivers();
-    detect_current_audio_driver();
-
-    // ---- initialize
-
-    SDL_AudioSpec expected_spec;
-    expected_spec.freq = 22050;
-    expected_spec.format = AUDIO_S16;
-    expected_spec.channels = 1;
-    expected_spec.samples = 4096;
-    expected_spec.callback = nullptr;
-    //expected_spec.callback = audio_callback;
-    expected_spec.userdata = nullptr;
-
-    SDL_AudioSpec device_spec;
-    SDL_AudioDeviceID device = SDL_OpenAudioDevice(nullptr, 0, &expected_spec, &device_spec, SDL_AUDIO_ALLOW_FREQUENCY_CHANGE);
-    if(!device){
-        LOG_ERROR("Failed SDL_OpenAudioDevice() %s", SDL_GetError());
-    }
-
-    LOG_INFO("Device Audio Specification");
-    LOG_INFO("- frequency : %i", device_spec.freq);
-    LOG_INFO("- format: %s", (device_spec.format == AUDIO_S16) ? "AUDIO_S16" : "UNKNOWN");
-    LOG_INFO("- channels: %i", device_spec.channels);
-
-    // ---- sound loading
-
-    SDL_AudioSpec wav_spec;
-    u32 wav_size;
-    u8* wav_buffer;
-    if(!SDL_LoadWAV("./data/audio/ImperialMarch60.wav", &wav_spec, &wav_buffer, &wav_size)){
-        LOG_ERROR("Failed SDL_LoadWAV() %s", SDL_GetError());
-    }
-
-    LOG_INFO("Device Audio Specification");
-    LOG_INFO("- frequency : %i", wav_spec.freq);
-    LOG_INFO("- format: %s", (wav_spec.format == AUDIO_S16) ? "AUDIO_S16" : "UNKNOWN");
-    LOG_INFO("- channels: %i", wav_spec.channels);
-
-    LOG_TRACE("%d", SDL_QueueAudio(device, wav_buffer, wav_size));
-    //SDL_LockAudioDevice(device);
-    //SDL_UnlockAudioDevice(device);
-
-    // ---- start playing
-
-    SDL_PauseAudioDevice(device, 0);
-
-    // ---- update wav file
-
-    //SDL_LockAudioDevice(device);
-    //SDL_UnlockAudioDevice(device);
-
-    // ---- termination
-
-    SDL_Delay(10000);
-
-    SDL_FreeWAV(wav_buffer);
-    SDL_CloseAudioDevice(device);
-    SDL_Quit();
-
-    return 0;
-}
-#endif
