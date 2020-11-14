@@ -8,22 +8,25 @@ char path_separator(){
 #endif
 }
 
-File_Path& File_Path::operator=(File_Path& rhs){
+File_Path& File_Path::operator=(const File_Path& rhs){
     memcpy(data, rhs.data, rhs.size);
     size = rhs.size;
+    return *this;
 };
 File_Path& File_Path::operator=(const char* rhs){
     u32 rhs_size = strlen(rhs);
     assert(rhs_size <= file_path_capacity);
     memcpy(data, rhs, rhs_size);
     size = rhs_size;
+    return *this;
 };
 
-File_Path& File_Path::operator/(File_Path& rhs){
+File_Path& File_Path::operator/(const File_Path& rhs){
     assert((size + rhs.size + 1u) <= file_path_capacity);
     data[size] = path_separator();
     memcpy(data + size + 1u, rhs.data, rhs.size);
     size += rhs.size;
+    return *this;
 };
 
 File_Path& File_Path::operator/(const char* rhs){
@@ -32,9 +35,10 @@ File_Path& File_Path::operator/(const char* rhs){
     data[size] = path_separator();
     memcpy(data + size + 1u, rhs, rhs_size);
     size += rhs_size;
+    return *this;
 };
 
-buffer<u8> read_file(File_Path& path){
+buffer<u8> read_file(const File_Path& path){
     FILE* f = fopen(path.data, "rb");
     if(f == NULL){
         LOG_ERROR("read_file(%s) FAILED - returning buffer with nullptr", path.data);
@@ -60,10 +64,10 @@ buffer<u8> read_file(File_Path& path){
     return buffer;
 }
 
-char* read_file_cstring(const char* const path){
-    FILE* f = fopen(path, "rb");
+char* read_file_cstring(const File_Path& path){
+    FILE* f = fopen(path.data, "rb");
     if(f == NULL){
-        LOG_ERROR("read_file_cstring(%s) FAILED - returning nullptr", path);
+        LOG_ERROR("read_file_cstring(%s) FAILED - returning nullptr", path.data);
         return nullptr;
     }
 
@@ -84,10 +88,10 @@ char* read_file_cstring(const char* const path){
     return data;
 }
 
-void write_file(const char* const path, u8* data, size_t bytesize){
-    FILE* f = fopen(path, "wb");
+void write_file(const File_Path& path, const u8* data, size_t bytesize){
+    FILE* f = fopen(path.data, "wb");
     if(f == NULL){
-        LOG_ERROR("write_file(%s) FAILED - aborting write", path);
+        LOG_ERROR("write_file(%s) FAILED - aborting write", path.data);
         return;
     }
 

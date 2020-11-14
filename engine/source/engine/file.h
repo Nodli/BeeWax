@@ -8,11 +8,11 @@ char path_separator();
 constexpr u32 file_path_capacity = 255;
 struct File_Path{
     template<size_t isize>
-    constexpr File_Path(char (&idata)[isize]);
+    constexpr File_Path(const char (&idata)[isize]);
 
-    File_Path& operator=(File_Path& rhs);
+    File_Path& operator=(const File_Path& rhs);
     File_Path& operator=(const char* rhs);
-    File_Path& operator/(File_Path& rhs);
+    File_Path& operator/(const File_Path& rhs);
     File_Path& operator/(const char* rhs);
 
     // ---- data
@@ -21,10 +21,10 @@ struct File_Path{
     u8 size = 0u;
 };
 
-buffer<u8> read_file(File_Path& path); // NOTE(hugo): free required
-char* read_file_cstring(const char* const path); // NOTE(hugo): free required
+buffer<u8> read_file(const File_Path& path); // NOTE(hugo): free required
+char* read_file_cstring(const File_Path& path); // NOTE(hugo): free required
 
-void write_file(const char* const path, u8* data, size_t bytesize);
+void write_file(const File_Path& path, const u8* data, size_t bytesize);
 
 template<typename T>
 T get_bytes(u8*& cursor);

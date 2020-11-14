@@ -10,16 +10,16 @@ namespace BEEWAX_INTERNAL{
     };
 }
 
-void Font_Renderer::make_bitmap_from_file(const char* filename, const char* string, float font_size, s32 glyph_padding, s32 glyph_edge_value){
-    buffer<u8> file = read_file(filename);
+void Font_Renderer::make_bitmap_from_file(const File_Path& path, const char* string, float font_size, s32 glyph_padding, s32 glyph_edge_value){
+    buffer<u8> file = read_file(path);
     if(!file.data || file.size == 0u){
-        LOG_ERROR("stbtt_InitFont() - FAILED for filename: %s", filename);
+        LOG_ERROR("stbtt_InitFont() - FAILED for path: %s", path.data);
         return;
     }
 
     stbtt_fontinfo info;
     if(!stbtt_InitFont(&info, (const u8*)file.data, 0)){
-        LOG_ERROR("stbtt_InitFont() - FAILED for filename: %s", filename);
+        LOG_ERROR("stbtt_InitFont() - FAILED for path: %s", path.data);
         return;
     }
 

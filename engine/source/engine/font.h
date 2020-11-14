@@ -10,7 +10,7 @@
 
 struct Font_Renderer{
     // NOTE: glyph_edge_value and glyph_padding are hard coded in the shader
-    void make_bitmap_from_file(const char* filename, const char* string, float font_size, s32 glyph_padding, s32 glyph_edge_value);
+    void make_bitmap_from_file(const File_Path& path, const char* string, float font_size, s32 glyph_padding, s32 glyph_edge_value);
     void free();
 
     void start_frame();
