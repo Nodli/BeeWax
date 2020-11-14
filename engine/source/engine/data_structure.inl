@@ -654,7 +654,6 @@ u32 dpool<T>::get_first(){
 
 template<typename T>
 u32 dpool<T>::get_next(u32 current_identifier){
-    assert(is_active(current_identifier));
     for(u32 identifier = current_identifier + 1u; identifier < capacity; ++identifier){
         if(is_active(identifier)){
             return identifier;

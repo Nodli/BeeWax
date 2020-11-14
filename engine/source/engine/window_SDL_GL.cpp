@@ -2,7 +2,7 @@ void Window_SDL_GL3::initialize(const Window_Settings& settings){
     SDL_DisplayMode display_mode;
 
     if(SDL_GetDesktopDisplayMode(0, &display_mode)){
-        LOG_ERROR("Failed SDL_GetDesktopDisplayMode() %s", SDL_GetError());
+        LOG_ERROR("SDL_GetDesktopDisplayMode() FAILED - %s", SDL_GetError());
     }
 
     assert(!(settings.width > display_mode.w));
@@ -49,7 +49,7 @@ void Window_SDL_GL3::initialize(const Window_Settings& settings){
             width, height,
             SDL_WINDOW_OPENGL);
     if(!handle){
-        LOG_ERROR("Failed SDL_CreateWindow() %s", SDL_GetError());
+        LOG_ERROR("SDL_CreateWindow() FAILED - %s", SDL_GetError());
         return;
     }
 
@@ -57,7 +57,7 @@ void Window_SDL_GL3::initialize(const Window_Settings& settings){
 
     context = SDL_GL_CreateContext(handle);
     if(!context){
-        LOG_ERROR("Failed SDL_GL_CreateContext() %s", SDL_GetError());
+        LOG_ERROR("SDL_GL_CreateContext() FAILED - %s", SDL_GetError());
         return;
     }
 
