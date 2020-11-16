@@ -30,6 +30,28 @@ struct Scene{
     void (*terminate)(void* data);
 };
 
+// NOTE(hugo): template for a Scene structure ; search and replace struct_name to something
+/*
+struct struct_name{
+    static void setup(void* data){
+        struct_name* self = (struct_name*)data;
+    }
+    static u32 update(void* data){
+        struct_name* self = (struct_name*)data;
+        return action_stop;
+    }
+    static u32 render(void* data){
+        struct_name* self = (struct_name*)data;
+        return action_stop;
+    }
+    static void terminate(void* data){
+        struct_name* self = (struct_name*)data;
+    }
+
+    // ---- data
+};
+*/
+
 struct Scene_Manager{
     template<typename T>
     T* push_scene(const char* scene_name);
