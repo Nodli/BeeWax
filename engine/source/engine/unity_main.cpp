@@ -186,6 +186,8 @@ namespace bw{
     #include "noise.h"
     #include "noise.cpp"
 
+    #include "tweening.h"
+
     // ---- platform layer & rendering
 
     #include "window_settings.h"

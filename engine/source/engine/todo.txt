@@ -2,15 +2,18 @@ TODO(jam) -------------
 
 TODO(engine) ----------
 
-- simplex derivatives
-- other noise functions: voronoise, worley, ...
+- dpool should have a size and use that instead of using dpool_no_element_available
+- make font independant of window by using width & height resolution members
+- pull File_Path out of file.h / file.inl / file.cpp
+- review dring, dpool
 - sprite batching
-- decouple buffer copy to GPU vs draw
 - renderer static buffers
-- vulkan renderer
 
 FUTURE(engine) --------
 
+- custom assert with message
+- vulkan renderer
+- other noise functions: voronoise, worley, ...
 - backend-independant interface
 - make Frame_Timing more dynamic instead of using static variables
 - typed quick sort with inlined comparator (sort_search.h)
@@ -21,9 +24,33 @@ CURRENT ---------------
 
 DONE ------------------
 
+15/11/2020
+- Mini Jam 67: "Void" - "Game must not contain any enemies"
+
+14/11/2020
+- conversion of wav audio to the device format
+- scene manager
+- easy_setup
+
+13/11/2020
+- implement an audio manager
+- fix atomic operation
+- hint laptops to use dedicated gpus
+
+12/11/2020
+- working signed-distance fonts
+
+11/11/2020
+- work on signed-distance font rendering
+
+10/11/2020
+- bugfix dhashmap
+- tweakable file hotreloading
+- simplex derivatives
+
 09/11/2020
-- review data_structure : daryheap
-- daryheap unit test
+- review data_structure : daryheap, dhashmap
+- daryheap, dhashmap randomized test
 
 08/11/2020
 - debug_break

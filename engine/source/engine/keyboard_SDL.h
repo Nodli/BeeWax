@@ -14,6 +14,7 @@
 
 #define FOR_EACH_KEYBOARD_BUTTON(FUNCTION)  \
 FUNCTION(function_F1, SDLK_F1)              \
+FUNCTION(key_f, SDLK_f)                     \
 FUNCTION(arrow_left, SDLK_LEFT)             \
 FUNCTION(arrow_right, SDLK_RIGHT)           \
 FUNCTION(arrow_up, SDLK_UP)                 \
