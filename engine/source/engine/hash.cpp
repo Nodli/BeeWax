@@ -83,3 +83,57 @@ u64 xorshift_hash(u64 data){
     data ^= (data << 17);
     return data;
 }
+
+u32 murmur3(u8* data, size_t bytesize, u32 seed){
+    const u32 nblocks = bytesize / 4u;
+    u32 hash = seed;
+    constexpr u32 c1 = 0xcc9e2d51;
+    constexpr u32 c2 = 0x1b873593;
+    constexpr u32 c3 = 0xe6546b64;
+    constexpr u32 c4 = 0x85ebca6b;
+    constexpr u32 c5 = 0xc2b2ae35;
+
+    // NOTE(hugo): 4-byte blocks
+    for(u32 iblock = 0u; iblock != nblocks; ++iblock){
+        u32 block = data[iblock];
+
+        block *= c1;
+        block = (block << 15u) | (block >> (32u - 15u));
+        block *= c2;
+
+        hash ^= block;
+        hash = (hash << 13u) | (hash >> (32u - 13u));
+        hash = hash * 5u + c3;
+    }
+
+    // NOTE(hugo): remaining bytes
+    const u8* remaining_ptr = data + nblocks * 4u;
+    u32 remainder = 0u;
+    switch(bytesize & 3u){
+
+        case 3:
+            remainder ^= remaining_ptr[2u] << 16u;
+            [[fallthrough]];
+        case 2:
+            remainder ^= remaining_ptr[1u] << 8u;
+            [[fallthrough]];
+        case 1:
+            remainder ^= remaining_ptr[0u];
+            remainder *= c1;
+            remainder = (remainder << 15u) | (remainder >> (32u - 15u));
+            remainder *= c2;
+
+            hash ^= remainder;
+    }
+
+    // NOTE(hugo): finalization
+    hash ^= (u32)bytesize;
+
+    hash ^= hash >> 16u;
+    hash *= c4;
+    hash ^= hash >> 13u;
+    hash *= c5;
+    hash ^= hash >> 16u;
+
+    return hash;
+}
