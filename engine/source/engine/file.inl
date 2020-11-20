@@ -18,6 +18,6 @@ T get_bytes_LE(u8*& cursor){
 
 template<typename T>
 T get_bytes_BE(u8*& cursor){
-    return byteswap(get_bytes<T>(cursor));
+    return atomic_byteswap<T>(get_bytes<T>(cursor));
 }
 

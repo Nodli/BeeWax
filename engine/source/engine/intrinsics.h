@@ -18,16 +18,8 @@ u64 cycle_counter();
 
 // ---- endianness conversion
 
-u16 byteswap(u16 x);
-s16 byteswap(s16 x);
-u32 byteswap(u32 x);
-s32 byteswap(s32 x);
-u64 byteswap(u64 x);
-s64 byteswap(s64 x);
-
-// NOTE(hugo): remove byteswap on an implicitly-converted value
-template <typename T>
-T byteswap(T) = delete;
+template<typename T>
+inline T atomic_byteswap(T value);
 
 // ---- cpu capabilities
 

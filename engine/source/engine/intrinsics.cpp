@@ -2,6 +2,9 @@
 
 template<typename T>
 inline T atomic_compare_exchange(volatile T* atomic, T new_value, T previous_value, bool can_fail_exchange){
+    static_assert((sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u),
+            "atomic_compare_exchange is not implemented for this type");
+
 #if defined(COMPILER_MSVC)
     if constexpr (sizeof(T) == 1u)
         return _InterlockedCompareExchange8(atomic, new_value, previous_value);
@@ -11,20 +14,18 @@ inline T atomic_compare_exchange(volatile T* atomic, T new_value, T previous_val
         return _InterlockedCompareExchange(atomic, new_value, previous_value);
     else if constexpr (sizeof(T) == 8u)
         return _InterlockedCompareExchange64(atomic, new_value, previous_value);
-    else
-#elif defined(COMPILER_GCC)
-    if constexpr (sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u){
-        T output;
-        __atomic_compare_exchange(atomic, &new_value, &output, can_fail_exchange, __ATOMIC_ACQ_REL, __ATOMIC_ACQ_REL);
-        return output;
-    }
-    else
+#elif defined(COMPILER_GCC) || defined(COMPILER_CLANG)
+    T output;
+    __atomic_compare_exchange(atomic, &new_value, &output, can_fail_exchange, __ATOMIC_ACQ_REL, __ATOMIC_ACQ_REL);
+    return output;
 #endif
-        static_assert(false, "atomic_compare_exchange is not implemented for this type");
 }
 
 template<typename T>
 inline T atomic_exchange(volatile T* atomic, T new_value){
+    static_assert((sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u),
+            "atomic_exchange is not implemented for this type");
+
 #if defined(COMPILER_MSVC)
     if constexpr (sizeof(T) == 1u)
         return _InterlockedExchange8(atomic, new_value);
@@ -34,39 +35,34 @@ inline T atomic_exchange(volatile T* atomic, T new_value){
         return _InterlockedExchange(atomic, new_value);
     else if constexpr (sizeof(T) == 8u)
         return _InterlockedExchange64((LONG64*)atomic, (LONG64)new_value);
-    else
-#elif defined(COMPILER_GCC)
-    if constexpr (sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u){
-        T output;
-        __atomic_exchange(atomic, &new_value, &output, __ATOMIC_ACQ_REL);
-        return output;
-    }
-    else
+#elif defined(COMPILER_GCC) || defined(COMPILER_CLANG)
+    T output;
+    __atomic_exchange(atomic, &new_value, &output, __ATOMIC_ACQ_REL);
+    return output;
 #endif
-        static_assert(false, "atomic_exchange is not implemented for this type");
 }
 
 template<typename T>
 inline T atomic_get(volatile T* atomic){
+    static_assert((sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u),
+            "atomic_get is not implemented for this type");
+
 #if defined(COMPILER_MSVC)
-    if constexpr (sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u, "")
-        return *atomic;
-    else
-#elif defined(COMPILER_GCC)
-    if constexpr (sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u, "")
-        return __atomic_load_n(atomic, __ATOMIC_ACQ_REL);
-    else
+    return *atomic;
+#elif defined(COMPILER_GCC) || defined(COMPILER_CLANG)
+    return __atomic_load_n(atomic, __ATOMIC_ACQ_REL);
 #endif
-        static_assert(false, "atomic_get is not implemented for this type");
 }
 
 template<typename T>
 inline void atomic_set(volatile T* atomic, T value){
-#if defined(COMPILER_GCC)
-    static_assert(sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u, "")
+    static_assert((sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u),
+            "atomic_store is not implemented for this type");
+
+#if defined(COMPILER_GCC) || defined(COMPILER_CLANG)
     __atomic_store(atomic, &value, __ATOMIC_ACQ_REL);
 #else
-    atomic_exchange(atomic, value);
+    atomic_exchange<T>(atomic, value);
 #endif
 }
 
@@ -78,53 +74,27 @@ u64 cycle_counter(){
 
 // ---- endianness conversion
 
-DISABLE_WARNING_PUSH
-DISABLE_WARNING_SIGN_CONVERSION
+template<typename T>
+inline T atomic_byteswap(T value){
+    static_assert((sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u),
+            "byteswap() is not implemented for this type");
+
 #if defined(COMPILER_MSVC)
-    u16 byteswap(u16 x){
-        return _byteswap_ushort(x);
-    }
-    s16 byteswap(s16 x){
-        return _byteswap_ushort(x);
-    }
-    u32 byteswap(u32 x){
-        return _byteswap_ulong(x);
-    }
-    s32 byteswap(s32 x){
-        return _byteswap_ulong(x);
-    }
-    u64 byteswap(u64 x){
-        return _byteswap_uint64(x);
-    }
-    s64 byteswap(s64 x){
-        return _byteswap_uint64(x);
-    }
-
+    if constexpr (sizeof(T) == 2u)
+        return _byteswap_ushort(*(ushort*)&value);
+    else if constexpr (sizeof(T) == 4u)
+        return _byteswap_ulong(*(u32*)&value);
+    else if constexpr (sizeof(T) == 8u)
+        return _byteswap_uint64(*(u64*)&value);
 #elif defined(COMPILER_GCC)
-    u16 byteswap(u16 x){
-        return __builtin_bswap16(x);
-    }
-    s16 byteswap(s16 x){
-        return __builtin_bswap16(*(u16*)&x);
-    }
-    u32 byteswap(u32 x){
-        return __builtin_bswap32(x);
-    }
-    s32 byteswap(s32 x){
-        return __builtin_bswap32(*(u32*)&x);
-    }
-    u64 byteswap(u64 x){
-        return __builtin_bswap64(x);
-    }
-    s64 byteswap(s64 x){
-        return __builtin_bswap64(*(u64*)&x);
-    }
-
-#else
-    static_assert(false, "byteswap() is not implemented for this platform");
-
+    if constexpr (sizeof(T) == 2u)
+        return __builtin_bswap16(*(ushort*)&value);
+    else if constexpr (sizeof(T) == 4u)
+        return __builtin_bswap32(*(u32*)&value);
+    else if constexpr (sizeof(T) == 8u)
+        return __builtin_bswap64(*(u64*)&value);
 #endif
-DISABLE_WARNING_POP
+}
 
 // ---- cpu capabilities
 
@@ -166,8 +136,8 @@ s32 detect_vector_capabilities(){
 
     cpuidex_internal(cpuinfo, 1, 0);
 
-#define CPUINFO_DETECTION(WORD_INDEX, BIT_INDEX)                \
-    if(cpuinfo[WORD_INDEX] & (1 << BIT_INDEX) == 0)             \
+#define CPUINFO_DETECTION(WORD_INDEX, BIT_INDEX)        \
+    if((cpuinfo[WORD_INDEX] & (1 << BIT_INDEX)) == 0)   \
         return BEEWAX_INTERNAL::simd_instruction_set;
 
     CPUINFO_DETECTION(3, 0);    // FPU (x87 FPU on chip)
@@ -212,4 +182,3 @@ u32 detect_physical_cores(){
 
 #endif
 }
-
