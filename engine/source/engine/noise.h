@@ -52,6 +52,18 @@ template<float (*noise_derivatives_function)(const float x, const float y)>
 vec2 noise_curl(const float x, const float y);
 
 template<float (*noise_function)(const float x, const float y)>
+u8* generate_noise_texture(u32 width, u32 height, u32 nchannels, vec2 origin, float span);
+
+template<void (*noise_function)(const float x, const float y, float& value, vec2& derivatives)>
+void* generate_noise_derivatives_textures(u32 width, u32 height, u32 nchannels, vec2 origin, float span, u8*& noise, u8*& noise_dx, u8*& noise_dy);
+
+// TODO(hugo): https://en.wikipedia.org/wiki/Worley_noise
+// TODO(hugo): http://iquilezles.org/www/articles/smoothvoronoi/smoothvoronoi.htm
+// TODO(hugo): http://iquilezles.org/www/articles/voronoise/voronoise.htm
+// TODO(hugo): https://www.reddit.com/r/VoxelGameDev/comments/ee94wg/supersimplex_the_better_opensimplex_new_gradient/
+// ----
+
+template<float (*noise_function)(const float x, const float y)>
 u8* generate_noise_texture(u32 width, u32 height, u32 nchannels, vec2 origin, float span){
     u8* texture_data = (u8*)malloc(width * height * nchannels);
 
@@ -102,12 +114,5 @@ void* generate_noise_derivatives_textures(u32 width, u32 height, u32 nchannels, 
 
     return memory;
 }
-
-#if 0
-// TODO(hugo): https://en.wikipedia.org/wiki/Worley_noise
-// TODO(hugo): http://iquilezles.org/www/articles/smoothvoronoi/smoothvoronoi.htm
-// TODO(hugo): http://iquilezles.org/www/articles/voronoise/voronoise.htm
-// TODO(hugo): https://www.reddit.com/r/VoxelGameDev/comments/ee94wg/supersimplex_the_better_opensimplex_new_gradient/
-#endif
 
 #endif

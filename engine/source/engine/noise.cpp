@@ -1,3 +1,9 @@
+namespace BEEWAX_INTERNAL{
+    static inline u32 noise_hash(u32 data){
+        return wang_hash(data);
+    }
+}
+
 static inline float perlin_quintic_interpolator(const float t){
     return t * t * t * (10.f + t * (- 15.f + t * 6.f));
 }
@@ -15,8 +21,8 @@ float perlin_noise(const float x){
     float dR = - 1.f + x_decimal;
 
     // NOTE(hugo): determine gradients
-    u32 seedL = fibonacci_hash((u32)origin);
-    u32 seedR = fibonacci_hash((u32)origin + 1u);
+    u32 seedL = BEEWAX_INTERNAL::noise_hash((u32)origin);
+    u32 seedR = BEEWAX_INTERNAL::noise_hash((u32)origin + 1u);
     float gradL = random_float_normalized(seedL);
     float gradR = random_float_normalized(seedR);
 
@@ -110,19 +116,19 @@ static inline void setup_perlin_noise_2D(const float x, const float y,
 
     hash_data[0] = x_origin;
     hash_data[1] = y_origin;
-    hash = combined_hash_32<fibonacci_hash>((u32*)hash_data, 2u);
+    hash = combined_hash_32<BEEWAX_INTERNAL::noise_hash>((u32*)hash_data, 2u);
     gradient[0] = perlin_gradient_2D_cache(hash);
 
     ++hash_data[0];
-    hash = combined_hash_32<fibonacci_hash>((u32*)hash_data, 2u);
+    hash = combined_hash_32<BEEWAX_INTERNAL::noise_hash>((u32*)hash_data, 2u);
     gradient[1] = perlin_gradient_2D_cache(hash);
 
     ++hash_data[1];
-    hash = combined_hash_32<fibonacci_hash>((u32*)hash_data, 2u);
+    hash = combined_hash_32<BEEWAX_INTERNAL::noise_hash>((u32*)hash_data, 2u);
     gradient[2] = perlin_gradient_2D_cache(hash);
 
     --hash_data[0];
-    hash = combined_hash_32<fibonacci_hash>((u32*)hash_data, 2u);
+    hash = combined_hash_32<BEEWAX_INTERNAL::noise_hash>((u32*)hash_data, 2u);
     gradient[3] = perlin_gradient_2D_cache(hash);
 
     // NOTE(hugo): extrapolate the gradients
@@ -218,8 +224,8 @@ float simplex_noise(const float x){
     float dR = - 1.f + x_decimal;
 
     // NOTE(hugo): determine gradients
-    u32 seedL = fibonacci_hash((u32)origin);
-    u32 seedR = fibonacci_hash((u32)origin + 1u);
+    u32 seedL = BEEWAX_INTERNAL::noise_hash((u32)origin);
+    u32 seedR = BEEWAX_INTERNAL::noise_hash((u32)origin + 1u);
     float gradL = random_float_normalized(seedL);
     float gradR = random_float_normalized(seedR);
 
@@ -321,7 +327,7 @@ float simplex_noise(const float x, const float y){
         float weight_origin_pow2 = weight_origin * weight_origin;
         float weight_origin_pow4 = weight_origin_pow2 * weight_origin_pow2;
         s32 hash_data_origin[2] = {grid_x_origin, grid_y_origin};
-        u32 hash_origin = combined_hash_32<fibonacci_hash>((u32*)hash_data_origin, 2u);
+        u32 hash_origin = combined_hash_32<BEEWAX_INTERNAL::noise_hash>((u32*)hash_data_origin, 2u);
         vec2 gradient_origin = perlin_gradient_2D_cache(hash_origin);
         float extrap_origin = origin_to_point_x * gradient_origin.x + origin_to_point_y * gradient_origin.y;
 
@@ -332,7 +338,7 @@ float simplex_noise(const float x, const float y){
         float weight_corner_pow2 = weight_corner * weight_corner;
         float weight_corner_pow4 = weight_corner_pow2 * weight_corner_pow2;
         s32 hash_data_corner[2] = {grid_x_origin + grid_x_corner, grid_y_origin + grid_y_corner};
-        u32 hash_corner = combined_hash_32<fibonacci_hash>((u32*)hash_data_corner, 2u);
+        u32 hash_corner = combined_hash_32<BEEWAX_INTERNAL::noise_hash>((u32*)hash_data_corner, 2u);
         vec2 gradient_corner = perlin_gradient_2D_cache(hash_corner);
         float extrap_corner = corner_to_point_x * gradient_corner.x + corner_to_point_y * gradient_corner.y;
 
@@ -343,7 +349,7 @@ float simplex_noise(const float x, const float y){
         float weight_opposite_pow2 = weight_opposite * weight_opposite;
         float weight_opposite_pow4 = weight_opposite_pow2 * weight_opposite_pow2;
         s32 hash_data_opposite[2] = {grid_x_origin + 1, grid_y_origin + 1};
-        u32 hash_opposite = combined_hash_32<fibonacci_hash>((u32*)hash_data_opposite, 2u);
+        u32 hash_opposite = combined_hash_32<BEEWAX_INTERNAL::noise_hash>((u32*)hash_data_opposite, 2u);
         vec2 gradient_opposite = perlin_gradient_2D_cache(hash_opposite);
         float extrap_opposite = opposite_to_point_x * gradient_opposite.x + opposite_to_point_y * gradient_opposite.y;
 
@@ -374,7 +380,7 @@ vec2 simplex_derivatives(const float x, const float y){
         float weight_origin_pow2 = weight_origin * weight_origin;
         float weight_origin_pow4 = weight_origin_pow2 * weight_origin_pow2;
         s32 hash_data_origin[2] = {grid_x_origin, grid_y_origin};
-        u32 hash_origin = combined_hash_32<fibonacci_hash>((u32*)hash_data_origin, 2u);
+        u32 hash_origin = combined_hash_32<BEEWAX_INTERNAL::noise_hash>((u32*)hash_data_origin, 2u);
         vec2 gradient_origin = perlin_gradient_2D_cache(hash_origin);
         float extrap_origin = origin_to_point_x * gradient_origin.x + origin_to_point_y * gradient_origin.y;
 
@@ -386,7 +392,7 @@ vec2 simplex_derivatives(const float x, const float y){
         float weight_corner_pow2 = weight_corner * weight_corner;
         float weight_corner_pow4 = weight_corner_pow2 * weight_corner_pow2;
         s32 hash_data_corner[2] = {grid_x_origin + grid_x_corner, grid_y_origin + grid_y_corner};
-        u32 hash_corner = combined_hash_32<fibonacci_hash>((u32*)hash_data_corner, 2u);
+        u32 hash_corner = combined_hash_32<BEEWAX_INTERNAL::noise_hash>((u32*)hash_data_corner, 2u);
         vec2 gradient_corner = perlin_gradient_2D_cache(hash_corner);
         float extrap_corner = corner_to_point_x * gradient_corner.x + corner_to_point_y * gradient_corner.y;
 
@@ -398,7 +404,7 @@ vec2 simplex_derivatives(const float x, const float y){
         float weight_opposite_pow2 = weight_opposite * weight_opposite;
         float weight_opposite_pow4 = weight_opposite_pow2 * weight_opposite_pow2;
         s32 hash_data_opposite[2] = {grid_x_origin + 1, grid_y_origin + 1};
-        u32 hash_opposite = combined_hash_32<fibonacci_hash>((u32*)hash_data_opposite, 2u);
+        u32 hash_opposite = combined_hash_32<BEEWAX_INTERNAL::noise_hash>((u32*)hash_data_opposite, 2u);
         vec2 gradient_opposite = perlin_gradient_2D_cache(hash_opposite);
         float extrap_opposite = opposite_to_point_x * gradient_opposite.x + opposite_to_point_y * gradient_opposite.y;
 
@@ -431,7 +437,7 @@ void simplex_noise_and_derivatives(const float x, const float y, float& value, v
         float weight_origin_pow2 = weight_origin * weight_origin;
         float weight_origin_pow4 = weight_origin_pow2 * weight_origin_pow2;
         s32 hash_data_origin[2] = {grid_x_origin, grid_y_origin};
-        u32 hash_origin = combined_hash_32<fibonacci_hash>((u32*)hash_data_origin, 2u);
+        u32 hash_origin = combined_hash_32<BEEWAX_INTERNAL::noise_hash>((u32*)hash_data_origin, 2u);
         vec2 gradient_origin = perlin_gradient_2D_cache(hash_origin);
         float extrap_origin = origin_to_point_x * gradient_origin.x + origin_to_point_y * gradient_origin.y;
 
@@ -444,7 +450,7 @@ void simplex_noise_and_derivatives(const float x, const float y, float& value, v
         float weight_corner_pow2 = weight_corner * weight_corner;
         float weight_corner_pow4 = weight_corner_pow2 * weight_corner_pow2;
         s32 hash_data_corner[2] = {grid_x_origin + grid_x_corner, grid_y_origin + grid_y_corner};
-        u32 hash_corner = combined_hash_32<fibonacci_hash>((u32*)hash_data_corner, 2u);
+        u32 hash_corner = combined_hash_32<BEEWAX_INTERNAL::noise_hash>((u32*)hash_data_corner, 2u);
         vec2 gradient_corner = perlin_gradient_2D_cache(hash_corner);
         float extrap_corner = corner_to_point_x * gradient_corner.x + corner_to_point_y * gradient_corner.y;
 
@@ -457,7 +463,7 @@ void simplex_noise_and_derivatives(const float x, const float y, float& value, v
         float weight_opposite_pow2 = weight_opposite * weight_opposite;
         float weight_opposite_pow4 = weight_opposite_pow2 * weight_opposite_pow2;
         s32 hash_data_opposite[2] = {grid_x_origin + 1, grid_y_origin + 1};
-        u32 hash_opposite = combined_hash_32<fibonacci_hash>((u32*)hash_data_opposite, 2u);
+        u32 hash_opposite = combined_hash_32<BEEWAX_INTERNAL::noise_hash>((u32*)hash_data_opposite, 2u);
         vec2 gradient_opposite = perlin_gradient_2D_cache(hash_opposite);
         float extrap_opposite = opposite_to_point_x * gradient_opposite.x + opposite_to_point_y * gradient_opposite.y;
 
