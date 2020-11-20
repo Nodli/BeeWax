@@ -282,7 +282,7 @@ Vertex_Batch_ID Renderer_GL3::get_vertex_batch(Vertex_Format_Name name, Renderer
                 glBindBuffer(GL_ARRAY_BUFFER, 0u);
             }
 
-            return {free_batch_index};
+            return free_batch_index;
         }
     }
 
@@ -311,7 +311,7 @@ Vertex_Batch_ID Renderer_GL3::get_vertex_batch(Vertex_Format_Name name, Renderer
     u32 output_index = vertex_batch_storage.batches.size;
     vertex_batch_storage.batches.push(new_batch);
 
-    return {output_index};
+    return output_index;
 };
 
 void Renderer_GL3::free_vertex_batch(Vertex_Batch_ID batch){
@@ -406,6 +406,26 @@ static inline GLint compute_texture_row_alignment(u32 width, u32 height, Texture
 }
 
 Texture_ID Renderer_GL3::get_texture(Texture_Format format, u32 width, u32 height, Renderer_Data_Type data_type, void* data){
+
+    auto bind_upload_unbind = [&](const GL::Texture texture){
+        glBindTexture(GL_TEXTURE_2D, texture);
+
+        // NOTE(hugo): set the unpacking alignment for this operation when necessary
+        GLint row_alignment = compute_texture_row_alignment(width, height, format, data_type);
+        if(row_alignment != GL::default_unpack_alignment){
+            glPixelStorei(GL_UNPACK_ALIGNMENT, row_alignment);
+            glTexImage2D(GL_TEXTURE_2D, 0, format, (GLsizei)width, (GLsizei)height, 0, format, data_type, nullptr);
+            glPixelStorei(GL_UNPACK_ALIGNMENT, GL::default_unpack_alignment);
+        }else{
+            glTexImage2D(GL_TEXTURE_2D, 0, format, (GLsizei)width, (GLsizei)height, 0, format, data_type, nullptr);
+        }
+
+        // NOTE(hugo): default MIP mapping to have a complete texture
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+
+    };
+
     // NOTE(hugo): trying to find a free texture
     for(u32 ifree_texture = 0u; ifree_texture != texture_storage.free_textures.size; ++ifree_texture){
         u32 free_texture_index = texture_storage.free_textures[ifree_texture];
@@ -413,7 +433,8 @@ Texture_ID Renderer_GL3::get_texture(Texture_Format format, u32 width, u32 heigh
 
         if(entry->format == format && entry->width == width && entry->height == height){
             texture_storage.free_textures.remove_swap(ifree_texture);
-            return {free_texture_index};
+            bind_upload_unbind(entry->texture);
+            return free_texture_index;
         }
     }
 
@@ -422,27 +443,12 @@ Texture_ID Renderer_GL3::get_texture(Texture_Format format, u32 width, u32 heigh
     glGenTextures(1u, &new_texture.texture);
     new_texture.width = width;
     new_texture.height = height;
-
-    glBindTexture(GL_TEXTURE_2D, new_texture.texture);
-
-    // NOTE(hugo): set the unpacking alignment for this operation when necessary
-    GLint row_alignment = compute_texture_row_alignment(width, height, format, data_type);
-    if(row_alignment != GL::default_unpack_alignment){
-        glPixelStorei(GL_UNPACK_ALIGNMENT, row_alignment);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, (GLsizei)width, (GLsizei)height, 0, format, data_type, data);
-        glPixelStorei(GL_UNPACK_ALIGNMENT, GL::default_unpack_alignment);
-    }else{
-        glTexImage2D(GL_TEXTURE_2D, 0, format, (GLsizei)width, (GLsizei)height, 0, format, data_type, data);
-    }
-
-    // NOTE(hugo): default MIP mapping to have a complete texture
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+    bind_upload_unbind(new_texture.texture);
 
     u32 output_index = texture_storage.textures.size;
     texture_storage.textures.push(new_texture);
 
-    return {output_index};
+    return output_index;
 }
 
 void Renderer_GL3::free_texture(Texture_ID texture){
