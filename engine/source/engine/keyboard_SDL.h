@@ -33,7 +33,16 @@ struct Keyboard_State{
     };
 #undef ADD_TO_ENUM_KEYBOARD_BUTTON
 
-    void reset(){
+    void initialize(){
+        for(u32 ibutton = 0; ibutton != carray_size(storage); ++ibutton){
+            storage[ibutton].state = Device_Button::STATE_UP;
+            storage[ibutton].state_generation = 0u;
+            storage[ibutton].npressed = 0u;
+            storage[ibutton].nreleased = 0u;
+        }
+    }
+
+    void next_frame(){
         for(u32 ibutton = 0; ibutton != carray_size(storage); ++ibutton){
             storage[ibutton].npressed = 0u;
             storage[ibutton].nreleased = 0u;
@@ -58,7 +67,6 @@ struct Keyboard_State{
                 }
             };
 
-
             switch(event.key.keysym.sym){
 
 #define DECLARE_KEYBOARD_REGISTRATION(name, keycode)        \
@@ -80,7 +88,7 @@ struct Keyboard_State{
 
     u64 state_generation = 0u;
     union{
-        Device_Button storage[NUMBER_OF_KEYBOARD_BUTTONS] = {};
+        Device_Button storage[NUMBER_OF_KEYBOARD_BUTTONS];
         struct{
 #define DECLARE_KEYBOARD_BUTTON_VARIABLE(name, keycode) Device_Button name;
             FOR_EACH_KEYBOARD_BUTTON(DECLARE_KEYBOARD_BUTTON_VARIABLE)

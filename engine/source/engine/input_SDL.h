@@ -15,10 +15,10 @@ struct Device_Button{
         return (state == STATE_UP) ? STATE_DOWN : STATE_UP;
     }
 
-    Button_State state = STATE_UP;
-    u64 state_generation = 0u;
-    u32 npressed = 0u;
-    u32 nreleased = 0u;
+    Button_State state;
+    u64 state_generation;
+    u32 npressed;
+    u32 nreleased;
 };
 
 #endif

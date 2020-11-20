@@ -2,7 +2,16 @@
 #define H_MOUSE_STATE
 
 struct Mouse_State{
-    void reset(){
+    void initialize(){
+        for(u32 ibutton = 0u; ibutton != carray_size(button.storage); ++ibutton){
+            button.storage[ibutton].state = Device_Button::STATE_UP;
+            button.storage[ibutton].state_generation = 0u;
+            button.storage[ibutton].npressed = 0u;
+            button.storage[ibutton].nreleased = 0u;
+        }
+    }
+
+    void next_frame(){
         for(u32 ibutton = 0u; ibutton != carray_size(button.storage); ++ibutton){
             button.storage[ibutton].npressed = 0u;
             button.storage[ibutton].nreleased = 0u;
@@ -69,7 +78,7 @@ struct Mouse_State{
 
     u64 state_generation = 0u;
     union{
-        Device_Button storage[5] = {};
+        Device_Button storage[5];
         struct{
             Device_Button left;
             Device_Button middle;
