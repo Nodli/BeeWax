@@ -74,6 +74,7 @@ struct darray{
     T& operator[](u32 index);
     const T& operator[](u32 index) const;
 
+    void insert_empty(u32 index);
     void insert(u32 index, const T& value);
     void insert_multi(u32 index, u32 nelement);
     void remove(u32 index);
@@ -82,6 +83,7 @@ struct darray{
     // NOTE(hugo): removes the /index/th element and replaces it with the one at the end of the array
     void remove_swap(u32 index);
 
+    void push_empty();
     void push(const T& value);
     void push_multi(u32 nelement);
     void pop();
@@ -146,10 +148,49 @@ struct dring{
 
 constexpr u32 dpool_no_element_available = UINT32_MAX;
 
-#define DPOOL_KEEP_AVAILABLE_LIST_SORTED TRUE
+#define DPOOL_KEEP_AVAILABLE_LIST_SORTED
 
 template<typename T>
 struct dpool{
+    T& operator[](u32 index);
+    const T& operator[](u32 index) const;
+
+    u32 insert_empty();
+    u32 insert(const T& value);
+    void remove(u32 identifier);
+
+    void set_min_capacity(u32 new_capacity);
+
+    void clear();
+    void free();
+
+    size_t capacity_in_bytes();
+
+    // ---- data
+
+    struct element{
+        union {
+            T type;
+            u32 next_element;
+        };
+    };
+
+    element* memory = nullptr;
+    u32 capacity = 0u;
+    u32 available_element = dpool_no_element_available;
+};
+
+template<typename T>
+void deep_copy(dpool<T>& dest, const dpool<T>& src);
+
+// ---- diterpool
+
+constexpr u32 diterpool_no_element_available = UINT32_MAX;
+
+#define DITERPOOL_KEEP_AVAILABLE_LIST_SORTED TRUE
+
+template<typename T>
+struct diterpool{
     T& operator[](u32 index);
     const T& operator[](u32 index) const;
 
@@ -187,12 +228,13 @@ struct dpool{
     };
 
     element* memory = nullptr;
+    u32 size = 0u;
     u32 capacity = 0u;
-    u32 available_element = dpool_no_element_available;
+    u32 available_element = diterpool_no_element_available;
 };
 
 template<typename T>
-void deep_copy(dpool<T>& dest, const dpool<T>& src);
+void deep_copy(diterpool<T>& dest, const diterpool<T>& src);
 
 // ---- dhashmap
 
@@ -223,7 +265,7 @@ struct dhashmap{
     u32* table = nullptr;
     u32 table_capacity_minus_one = 0u;
     u32 nentries = 0u;
-    dpool<entry> storage;
+    diterpool<entry> storage;
 };
 
 // ---- daryheap : mindheap, maxdheap
@@ -265,8 +307,6 @@ using mindheap = daryheap<D, T, &BEEWAX_INTERNAL::comparison_decreasing_order>;
 
 // ---- priodheap : minpriodheap, maxpriodheap
 
-// TODO(hugo): compare performances with a custom type associating a daryheap<PriorityType> and a dpool<DataType>
-
 namespace BEEWAX_INTERNAL{
     template<typename PriorityType, typename DataType>
     struct priodheap_pair{
@@ -283,13 +323,13 @@ namespace BEEWAX_INTERNAL{
 }
 
 template<u32 D, typename PriorityType, typename DataType, s32 (*compare)(const PriorityType& A, const PriorityType& B)>
-using priodheap = daryheap<D, BEEWAX_INTERNAL::priodheap_pair<PriorityType, DataType>, &BEEWAX_INTERNAL::priodheap_pair_comparison_wrapper<PriorityType, DataType, compare>>;
+using dprio = daryheap<D, BEEWAX_INTERNAL::priodheap_pair<PriorityType, DataType>, &BEEWAX_INTERNAL::priodheap_pair_comparison_wrapper<PriorityType, DataType, compare>>;
 
 template<typename PriorityType, typename DataType, u32 D = 4u>
-using minpriodheap = priodheap<D, PriorityType, DataType, &BEEWAX_INTERNAL::comparison_increasing_order>;
+using mindprio = dprio<D, PriorityType, DataType, &BEEWAX_INTERNAL::comparison_increasing_order>;
 
 template<typename PriorityType, typename DataType, u32 D = 4u>
-using maxpriodheap = priodheap<D, PriorityType, DataType, &BEEWAX_INTERNAL::comparison_increasing_order>;
+using maxdprio = dprio<D, PriorityType, DataType, &BEEWAX_INTERNAL::comparison_increasing_order>;
 
 #include "data_structure.inl"
 
