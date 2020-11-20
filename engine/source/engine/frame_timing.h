@@ -4,7 +4,7 @@
 // TODO(hugo): make something more flexible with dynamic allocation so that the user can select the snap frequencies
 
 // NOTE(hugo): Fuzzy Time Snapping
-// https://medium.com/@tglaiel/how-to-make-your-game-run-at-60fps-24c61210fe75
+// REF(hugo): https://medium.com/@tglaiel/how-to-make-your-game-run-at-60fps-24c61210fe75
 struct Frame_Timing{
     constexpr static u32 max_frame_skipped = 8u;
     constexpr static u32 nsnap_frequencies = 5u;

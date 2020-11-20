@@ -106,7 +106,7 @@ constexpr T to_degree(const T value_radians){
 }
 
 template<typename T>
-constexpr T range_normalize(const T x, const T range_min, const T range_max){
+constexpr T normalize_to_range(const T x, const T range_min, const T range_max){
     return clamp((x - range_min) / (range_max - range_min), T(0), T(1));
 }
 

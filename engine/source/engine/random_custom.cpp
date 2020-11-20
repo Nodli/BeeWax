@@ -70,11 +70,11 @@ u32 random_u32_range_uniform(u32 max, u32& seed){
 float random_float_uniform(u32& seed){
     seed *= multiplierLLC32;
 
-    // NOTE(hugo): excluding non-numbers ie doubled probability for a mantissa of 254
+    // NOTE(hugo): excluding non-numbers to have uniform probabilities
     float output;
     do{
         *(u32*)(&output) = (seed >> 9 | 0x40000000u);
-    }while(float_mantissa(output) == 255);
+    }while(((*(u32*)&output) & 0x7FFFFF) == 255);
 
     return output;
 }

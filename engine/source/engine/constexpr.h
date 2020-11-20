@@ -84,7 +84,7 @@ template<typename T>
 constexpr T to_degree(const T value_radians);
 
 template<typename T>
-constexpr T map_to_range_normalized(const T x, const T range_min, const T range_max);
+constexpr T normalize_to_range(const T x, const T range_min, const T range_max);
 
 // REF(hugo): https://en.wikipedia.org/wiki/Newton%27s_method#Square_root
 constexpr long double constexpr_sqrt(const long double x);

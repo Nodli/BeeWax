@@ -1,5 +1,5 @@
-Rect Camera_2D::view_rect(){
-    Rect output;
+c2D::Rect Camera_2D::view_rect(){
+    c2D::Rect output;
 
     float half_height = 0.5f * height;
     float half_width = half_height * aspect_ratio;
@@ -65,7 +65,7 @@ void extend_to_show(Camera_2D& camera, vec2 position){
     camera.center = (required_min + required_max) / 2.f;
 }
 
-void keep_in_box(Camera_2D& camera, vec2 position, Rect screenspace_box){
+void keep_in_box(Camera_2D& camera, vec2 position, c2D::Rect screenspace_box){
     // NOTE(hugo): no aspect ratio otherwise /screenspace_box/ would have to be aspect ratio corrected too
     float screenspace_factor = 2.f / camera.height;
     vec2 to_position = position - camera.center;

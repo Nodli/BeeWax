@@ -51,6 +51,4 @@ double measure_precision(double d);
 // NOTE(hugo): ULP stands for Units in the Last Place ie bitwise difference
 bool almost_equal(double dA, double dB, double delta_absolute, u64 delta_ULP);
 
-#include "type.inl"
-
 #endif

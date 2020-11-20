@@ -4,7 +4,7 @@
 // NOTE(hugo): aspect_ratio is width / height
 
 struct Camera_2D{
-    Rect view_rect();
+    c2D::Rect view_rect();
     float width();
 
     mat3 camera_matrix();
@@ -20,7 +20,7 @@ struct Camera_2D{
 
 void move_to_show(Camera_2D& camera, vec2 position);
 void extend_to_show(Camera_2D& camera, vec2 position);
-void keep_in_box(Camera_2D& camera, vec2 position, Rect screenspace_box);
+void keep_in_box(Camera_2D& camera, vec2 position, c2D::Rect screenspace_box);
 void move_to_position_smooth(Camera_2D& camera, vec2 position, float smoothing_ratio);
 
 #endif
