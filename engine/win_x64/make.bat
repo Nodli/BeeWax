@@ -31,6 +31,7 @@ set LinkWindows=user32.lib gdi32.lib opengl32.lib
 
 set CompilerFlags=/nologo /Fe%Executablename% /FC /EHsc /std:c++17 /O2 /cgthreads4 /Fo%PathOBJ%
 set DebugFlags=/Zi /Fd%PathPDB%
+REM set DebugFlags=
 
 pushd %P%\win_x64\bin
 
