@@ -577,12 +577,35 @@ size_t dring<T>::capacity_in_bytes(){
 // ---- dpool
 
 template<typename T>
-static inline void dpool_reallocate_to_capacity(dpool<T>& dp){
-    void* new_memory = realloc((void*)dp.memory, (size_t)dp.capacity * sizeof(typename dpool<T>::element));
+static inline void dpool_increase_capacity(dpool<T>& dp, u32 new_capacity){
+    assert(new_capacity > dp.capacity); // NOTE(hugo): implies that new_capacity > 0u
+
+    void* new_memory = realloc((void*)dp.memory, new_capacity * sizeof(typename dpool<T>::element));
+
     if(new_memory){
         dp.memory = (typename dpool<T>::element*)new_memory;
+
+        // NOTE(hugo): go to the end of the linked list of available elements
+        u32 owner_next = dp.capacity;
+        u32 next = dp.available_element;
+        while(next != dpool_no_element_available){
+            owner_next = next;
+            next = dp.memory[owner_next].next_element;
+        }
+
+        // NOTE(hugo): make new elements available at the end of the linked list
+        dp.memory[owner_next].next_element = dp.capacity;
+        for(u32 new_available = dp.capacity; new_available < new_capacity - 1u; ++new_available){
+            dp.memory[new_available].next_element = new_available + 1u;
+        }
+        dp.memory[new_capacity - 1u].next_element = dpool_no_element_available;
+
+        dp.available_element = min(dp.available_element, dp.capacity);
+
+        dp.capacity = new_capacity;
+
     }else{
-        LOG_ERROR("realloc FAILED - keeping previous memory but subsequent write may be out of bound");
+        LOG_ERROR("realloc FAILED - keeping previous memory and capacity");
     }
 }
 
@@ -598,12 +621,11 @@ const T& dpool<T>::operator[](u32 index) const{
     return memory[index].type;
 }
 
-
 template<typename T>
 u32 dpool<T>::insert_empty(){
     if(available_element == dpool_no_element_available){
-        capacity = 2u * max(1u, capacity);
-        dpool_reallocate_to_capacity(*this);
+        u32 new_capacity = 2u * max(1u, capacity);
+        dpool_increase_capacity(*this, new_capacity);
     }
 
     u32 insertion_index = available_element;
@@ -730,7 +752,7 @@ static inline void diterpool_use_memory(diterpool<T>& dpa, u32 capacity, void* p
 
     // NOTE(hugo): making new elements available in the linked list
     u32 current_identifier = 0u;
-    for(u32 new_identifier = 1; new_identifier < capacity - 1; ++new_identifier){
+    for(u32 new_identifier = 1; new_identifier < capacity - 1u; ++new_identifier){
         dpa.memory[current_identifier].next_element = new_identifier;
         current_identifier = new_identifier;
     }
@@ -863,6 +885,18 @@ void diterpool<T>::remove(u32 identifier){
 }
 
 template<typename T>
+bool diterpool<T>::is_active(u32 identifier){
+    assert(identifier < capacity);
+
+    u32 byte_offset = identifier / 8u;
+    u8* identifier_ptr = get_bitset_ptr()  + byte_offset;
+    u32 bit_offset = identifier - byte_offset * 8u;
+    u32 size = 0u;
+
+    return (((u32)(*identifier_ptr) >> bit_offset) & 1u) != 0u;
+}
+
+template<typename T>
 void diterpool<T>::set_min_capacity(u32 new_capacity){
     if(new_capacity > capacity){
         diterpool_increase_capacity(*this, new_capacity);
@@ -932,18 +966,6 @@ void diterpool<T>::set_inactive(u32 identifier){
     assert(is_active(identifier));
 
     (*identifier_ptr) &= (u8)(~(1u << bit_offset));
-}
-
-template<typename T>
-bool diterpool<T>::is_active(u32 identifier){
-    assert(identifier < capacity);
-
-    u32 byte_offset = identifier / 8u;
-    u8* identifier_ptr = get_bitset_ptr()  + byte_offset;
-    u32 bit_offset = identifier - byte_offset * 8u;
-    u32 size = 0u;
-
-    return (((u32)(*identifier_ptr) >> bit_offset) & 1u) != 0u;
 }
 
 template<typename T>

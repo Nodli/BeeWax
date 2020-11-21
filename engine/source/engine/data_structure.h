@@ -195,13 +195,16 @@ struct diterpool{
     const T& operator[](u32 index) const;
 
     // NOTE(hugo): use to iterate on active elements
-    // for(u32 index = array.get_first(); index < array.capacity; index = array.get_next(index))
+    // u32 index, counter;
+    // for(index = array.get_first(), counter = 0u; index < array.capacity && counter != array.size; index = array.get_next(index), ++counter)
     u32 get_first();
     u32 get_next(u32 current_identifier);
 
     u32 insert_empty();
     u32 insert(const T& value);
     void remove(u32 identifier);
+
+    bool is_active(u32 identifier);
 
     void set_min_capacity(u32 new_capacity);
 
@@ -218,7 +221,6 @@ struct diterpool{
     inline u8* get_bitset_ptr();
     inline void set_active(u32 identifier);
     inline void set_inactive(u32 identifier);
-    inline bool is_active(u32 identifier);
 
     struct element{
         union {
