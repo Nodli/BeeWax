@@ -8,21 +8,27 @@
 // http://chanae.walon.org/pub/ttf/ttf_glyphs.htm
 // https://github.com/justinmeiners/stb-truetype-example/blob/master/main.c
 
-struct Font_Renderer{
-    // NOTE: glyph_edge_value and glyph_padding are hard coded in the shader
-    void make_bitmap_from_file(const File_Path& path, const char* string, float font_size, s32 glyph_padding, s32 glyph_edge_value);
-    void free();
+typedef u32 Font_ID;
 
-    void start_frame();
-    void end_frame();
+struct Font_Manager{
+    // NOTE(hugo): do not use this between start_frame() and end_frame()
+    void terminate();
+
+    // NOTE(hugo): the shader has hard-coded values for /glyph_padding/ & /glyph_edge_value/
+    Font_ID font_from_file(const File_Path& path, const char* character_string, float font_size, s32 glyph_padding = 5, s32 glyph_edge_value = 180);
+    void remove_font(Font_ID font);
+
+    // NOTE(hugo): acquisition & release of the renderer resources to render strings using this font
+    void start_frame(Font_ID font);
+    void end_frame(Font_ID font);
 
     // NOTE(hugo): returns baseline_x at the end of the string
-    float batch_string(const char* string, float baseline_x, float baseline_y, float font_size);
-    void render();
+    float batch_string(Font_ID font, const char* string, float baseline_x, float baseline_y, float font_size);
+    void render_batch(Font_ID font);
 
     // ---- font data
 
-    struct codepoint_info{
+    struct CodePoint_Info{
         vec2 uv_min;
         vec2 uv_max;
         s16 quad_offset_x;
@@ -32,22 +38,25 @@ struct Font_Renderer{
         float cursor_advance;
     };
 
-    buffer<u8> file;
-    stbtt_fontinfo info;
+    struct Font_Data{
+        buffer<u8> file;
+        stbtt_fontinfo info;
+        dhashmap<char, CodePoint_Info> codepoint_to_info;
 
-    float bitmap_font_size = 0.f;
-    u32 bitmap_width = 0u;
-    u32 bitmap_height = 0u;
-    u8* bitmap_data = nullptr;
+        float bitmap_font_size = 0.f;
+        u32 bitmap_width = 0u;
+        u32 bitmap_height = 0u;
+        u8* bitmap_data = nullptr;
 
-    dhashmap<char, codepoint_info> codepoint_to_info;
+        Texture_ID texture;
+        Vertex_Batch_ID batch;
+    };
+    dpool<Font_Data> fonts;
 
     // ---- rendering data
 
     Window* window = nullptr;
     Renderer* renderer = nullptr;
-    Texture_ID texture;
-    Vertex_Batch_ID batch;
 };
 
 #endif
