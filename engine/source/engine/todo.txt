@@ -2,27 +2,40 @@ TODO(jam) -------------
 
 TODO(engine) ----------
 
-- dpool should have a size and use that instead of using dpool_no_element_available
-- make font independant of window by using width & height resolution members
-- pull File_Path out of file.h / file.inl / file.cpp
-- review dring, dpool
+- reimplement tweening
 - sprite batching
 - renderer static buffers
+- review dring, dpool, diterpool
+- allow object destruction through a template parameter in data structures
 
 FUTURE(engine) --------
 
 - custom assert with message
 - vulkan renderer
 - other noise functions: voronoise, worley, ...
-- backend-independant interface
 - make Frame_Timing more dynamic instead of using static variables
 - typed quick sort with inlined comparator (sort_search.h)
 - small-buffer-optimized vector (based of sarray)
 - data structures template of the bytesize as a base with a template of the typename as frontend
+- coroutines (https://www.chiark.greenend.org.uk/~sgtatham/coroutines.html)
 
 CURRENT ---------------
 
 DONE ------------------
+
+23/11/2020
+- parse & hotreload tweakable values directly in the __FILE__
+
+22/11/2020
+- replace Font_Renderer with Font_Manager to support multiple fonts
+
+21/11/2020
+- bugfix new Audio_Manager
+
+20/11/2020
+- size in diterpool
+- dpool
+- reimplement Audio_Manager
 
 15/11/2020
 - Mini Jam 67: "Void" - "Game must not contain any enemies"

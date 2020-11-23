@@ -31,10 +31,10 @@ int main(int argc, char* argv[]){
     Renderer renderer;
     renderer.setup_resources();
 
-    Font_Renderer font_renderer;
-    font_renderer.window = &window;
-    font_renderer.renderer = &renderer;
-    font_renderer.make_bitmap_from_file("./data/Roboto_Font/Roboto-Italic.ttf", ASCII_PRINTABLE, window_settings.height / 10.f, 5, 180);
+    Font_Manager font_manager;
+    font_manager.window = &window;
+    font_manager.renderer = &renderer;
+    Font_ID font = font_manager.font_from_file("./data/Roboto_Font/Roboto-Italic.ttf", ASCII_PRINTABLE, window.height / 10.f);
 
     //DEV_DEBUG_RENDERER;
 
@@ -45,7 +45,9 @@ int main(int argc, char* argv[]){
 
     // ---- input
 
-    Keyboard_State keyboard;
+    Keyboard_State keyboard = {};
+    keyboard.initialize();
+
     Mouse_State mouse;
 
     // ---- state
@@ -69,17 +71,18 @@ int main(int argc, char* argv[]){
 
     // ---- audio loading
 
-    Audio_Buffer_ID audio_imperial_march = audio.load_wav("./data/audio/ImperialMarch60.wav");
-    audio.play_buffer(audio_imperial_march);
+    Audio_Buffer_ID audio_imperial_march = audio.buffer_from_wav("./data/audio/ImperialMarch60.wav");
+    audio.start_playing(audio_imperial_march);
 
     // ---- developper tools
 
-    DEV_INITIALIZE;
-    DEV_DISPLAY_TWEAKABLE_ENTRIES;
+    DEV_setup();
+
+    DEV_debug_break();
 
 	// ---- main loop ---- //
 	while(running){
-        //DEV_LOG_FRAME_TIME;
+        //DEV_LOG_frame_duration;
 
         // ---- update
 
@@ -101,17 +104,25 @@ int main(int argc, char* argv[]){
                 mouse.register_event(event);
             }
 
+            if(keyboard.space.npressed > 0){
+                audio.start_playing(audio_imperial_march);
+            }
+
+            if(keyboard.function_F1.npressed > 0){
+                BEEWAX_INTERNAL::DEV_reparse_tweakables();
+            }
+
             // ---- setup the next game frame
 
-            keyboard.reset();
-            mouse.reset();
-            audio.next_frame();
+            keyboard.next_frame();
+            mouse.next_frame();
+            audio.mix_next_frame();
         }
 
         // ---- render
 
         renderer.start_frame();
-        font_renderer.start_frame();
+        font_manager.start_frame(font);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         Camera_2D camera;
@@ -142,8 +153,8 @@ int main(int argc, char* argv[]){
         if(true)
         {
             vec2 baseline = {300.f, 300.f};
-            float baseline_end_x = font_renderer.batch_string("Asobisof", baseline.x, baseline.y, 500.f / 2.f);
-            font_renderer.render();
+            float baseline_end_x = font_manager.batch_string(font, "Asobisof", baseline.x, baseline.y, 500.f / 2.f);
+            font_manager.render_batch(font);
 
             float underline_height = 10.f;
             Vertex_Batch_ID vertex_batch = renderer.get_vertex_batch(xyrgba, PRIMITIVE_TRIANGLE_STRIP);
@@ -203,7 +214,7 @@ int main(int argc, char* argv[]){
         }
 
         // NOTE(hugo): simplex texture
-        bool show_simplex = DEV_TWEAKABLE(BOOLEAN, "show_simplex", false);
+        bool show_simplex = DEV_Tweak(float, false);
         if(show_simplex)
         {
             Vertex_Batch_ID texture_batch = renderer.get_vertex_batch(xyuv, PRIMITIVE_TRIANGLE_STRIP);
@@ -221,12 +232,12 @@ int main(int argc, char* argv[]){
 
         // ---- setup the next rendering frame
 
-        font_renderer.end_frame();
+        font_manager.end_frame(font);
         renderer.end_frame();
 		window.swap_buffers();
 
-        DEV_DISPLAY_TIMING_ENTRIES;
-        DEV_NEXT_FRAME;
+        DEV_LOG_timing_entries();
+        DEV_next_frame();
 	}
 
     // ---- texture cleanup
@@ -238,16 +249,16 @@ int main(int argc, char* argv[]){
 
     // ---- audio cleanup
 
-    audio.unload_buffer(audio_imperial_march);
+    audio.remove_buffer(audio_imperial_march);
 
 	// ---- termination ---- //
     audio.terminate();
-    font_renderer.free();
+    font_manager.terminate();
     renderer.free_resources();
 	window.terminate();
 	SDL_Quit();
 
-    DEV_TERMINATE;
+    DEV_terminate();
 
     return 0;
 }
