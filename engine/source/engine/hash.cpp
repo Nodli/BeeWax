@@ -1,10 +1,10 @@
-u32 FNV1a_32ptr(u8* data, size_t bytesize){
+u32 FNV1a_32ptr(const u8* data, const size_t bytesize){
     constexpr u32 offset_basis = 2166136261;
     constexpr u32 FNV_prime = (u32(1) << 24) + (u32(1) << 8) + 0x93;
 
     u32 hash = offset_basis;
-    u8* begin = data;
-    u8* end = begin + bytesize;
+    const u8* begin = data;
+    const u8* end = begin + bytesize;
     while(begin < end){
         hash ^= (u32)*begin++;
         hash *= FNV_prime;
@@ -13,13 +13,13 @@ u32 FNV1a_32ptr(u8* data, size_t bytesize){
     return hash;
 }
 
-u64 FNV1a_64ptr(u8* data, size_t bytesize){
+u64 FNV1a_64ptr(const u8* data, const size_t bytesize){
     constexpr u64 offset_basis = 14695981039346656037u;
     constexpr u64 FNV_prime = (u64(1) << 40) + (u64(1) << 8) + 0x93;
 
     u64 hash = offset_basis;
-    u8* begin = data;
-    u8* end = begin + bytesize;
+    const u8* begin = data;
+    const u8* end = begin + bytesize;
     while(begin < end){
         hash ^= (u64)*begin++;
         hash *= FNV_prime;
@@ -28,63 +28,80 @@ u64 FNV1a_64ptr(u8* data, size_t bytesize){
     return hash;
 }
 
-// NOTE(hugo): fibo is 2^output_bits / golden ratio rounded to the nearest integer that is not a multiple of two
-u32 fibonacci_hash(u32 data){
-    constexpr u32 fibo32 = 2654435769u;
-    return data * fibo32;
+u32 FNV1a_32str(const char* data){
+    constexpr u32 offset_basis = 2166136261;
+    constexpr u32 FNV_prime = (u32(1) << 24) + (u32(1) << 8) + 0x93;
+
+    u32 hash = offset_basis;
+    while(*data){
+        hash ^= (u32)*data++;
+        hash *= FNV_prime;
+    }
+    return hash;
 }
 
-u64 fibonacci_hash(u64 data){
-    constexpr u64 fibo64 = 11400714819323198486u;
-    return data * fibo64;
-}
+u64 FNV1a_64str(const char* data){
+    constexpr u64 offset_basis = 14695981039346656037u;
+    constexpr u64 FNV_prime = (u64(1) << 40) + (u64(1) << 8) + 0x93;
 
-u32 wang_hash(u32 data)
-{
-    data = (data + 0x7ed55d16) + (data << 12);
-    data = (data ^ 0xc761c23c) ^ (data >> 19);
-    data = (data + 0x165667b1) + (data << 5);
-    data = (data + 0xd3a2646c) ^ (data << 9);
-    data = (data + 0xfd7046c5) + (data << 3);
-    data = (data ^ 0xb55a4f09) ^ (data >> 16);
-    return data;
-}
-
-u32 deadbeef_hash(u32 data)
-{
-    data = data ^ (data >> 4u);
-    data = (data ^ 0xdeadbeef) + (data << 5u);
-    data = data ^ (data >> 11u);
-    return data;
-}
-
-u32 combined_wang_hash(u32* data, size_t size){
-    u32 hash = 0;
-    u32* begin = data;
-    u32* end = begin + size;
-    while(begin < end){
-        hash ^= (u32)*begin++;
-        hash = wang_hash(hash);
+    u64 hash = offset_basis;
+    while(*data){
+        hash ^= (u64)*data++;
+        hash *= FNV_prime;
     }
 
     return hash;
 }
 
-u32 xorshift_hash(u32 data){
-    data ^= (data << 13);
-    data ^= (data >> 17);
-    data ^= (data << 5);
-    return data;
+// NOTE(hugo): fibo is 2^output_bits / golden ratio rounded to the nearest integer that is not a multiple of two
+u32 fibonacci_hash(const u32 data){
+    constexpr u32 fibo32 = 2654435769u;
+    return data * fibo32;
 }
 
-u64 xorshift_hash(u64 data){
-    data ^= (data << 13);
-    data ^= (data >> 7);
-    data ^= (data << 17);
-    return data;
+u64 fibonacci_hash(const u64 data){
+    constexpr u64 fibo64 = 11400714819323198486u;
+    return data * fibo64;
 }
 
-u32 murmur3(u8* data, size_t bytesize, u32 seed){
+u32 wang_hash(const u32 data)
+{
+    u32 hash = data;
+    hash = (hash + 0x7ed55d16) + (hash << 12);
+    hash = (hash ^ 0xc761c23c) ^ (hash >> 19);
+    hash = (hash + 0x165667b1) + (hash << 5);
+    hash = (hash + 0xd3a2646c) ^ (hash << 9);
+    hash = (hash + 0xfd7046c5) + (hash << 3);
+    hash = (hash ^ 0xb55a4f09) ^ (hash >> 16);
+    return hash;
+}
+
+u32 deadbeef_hash(const u32 data)
+{
+    u32 hash = data;
+    hash = hash ^ (hash >> 4u);
+    hash = (hash ^ 0xdeadbeef) + (hash << 5u);
+    hash = hash ^ (hash >> 11u);
+    return hash;
+}
+
+u32 xorshift_hash(const u32 data){
+    u32 hash = data;
+    hash ^= (hash << 13);
+    hash ^= (hash >> 17);
+    hash ^= (hash << 5);
+    return hash;
+}
+
+u64 xorshift_hash(const u64 data){
+    u32 hash = data;
+    hash ^= (hash << 13);
+    hash ^= (hash >> 7);
+    hash ^= (hash << 17);
+    return hash;
+}
+
+u32 murmur3(const u8* data, const size_t bytesize, const u32 seed){
     const u32 nblocks = bytesize / 4u;
     u32 hash = seed;
     constexpr u32 c1 = 0xcc9e2d51;
