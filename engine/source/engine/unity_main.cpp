@@ -1,24 +1,31 @@
 // ---- precompiler
+// REF(hugo): https://blog.kowalczyk.info/article/j/guide-to-predefined-macros-in-c-compilers-gcc-clang-msvc-etc..html
 
-#if defined(_WIN32) || defined(_WIN64)
+#if defined(_WIN32)
     #define PLATFORM_WINDOWS
-#elif defined(unix) || defined(__unix__) || defined(__unix)
+#elif defined(__linux__)
     #define PLATFORM_LINUX
 #else
-    static_assert(false, "no platform was specified")
+    static_assert(false, "no platform was specified");
 #endif
 
 #if defined(_MSC_VER)
     #define COMPILER_MSVC
 #elif defined(__GNUG__)
     #define COMPILER_GCC
+#elif defined(__clang__)
+    #define COMPILER_CLANG
 #else
-    static_assert(false, "no compiler was identified")
+    static_assert(false, "no compiler was identified");
 #endif
 
 #include "macro.h"
 
 // ---- C standard library
+
+#if defined(PLATFORM_WINDOWS)
+    #define _CRT_SECURE_NO_WARNINGS
+#endif
 
 #include <cassert>
 
@@ -55,12 +62,10 @@
         __declspec(dllexport) unsigned int AmdPowerXpressRequestHighPerformance = 1;
     }
 
-
 #elif defined(PLATFORM_LINUX)
     #include <sys/mman.h>   // NOTE(hugo): os.h / os.cpp
     #include <unistd.h>     // NOTE(hugo): intrinsics.h
     #include <signal.h>     // NOTE(hugo): debug_break.h
-
 #endif
 
 // ---- force dedicated gpu
@@ -118,6 +123,7 @@ namespace bw{
     #include "intrinsics.cpp"
 
     #include "constexpr.h"
+
     #include "byteoperation.h"
     #include "byteoperation.cpp"
 
@@ -125,7 +131,7 @@ namespace bw{
     #include "hash.cpp"
 
     #if defined(PLATFORM_LINUX)
-        #define LOG_USE_COLOR
+        #define LOG_COLORED
     #endif
     #include "logprint.h"
     #include "logprint.cpp"
@@ -134,11 +140,17 @@ namespace bw{
     #include "sort_search.h"
     #include "data_structure.h"
 
+    #include "filepath.h"
+    #include "filepath.cpp"
+
+    #include "file.h"
+    #include "file.cpp"
+
     // ---- debug
 
     #include "debug_break.h"
 
-    #define USE_DEVELOPPER_MODE
+    #define DEVELOPPER_MODE
     #include "developper_tools.h"
 
     // ---- os layer
@@ -148,15 +160,16 @@ namespace bw{
 
     // ---- core
 
+    #include "array_indexing.h"
+    #include "array_indexing.cpp"
+
     #include "random_custom.h"
     #include "random_custom.cpp"
 
     #include "time.h"
+
     #include "frame_timing.h"
     #include "frame_timing.cpp"
-
-    #include "file.h"
-    #include "file.cpp"
 
     #include "vec.h"
     #include "vec.cpp"
@@ -164,21 +177,23 @@ namespace bw{
     #include "rot.h"
     #include "quat.h"
 
-    #include "shape.h"
-    #include "shape.cpp"
-
-    #include "array_indexing.h"
-    #include "array_indexing.cpp"
-
-    #include "camera_math.h"
-    #include "camera_math.cpp"
-    #include "camera_2D.h"
-    #include "camera_2D.cpp"
-    #include "camera_3D.h"
-    #include "camera_3D.cpp"
+    #include "shape_2D.h"
+    #include "shape_2D.cpp"
 
     #include "collision_2D.h"
     #include "collision_2D.cpp"
+
+    #include "camera_2D.h"
+    #include "camera_2D.cpp"
+
+    #include "shape_3D.h"
+    #include "shape_3D.cpp"
+
+    #include "camera_math.h"
+    #include "camera_math.cpp"
+
+    #include "camera_3D.h"
+    #include "camera_3D.cpp"
 
     #include "colormap.h"
     #include "colormap.cpp"
@@ -236,5 +251,4 @@ namespace bw{
 
 // ----
 
-//#include "../application/default_main.cpp"
-#include "../application/minijam67_void.cpp"
+#include "../application/default_main.cpp"

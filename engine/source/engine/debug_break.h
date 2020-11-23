@@ -1,4 +1,10 @@
-FORCE_INLINE void debug_break(){
+#if !defined(DEVELOPPER_MODE)
+
+#define DEV_debug_break();
+
+#else
+
+FORCE_INLINE void DEV_debug_break(){
 #if defined(COMPILER_MSVC)
     __debugbreak();
 
@@ -10,3 +16,5 @@ FORCE_INLINE void debug_break(){
 
 #endif
 }
+
+#endif
