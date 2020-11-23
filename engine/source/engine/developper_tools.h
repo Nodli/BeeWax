@@ -1,44 +1,31 @@
 // NOTE(hugo): nothing is thread safe as is
 // a mutex could be used in the initialization part as it's only executed once
 
-#if !defined(USE_DEVELOPPER_MODE)
+#if !defined(DEVELOPPER_MODE)
 
-#define DEV_INITIALIZE
-#define DEV_NEXT_FRAME
-#define DEV_TERMINATE
+// ---- timing
 
-#define DEV_TIMED_BLOCK
-#define DEV_DISPLAY_TIMING_ENTRIES
-#define DEV_LOG_FRAME_TIME
+#define DEV_Timed_Block
 
-#define DEV_DEBUG_RENDERER
+#define DEV_LOG_timing_entries()
+#define DEV_LOG_frame_duration
 
-#define DEV_TWEAKABLE(TYPE, NAME, DEFAULT_VALUE) DEFAULT_VALUE
-#define DEV_DISPLAY_TWEAKABLE_ENTRIES
+// ---- rendering
+
+#define DEV_Debug_Renderer
+
+// ---- tweakable
+
+#define DEV_Tweak(TYPE, DEFAULT_VALUE) DEFAULT_VALUE
+
+// ---- setup / terminate
+
+#define DEV_setup()
+#define DEV_next_frame()
+#define DEV_terminate()
 
 #else
 
-// ---- initialization
-
-#define DEV_INITIALIZE                                                                  \
-do{                                                                                     \
-    BEEWAX_INTERNAL::DEV_import_tweakable_entries_from_file("./data/tweakable.txt");    \
-}while(0)
-
-#define DEV_NEXT_FRAME                              \
-do{                                                 \
-    BEEWAX_INTERNAL::DEV_timing_events.clear();     \
-}while(0)
-
-#define DEV_TERMINATE                                                               \
-do{                                                                                 \
-    BEEWAX_INTERNAL::DEV_timing_entries.free();                                     \
-    BEEWAX_INTERNAL::DEV_timing_events.free();                                      \
-    BEEWAX_INTERNAL::DEV_export_tweakable_entries_to_file("./data/tweakable.txt");  \
-    free(BEEWAX_INTERNAL::DEV_tweakable_file_mapping);                              \
-    BEEWAX_INTERNAL::DEV_tweakable_file_mapping = nullptr;                          \
-    BEEWAX_INTERNAL::DEV_tweakable_entries.free();                                  \
-}while(0)
 
 // ---- timing
 
@@ -50,392 +37,254 @@ namespace BEEWAX_INTERNAL{
         u32 hit_count = 0u;
         u64 cycle_counter = 0u;
     };
+    constexpr u32 DEV_timing_nentries = 256u;
+    static darray<DEV_Timing_Entry> DEV_timing_entries;
 
-    struct DEV_Timing_Event{
-        u64 cycle_counter = 0u;
-        u32 entry_index = 0u;
+    // TODO(hugo): support timing events
+    //struct DEV_Timing_Event{
+    //    u64 cycle_counter = 0u;
+    //    u32 entry_index = 0u;
+    //};
+    //constexpr u32 DEV_timing_nevents = 256u;
+    //static darray<DEV_Timing_Entry> DEV_timing_events;
+
+    static u32 DEV_get_new_timing_entry(const char* file, const char* function, const u32 line){
+        u32 entry_index = DEV_timing_entries.size;
+        DEV_timing_entries.push_empty();
+        DEV_timing_entries[entry_index].file = file;
+        DEV_timing_entries[entry_index].function = function;
+        DEV_timing_entries[entry_index].line = line;
+        return entry_index;
     };
-
-    constexpr u16 DEV_timing_chunk_size = 256;
-    static dchunkarena<DEV_Timing_Entry, DEV_timing_chunk_size> DEV_timing_entries;
-    static dchunkarena<DEV_Timing_Event, DEV_timing_chunk_size> DEV_timing_events;
-
-    static DEV_Timing_Entry* DEV_get_new_timed_block(const char* file, const char* function, u32 line){
-        DEV_Timing_Entry* entry = BEEWAX_INTERNAL::DEV_timing_entries.get();
-        entry->file = file;
-        entry->function = function;
-        entry->line = line;
-        return entry;
-    };
-
-    void DEV_LOG_timing_entries(){
-        u32 nentries = 0u;
-        dchunkarena<DEV_Timing_Entry, BEEWAX_INTERNAL::DEV_timing_chunk_size>::chunk* current_chunk = BEEWAX_INTERNAL::DEV_timing_entries.head;
-
-        auto display_chunk = [&](u32 entries_to_display){
-            for(u32 ientry = 0u; ientry != entries_to_display; ++ientry){
-                DEV_Timing_Entry& entry = current_chunk->data[ientry];
-                LOG_RAW("DEV_Timing_Entry [%d]: %s HITS(%d) CYCLES(%d) AVG(%d)", nentries + ientry, entry.function, entry.hit_count, entry.cycle_counter, entry.cycle_counter / entry.hit_count);
-                ++nentries;
-            }
-        };
-
-        if(current_chunk && BEEWAX_INTERNAL::DEV_timing_entries.current_chunk_space != 0u){
-            display_chunk(BEEWAX_INTERNAL::DEV_timing_chunk_size - BEEWAX_INTERNAL::DEV_timing_entries.current_chunk_space);
-            current_chunk = current_chunk->next;
-        }
-
-        while(current_chunk){
-            display_chunk(BEEWAX_INTERNAL::DEV_timing_chunk_size);
-            current_chunk = current_chunk->next;
-        }
-    }
 
     struct DEV_Timing_Container{
-        DEV_Timing_Container(DEV_Timing_Entry* ientry) : entry(ientry){
+        DEV_Timing_Container(u32 ientry_index) : entry_index(ientry_index){
             start_cycles = cycle_counter();
         }
         ~DEV_Timing_Container(){
-            ++(entry->hit_count);
-            entry->cycle_counter += (cycle_counter() - start_cycles);
+            DEV_Timing_Entry& entry = DEV_timing_entries[entry_index];
+            ++(entry.hit_count);
+            entry.cycle_counter += (cycle_counter() - start_cycles);
         };
 
-        DEV_Timing_Entry* entry;
+        u32 entry_index;
         u64 start_cycles;
     };
 }
 
-#define DEV_TIMED_BLOCK                                                                                                                                     \
-static BEEWAX_INTERNAL::DEV_Timing_Entry* CONCATENATE(DEV_timing_entry_ptr_variable_at_, __LINE__) = nullptr;                                               \
-if(!CONCATENATE(DEV_timing_entry_ptr_variable_at_, __LINE__)){                                                                                              \
-    CONCATENATE(DEV_timing_entry_ptr_variable_at_, __LINE__) = BEEWAX_INTERNAL::DEV_get_new_timed_block(__FILE__, __func__, __LINE__);                      \
-}                                                                                                                                                           \
-BEEWAX_INTERNAL::DEV_Timing_Container CONCATENATE(DEV_timing_container_variable_at_, __LINE__)(CONCATENATE(DEV_timing_entry_ptr_variable_at_, __LINE__));
+#define DEV_Timed_Block                                                                                                             \
+static u32 CONCATENATE(DEV_timing_entry_at_, __LINE__) = UINT_MAX;                                                                  \
+if(CONCATENATE(DEV_timing_entry_at_, __LINE__) == UINT_MAX){                                                                        \
+    CONCATENATE(DEV_timing_entry_at_, __LINE__) = BEEWAX_INTERNAL::DEV_get_new_timing_entry(__FILE__, __func__, __LINE__);          \
+}                                                                                                                                   \
+BEEWAX_INTERNAL::DEV_Timing_Container CONCATENATE(DEV_timing_container_at_, __LINE__)(CONCATENATE(DEV_timing_entry_at_, __LINE__));
 
-#define DEV_DISPLAY_TIMING_ENTRIES do{ BEEWAX_INTERNAL::DEV_LOG_timing_entries(); }while(0)
+void DEV_LOG_timing_entries(){
+    using namespace BEEWAX_INTERNAL;
+    for(u32 ientry = 0u; ientry != DEV_timing_entries.size; ++ientry){
+        DEV_Timing_Entry& entry = DEV_timing_entries[ientry];
+        LOG_RAW("DEV_Timing_Entry [%d]: %s HITS(%d) CYCLES(%d) AVG(%d)",
+                ientry,
+                entry.function,
+                entry.hit_count,
+                entry.cycle_counter,
+                entry.cycle_counter / entry.hit_count);
+    }
+}
 
-#define DEV_LOG_FRAME_TIME                                                                  \
+#define DEV_LOG_frame_duration                                                                  \
 double CONCATENATE(DEV_frame_start_time_at_, __LINE__) = timer_seconds();                       \
 DEFER{                                                                                          \
-    double DEV_frame_time = timer_seconds() - CONCATENATE(DEV_frame_start_time_at_, __LINE__);   \
+    double DEV_frame_time = timer_seconds() - CONCATENATE(DEV_frame_start_time_at_, __LINE__);  \
     LOG_RAW("DEV_Frame_Time: %f ms, %f FPS", DEV_frame_time, 1. / DEV_frame_time);              \
 };
 
 // ---- debug rendering
 
-#define DEV_DEBUG_RENDERER do{ GL::set_debug_message_callback(); }while(0)
+#define DEV_Debug_Renderer do{ GL::set_debug_message_callback(); }while(0)
 
 // ---- tweakable
 
+// REF(hugo): https://blog.tuxedolabs.com/2018/03/13/hot-reloading-hardcoded-parameters.html
+
 namespace BEEWAX_INTERNAL{
     enum DEV_Tweakable_Type{
-        TWEAKABLE_BOOLEAN,
-        TWEAKABLE_INTEGER,
-        TWEAKABLE_REAL,
-        TWEAKABLE_STRING,
+        Tweakable_bool,
+        Tweakable_s32,
+        Tweakable_float,
+        Tweakable_string,
     };
-
     union DEV_Tweakable_Value{
-        bool as_BOOLEAN;
-        s32 as_INTEGER;
-        float as_REAL;
-        char* as_STRING;
+        bool as_bool;
+        s32 as_s32;
+        float as_float;
+        char* as_string;
     };
-
     struct DEV_Tweakable_Entry{
-        const char* name;
+        File_Path file;
+        u32 line;
         DEV_Tweakable_Type type;
         DEV_Tweakable_Value value;
     };
+    constexpr u16 DEV_tweakable_nentries = 256;
+    static darray<DEV_Tweakable_Entry> DEV_tweakable_entries;
+    static darray<char*> DEV_string_alloc;
 
-    constexpr u16 DEV_tweakable_chunk_size = 256;
-    static dchunkarena<DEV_Tweakable_Entry, DEV_tweakable_chunk_size> DEV_tweakable_entries;
+    static u32 DEV_get_new_tweakable_entry(){
+        u32 entry_index = DEV_tweakable_entries.size;
+        DEV_tweakable_entries.push_empty();
+        return entry_index;
+    }
 
-    static char* DEV_tweakable_file_mapping = nullptr;
+    static void DEV_reparse_tweakables(){
+        // NOTE(hugo): free any previous memory used by the tweakables
+        for(u32 ialloc = 0u; ialloc != DEV_string_alloc.size; ++ialloc){
+            ::free(DEV_string_alloc[ialloc]);
+        }
+        DEV_string_alloc.clear();
 
-    static DEV_Tweakable_Entry* DEV_search_existing_tweakable(const char* name, DEV_Tweakable_Type type){
-        // NOTE(hugo): try to find a tweakable with this name and type
-        dchunkarena<DEV_Tweakable_Entry, DEV_tweakable_chunk_size>::chunk* current_chunk = BEEWAX_INTERNAL::DEV_tweakable_entries.head;
+        dhashmap<File_Path, buffer<u8>> path_to_content;
+        for(u32 ientry = 0u; ientry != DEV_tweakable_entries.size; ++ientry){
+            DEV_Tweakable_Entry& entry = DEV_tweakable_entries[ientry];
 
-        if(current_chunk && BEEWAX_INTERNAL::DEV_tweakable_entries.current_chunk_space != 0u){
-            u32 nentries = BEEWAX_INTERNAL::DEV_tweakable_chunk_size - BEEWAX_INTERNAL::DEV_tweakable_entries.current_chunk_space;
-            for(u32 ientry = 0u; ientry != nentries; ++ientry){
-                DEV_Tweakable_Entry* entry = &current_chunk->data[ientry];
-                if(entry->type == type && strcmp(entry->name, name) == 0u){
-                    return entry;
+            // NOTE(hugo): register the file in the hashmap and read it to memory when necessary
+            bool file_not_loaded;
+            buffer<u8>* file_content = path_to_content.get(entry.file, file_not_loaded);
+            if(file_not_loaded){
+                *file_content = read_file(entry.file);
+            }
+
+            // NOTE(hugo): go to the line of the DEV_Tweak
+            char* cursor = (char*)file_content->data;
+            u32 cursor_line = 1u;
+            while(cursor_line != entry.line){
+                while(*(cursor++) != '\n');
+                ++cursor_line;
+            }
+
+            const char* tweakable_expression = "DEV_Tweak(";
+
+            // NOTE(hugo): go to the position of the DEV_Tweak
+            char* tweakable_position = strstr(cursor, tweakable_expression);
+            tweakable_position += strlen(tweakable_expression);
+
+            // NOTE(hugo): type checking
+            char* type_position = tweakable_position;
+            while(*type_position == ' '){++type_position;};
+
+            switch(entry.type){
+                case Tweakable_bool:
+                {
+                    const char* type_expression = "bool";
+                    assert(memcmp(type_position, type_expression, strlen(type_expression)) == 0u);
+                    type_position += strlen(type_expression);
+                    break;
+                }
+                case Tweakable_s32:
+                {
+                    const char* type_expression = "s32";
+                    assert(memcmp(type_position, type_expression, strlen(type_expression)) == 0u);
+                    type_position += strlen(type_expression);
+                    break;
+                }
+                case Tweakable_float:
+                {
+                    const char* type_expression = "float";
+                    assert(memcmp(type_position, type_expression, strlen(type_expression)) == 0u);
+                    type_position += strlen(type_expression);
+                    break;
+                }
+                case Tweakable_string:
+                {
+                    const char* type_expression = "string";
+                    assert(memcmp(type_position, type_expression, strlen(type_expression)) == 0u);
+                    type_position += strlen(type_expression);
+                    break;
                 }
             }
-            current_chunk = current_chunk->next;
-        }
 
-        while(current_chunk){
-            for(u32 ientry = 0u; ientry != BEEWAX_INTERNAL::DEV_tweakable_chunk_size; ++ientry){
-                DEV_Tweakable_Entry* entry = &current_chunk->data[ientry];
-                if(entry->type == type && strcmp(entry->name, name) == 0u){
-                    return entry;
+            char* value_position = type_position;
+            assert(*value_position++ == ',');
+            while(*value_position == ' '){++value_position;};
+
+            // NOTE(hugo): parsing the tweakable value
+            switch(entry.type){
+                case Tweakable_bool:
+                {
+                    const char* true_expression = "true";
+                    const char* false_expression = "false";
+                    if(memcmp(value_position, true_expression, strlen(true_expression)) == 0u){
+                        entry.value.as_bool = true;
+                    }else if(memcmp(value_position, false_expression, strlen(false_expression)) == 0u){
+                        entry.value.as_bool = false;
+                    }else{
+                        LOG_ERROR("DEV_Tweak of type bool has an unknown value expression");
+                    }
+                    break;
+                }
+                case Tweakable_s32:
+                {
+                    entry.value.as_s32 = atoi(value_position);
+                    break;
+                }
+                case Tweakable_float:
+                {
+                    entry.value.as_float = atof(value_position);
+                    break;
+                }
+                case Tweakable_string:
+                {
+                    char* string_start = value_position;
+                    assert(*string_start++ == '"');
+
+                    char* string_end = string_start;
+                    while(*string_end != '"'){++string_end;};
+
+                    char* tweakable_memory = (char*)malloc(string_end - string_start);
+                    assert(tweakable_memory);
+                    memcpy(tweakable_memory, string_start, string_end - string_start);
+                    DEV_string_alloc.push(tweakable_memory);
+
+                    entry.value.as_string = tweakable_memory;
+                    break;
                 }
             }
-            current_chunk = current_chunk->next;
         }
 
-        return nullptr;
+        //NOTE(hugo): free the files from memory
+        u32 index, counter;
+        for(index = path_to_content.storage.get_first(), counter = 0u;
+            index < path_to_content.storage.capacity && counter != path_to_content.storage.size;
+            index = path_to_content.storage.get_next(index), ++counter){
+
+            ::free(path_to_content.storage[index].value.data);
+        }
+        path_to_content.free();
     }
+}
 
-    static DEV_Tweakable_Entry* DEV_get_new_or_existing_tweakable(const char* name, DEV_Tweakable_Type type, DEV_Tweakable_Value default_value){
-
-        DEV_Tweakable_Entry* entry = DEV_search_existing_tweakable(name, type);
-
-        // NOTE(hugo): no relevant tweakable was found ie make a new one
-        if(!entry){
-            entry = DEV_tweakable_entries.get();
-
-            entry->name = name;
-            entry->type = type;
-            entry->value = default_value;
-        }
-
-        return entry;
-    }
-
-    static void DEV_read_entire_file(const char* filename, char*& out_data, size_t& out_bytesize){
-        FILE* file = fopen(filename, "rb");
-        if(file == NULL){
-            LOG_ERROR("DEV_read_entire_file(%s) FAILED - aborting", filename);
-            out_data = nullptr;
-            out_bytesize = 0u;
-            return;
-        }
-
-        s64 start_index = ftell(file);
-        fseek(file, 0, SEEK_END);
-        s64 end_index = ftell(file);
-        fseek(file, start_index, SEEK_SET);
-
-        s64 file_bytesize = end_index - start_index;
-        if(file_bytesize == 0u){
-            LOG_INFO("DEV_read_entire_file(%s) - file was empty", filename);
-            out_data = nullptr;
-            out_bytesize = 0u;
-            return;
-        }
-
-        char* file_data = (char*)malloc(file_bytesize);
-        fread(file_data, 1u, file_bytesize, file);
-        fclose(file);
-
-        out_data = file_data;
-        out_bytesize = file_bytesize;
-    }
-
-    static DEV_Tweakable_Entry DEV_parse_tweakable_entry_at_cursor(char*& cursor){
-        DEV_Tweakable_Entry entry;
-
-        // NOTE(hugo): name
-        entry.name = cursor;
-        while(*cursor != ' ') ++cursor;
-        *cursor = '\0';
-        ++cursor;
-
-        // NOTE(hugo): type and value
-        if(memcmp(cursor, "BOOLEAN", 7u) == 0){
-            entry.type = TWEAKABLE_BOOLEAN;
-            while(*cursor != ' ') ++cursor;
-            ++cursor;
-
-            if(memcmp(cursor, "true", 4u) == 0){
-                entry.value.as_BOOLEAN = true;
-            }else{
-                entry.value.as_BOOLEAN = false;
-            }
-            while(*cursor != '\n' && *cursor != EOF) ++cursor;
-
-        }else if(memcmp(cursor, "INTEGER", 7u) == 0){
-            entry.type = TWEAKABLE_INTEGER;
-            while(*cursor != ' ') ++cursor;
-            ++cursor;
-
-            sscanf(cursor, "%d", &entry.value.as_INTEGER);
-            while(*cursor != '\n' && *cursor != EOF) ++cursor;
-
-        }else if(memcmp(cursor, "REAL", 4u) == 0){
-            entry.type = TWEAKABLE_REAL;
-            while(*cursor != ' ') ++cursor;
-            ++cursor;
-
-            sscanf(cursor, "%f", &entry.value.as_REAL);
-            while(*cursor != '\n' && *cursor != EOF) ++cursor;
-
-        }else if(memcmp(cursor, "STRING", 6u) == 0){
-            entry.type = TWEAKABLE_STRING;
-            while(*cursor != ' ') ++cursor;
-            ++cursor;
-
-            entry.value.as_STRING = cursor;
-            while(*cursor != '\n' && *cursor != EOF) ++cursor;
-            *cursor = '\0';
-
-        }else{
-            LOG_ERROR("DEV_parse_tweakable_entry_at_cursor - unknown type starting as %.*s", cursor, 4u);
-        }
-        ++cursor;
-        return entry;
-    }
-
-    static void DEV_import_tweakable_entries_from_file(const char* filename){
-
-        // NOTE(hugo): read entire file
-        size_t tweakable_file_bytesize;
-        DEV_read_entire_file(filename, DEV_tweakable_file_mapping, tweakable_file_bytesize);
-        if(!DEV_tweakable_file_mapping){
-            return;
-        }
-
-        char* cursor = DEV_tweakable_file_mapping;
-        while((cursor - DEV_tweakable_file_mapping) < tweakable_file_bytesize){
-            DEV_Tweakable_Entry* entry = DEV_tweakable_entries.get();
-            *entry = DEV_parse_tweakable_entry_at_cursor(cursor);
-        }
-    }
-
-    void DEV_reload_tweakable_entries_from_file(const char* filename){
-        LOG_INFO("DEV_reload_tweakable_entries_from_file()");
-
-        // NOTE(hugo): read entire file
-        char* new_file_mapping;
-        size_t tweakable_file_bytesize;
-        DEV_read_entire_file(filename, new_file_mapping, tweakable_file_bytesize);
-        if(!new_file_mapping){
-            return;
-        }
-
-        char* cursor = new_file_mapping;
-        while((cursor - new_file_mapping) < tweakable_file_bytesize){
-            DEV_Tweakable_Entry parsed_entry = DEV_parse_tweakable_entry_at_cursor(cursor);
-            DEV_Tweakable_Entry* entry = DEV_search_existing_tweakable(parsed_entry.name, parsed_entry.type);
-            if(!entry){
-                entry = DEV_tweakable_entries.get();
-            }
-            entry->name = parsed_entry.name;
-            entry->type = parsed_entry.type;
-            entry->value = parsed_entry.value;
-        }
-
-        free(DEV_tweakable_file_mapping);
-        DEV_tweakable_file_mapping = new_file_mapping;
-    }
-
-    static void DEV_export_tweakable_entries_to_file(const char* filename){
-        dchunkarena<DEV_Tweakable_Entry, DEV_tweakable_chunk_size>::chunk* current_chunk = BEEWAX_INTERNAL::DEV_tweakable_entries.head;
-
-        FILE* file = fopen(filename, "wb");
-        if(file == NULL){
-            LOG_ERROR("DEV_export_tweakable_entries_to_file(%s) FAILED - aborting export", filename);
-            return;
-        }
-
-        auto write_entry_to_file = [](FILE* file, DEV_Tweakable_Entry* entry){
-            // NOTE(hugo): name
-            fprintf(file, "%s ", entry->name);
-
-            // NOTE(hugo): type and value
-            switch(entry->type){
-                case TWEAKABLE_BOOLEAN:
-                    fprintf(file, "%s %s\n", "BOOLEAN", entry->value.as_BOOLEAN ? "true" : "false");
-                    break;
-                case TWEAKABLE_INTEGER:
-                    fprintf(file, "%s %d\n", "INTEGER", entry->value.as_INTEGER);
-                    break;
-                case TWEAKABLE_REAL:
-                    fprintf(file, "%s %f\n", "REAL", entry->value.as_REAL);
-                    break;
-                case TWEAKABLE_STRING:
-                    fprintf(file, "%s %s\n", "STRING", entry->value.as_STRING);
-                    break;
-                default:
-                    LOG_ERROR("entry->type with value %d is missing", entry->type);
-                    assert(false);
-                    break;
-            }
-        };
-
-        if(current_chunk && BEEWAX_INTERNAL::DEV_tweakable_entries.current_chunk_space != 0u){
-            u32 nentries = BEEWAX_INTERNAL::DEV_tweakable_chunk_size - BEEWAX_INTERNAL::DEV_tweakable_entries.current_chunk_space;
-            for(u32 ientry = 0u; ientry != nentries; ++ientry){
-                DEV_Tweakable_Entry* entry = &current_chunk->data[ientry];
-                write_entry_to_file(file, entry);
-            }
-            current_chunk = current_chunk->next;
-        }
-
-        while(current_chunk){
-            for(u32 ientry = 0u; ientry != BEEWAX_INTERNAL::DEV_tweakable_chunk_size; ++ientry){
-                DEV_Tweakable_Entry* entry = &current_chunk->data[ientry];
-                write_entry_to_file(file, entry);
-            }
-            current_chunk = current_chunk->next;
-        }
-
-        fclose(file);
-    }
-
-    void DEV_LOG_tweakable_entries(){
-        u32 nentries = 0u;
-        dchunkarena<DEV_Tweakable_Entry, BEEWAX_INTERNAL::DEV_tweakable_chunk_size>::chunk* current_chunk = BEEWAX_INTERNAL::DEV_tweakable_entries.head;
-
-        auto display_chunk = [&](u32 entries_to_display){
-            for(u32 ientry = 0u; ientry != entries_to_display; ++ientry){
-                DEV_Tweakable_Entry* entry = &current_chunk->data[ientry];
-                switch(entry->type){
-                    case TWEAKABLE_BOOLEAN:
-                        LOG_RAW("DEV_Tweakable_Entry [%d]: %s BOOLEAN %s", nentries, entry->name, entry->value.as_BOOLEAN ? "true" : "false");
-                        break;
-                    case TWEAKABLE_INTEGER:
-                        LOG_RAW("DEV_Tweakable_Entry [%d]: %s INTEGER %d", nentries, entry->name, entry->value.as_INTEGER);
-                        break;
-                    case TWEAKABLE_REAL:
-                        LOG_RAW("DEV_Tweakable_Entry [%d]: %s REAL %f", nentries, entry->name, entry->value.as_REAL);
-                        break;
-                    case TWEAKABLE_STRING:
-                        LOG_RAW("DEV_Tweakable_Entry [%d]: %s STRING %s", nentries, entry->name, entry->value.as_STRING);
-                        break;
-                    default:
-                        LOG_ERROR("DEV_Tweakable_Entry [%d]: entry->type with value %d is missing", nentries, entry->type);
-                        assert(false);
-                        break;
-                }
-                ++nentries;
-            }
-        };
-
-        if(current_chunk && BEEWAX_INTERNAL::DEV_tweakable_entries.current_chunk_space != 0u){
-            display_chunk(BEEWAX_INTERNAL::DEV_tweakable_chunk_size - BEEWAX_INTERNAL::DEV_tweakable_entries.current_chunk_space);
-            current_chunk = current_chunk->next;
-        }
-
-        while(current_chunk){
-            display_chunk(BEEWAX_INTERNAL::DEV_tweakable_chunk_size);
-            current_chunk = current_chunk->next;
-        }
-    }
-
-};
-
-#define DEV_TWEAKABLE(TYPE, NAME, DEFAULT_VALUE)                                                    \
-[](){                                                                                               \
-    using namespace BEEWAX_INTERNAL;                                                                \
-    static DEV_Tweakable_Entry* entry = nullptr;                                                    \
-    if(!entry){                                                                                     \
-        DEV_Tweakable_Value default_value;                                                          \
-        DISABLE_WARNING_PUSH                                                                        \
-        DISABLE_WARNING_STATIC_STRING                                                               \
-        CONCATENATE(default_value.as_, TYPE) = DEFAULT_VALUE;                                       \
-        DISABLE_WARNING_POP                                                                         \
-        entry = DEV_get_new_or_existing_tweakable(NAME, CONCATENATE(TWEAKABLE_, TYPE), default_value);  \
-    }                                                                                               \
-    return CONCATENATE(entry->value.as_, TYPE);                                                     \
+#define DEV_Tweak(TYPE, DEFAULT_VALUE)                                                                      \
+[](){                                                                                                       \
+    using namespace BEEWAX_INTERNAL;                                                                        \
+    static u32 DEV_tweakable_entry_index = UINT_MAX;                                                        \
+    if(DEV_tweakable_entry_index == UINT_MAX){                                                              \
+        DEV_tweakable_entry_index = DEV_get_new_tweakable_entry();                                          \
+        DEV_tweakable_entries[DEV_tweakable_entry_index].file = __FILE__;                                   \
+        DEV_tweakable_entries[DEV_tweakable_entry_index].line = __LINE__;                                   \
+        DEV_tweakable_entries[DEV_tweakable_entry_index].type = CONCATENATE(Tweakable_, TYPE);              \
+        CONCATENATE(DEV_tweakable_entries[DEV_tweakable_entry_index].value.as_, TYPE) = DEFAULT_VALUE;      \
+    }                                                                                                       \
+    return CONCATENATE(DEV_tweakable_entries[DEV_tweakable_entry_index].value.as_, TYPE);                   \
 }()
 
-#define DEV_DISPLAY_TWEAKABLE_ENTRIES do{ BEEWAX_INTERNAL::DEV_LOG_tweakable_entries(); }while(0)
-#define DEV_RELOAD_TWEAKABLE_ENTRIES do{ BEEWAX_INTERNAL::DEV_reload_tweakable_entries_from_file("./data/tweakable.txt"); }while(0)
+// ---- setup / terminate
+
+void DEV_setup(){
+}
+void DEV_next_frame(){
+}
+void DEV_terminate(){
+    BEEWAX_INTERNAL::DEV_timing_entries.free();
+}
 
 #endif
