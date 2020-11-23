@@ -414,10 +414,10 @@ Texture_ID Renderer_GL3::get_texture(Texture_Format format, u32 width, u32 heigh
         GLint row_alignment = compute_texture_row_alignment(width, height, format, data_type);
         if(row_alignment != GL::default_unpack_alignment){
             glPixelStorei(GL_UNPACK_ALIGNMENT, row_alignment);
-            glTexImage2D(GL_TEXTURE_2D, 0, format, (GLsizei)width, (GLsizei)height, 0, format, data_type, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, format, (GLsizei)width, (GLsizei)height, 0, format, data_type, data);
             glPixelStorei(GL_UNPACK_ALIGNMENT, GL::default_unpack_alignment);
         }else{
-            glTexImage2D(GL_TEXTURE_2D, 0, format, (GLsizei)width, (GLsizei)height, 0, format, data_type, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, format, (GLsizei)width, (GLsizei)height, 0, format, data_type, data);
         }
 
         // NOTE(hugo): default MIP mapping to have a complete texture
