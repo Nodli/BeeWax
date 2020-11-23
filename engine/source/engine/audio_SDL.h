@@ -25,6 +25,9 @@ struct Audio_Manager{
 
     void mix_next_frame();
 
+    void pause_audio();
+    void resume_audio();
+
     // ---- data
 
     SDL_AudioDeviceID device;

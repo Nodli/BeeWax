@@ -677,6 +677,34 @@ void dpool<T>::set_min_capacity(u32 new_capacity){
 }
 
 template<typename T>
+template<typename Action>
+void dpool<T>::action_on_active(Action&& action){
+    // NOTE(hugo): mark the active indices
+    u32 inactive_bytes = capacity / 8u + ((capacity % 8u) != 0u);
+    u8* inactive_indices = (u8*)calloc(inactive_bytes, sizeof(u8));
+
+    u32 inactive_index = available_element;
+    while(inactive_index != dpool_no_element_available){
+        u32 byte_index = inactive_index / 8u;
+        u32 bit_index = inactive_index % 8u;
+        inactive_indices[byte_index] |= (1u << bit_index);
+        inactive_index = memory[inactive_index].next_element;
+    }
+
+    for(u32 index = 0u; index != capacity; ++index){
+        u32 byte_index = index / 8u;
+        u32 bit_index = index % 8u;
+
+        bool is_inactive = (inactive_indices[byte_index] >> bit_index) & 1u;
+        if(!is_inactive){
+            action(memory[index].type);
+        }
+    }
+
+    ::free(inactive_indices);
+}
+
+template<typename T>
 void dpool<T>::clear(){
     // NOTE(hugo): memset expects a non-null pointer
     if(capacity){
@@ -990,11 +1018,9 @@ template<typename K>
 static u32 dhashmap_hash_key(const K& key){
     return FNV1a_32ptr((uchar*)&key, sizeof(K));
 }
-template<u32>
 static u32 dhashmap_hash_key(const u32& key){
     return wang_hash(key);
 }
-template<s32>
 static u32 dhashmap_hash_key(const s32& key){
     return wang_hash(*(u32*)&key);
 }

@@ -161,6 +161,11 @@ struct dpool{
 
     void set_min_capacity(u32 new_capacity);
 
+    // NOTE(hugo): very expensive ! should be used only to terminate / free a dpool
+    // diterpool is a better solution if iteration is needed
+    template<typename Action>
+    void action_on_active(Action&& action);
+
     void clear();
     void free();
 

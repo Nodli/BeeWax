@@ -43,6 +43,7 @@ void Audio_Manager::setup(){
 void Audio_Manager::terminate(){
     SDL_PauseAudioDevice(device, 1);
 
+    buffers.action_on_active([](Buffer_Data& buffer){::free(buffer.data);});
     buffers.free();
     to_play.free();
 
@@ -250,6 +251,14 @@ static void audio_callback(void* user_ptr, u8* out_stream, s32 out_stream_size){
         new_reader_cursor = second_samples;
     }
     atomic_set<u32>(&state->reader_cursor, new_reader_cursor);
+}
+
+void Audio_Manager::pause_audio(){
+    SDL_PauseAudioDevice(device, 0);
+}
+
+void Audio_Manager::resume_audio(){
+    SDL_PauseAudioDevice(device, 1);
 }
 
 // ---- hardware / software detection
