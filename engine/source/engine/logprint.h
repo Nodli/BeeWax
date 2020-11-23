@@ -4,10 +4,9 @@
 #define LOG_WARNING(...)    BEEWAX_INTERNAL::log_function(__FILE__, __LINE__, 2, __VA_ARGS__)
 #define LOG_ERROR(...)      BEEWAX_INTERNAL::log_function(__FILE__, __LINE__, 3, __VA_ARGS__)
 
-#define LOG_DISABLE_LEVEL(i)    do{ assert(i >= 0 && i < BEEWAX_INTERNAL::nlog_levels); BEEWAX_INTERNAL::log_levels_disabled[i] = true;  }while(0)
-#define LOG_ENABLE_LEVEL(i)     do{ assert(i >= 0 && i < BEEWAX_INTERNAL::nlog_levels); BEEWAX_INTERNAL::log_levels_disabled[i] = false; }while(0)
-
-void set_log_file(const char* filename);
+void LOG_disable_level(u32 level);
+void LOG_enable_level(u32 level);
+void LOG_output_file(const char* filename);
 
 namespace BEEWAX_INTERNAL{
     // ----------
