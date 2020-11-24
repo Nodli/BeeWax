@@ -42,3 +42,27 @@ template<typename T>
 bool is_aligned(const T* ptr, size_t align){
     return void_is_aligned((void*)ptr, align);
 }
+
+template<typename T>
+void set_bit(T& bitset, u32 bit_index){
+    assert(bit_index < sizeof(T) * 8u);
+    bitset |= (T)(1u << bit_index);
+}
+
+template<typename T>
+void unset_bit(T& bitset, u32 bit_index){
+    assert(bit_index < sizeof(T) * 8u);
+    bitset &= (T)(~(1u << bit_index));
+}
+
+template<typename T>
+void toggle_bit(T& bitset, u32 bit_index){
+    assert(bit_index < sizeof(T) * 8u);
+    bitset ^= (T)(1u << bit_index);
+}
+
+template<typename T>
+T extract_bit(T& bitset, u32 bit_index){
+    assert(bit_index < sizeof(T) * 8u);
+    return bitset & (T)(1u << bit_index);
+}

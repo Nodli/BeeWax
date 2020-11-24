@@ -20,4 +20,15 @@ T* align_down(const void* ptr, size_t align);
 template<typename T>
 bool is_aligned(const T* ptr, size_t align);
 
+// ---- bitset
+
+template<typename T>
+void set_bit(T& bitset, u32 bit_index);
+template<typename T>
+void unset_bit(T& bitset, u32 bit_index);
+template<typename T>
+void toggle_bit(T& bitset, u32 bit_index);
+template<typename T>
+T extract_bit(T& bitset, u32 bit_index);
+
 #endif
