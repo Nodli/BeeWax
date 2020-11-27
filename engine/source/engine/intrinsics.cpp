@@ -2,6 +2,7 @@
 
 template<typename T>
 inline T atomic_compare_exchange(volatile T* atomic, T new_value, T previous_value, bool can_fail_exchange){
+    static_assert(__atomic_always_lock_free(sizeof(T), NULL));
     static_assert((sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u),
             "atomic_compare_exchange is not implemented for this type");
 
@@ -23,6 +24,7 @@ inline T atomic_compare_exchange(volatile T* atomic, T new_value, T previous_val
 
 template<typename T>
 inline T atomic_exchange(volatile T* atomic, T new_value){
+    static_assert(__atomic_always_lock_free(sizeof(T), NULL));
     static_assert((sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u),
             "atomic_exchange is not implemented for this type");
 
@@ -44,23 +46,29 @@ inline T atomic_exchange(volatile T* atomic, T new_value){
 
 template<typename T>
 inline T atomic_get(volatile T* atomic){
+    static_assert(__atomic_always_lock_free(sizeof(T), NULL));
     static_assert((sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u),
             "atomic_get is not implemented for this type");
 
 #if defined(COMPILER_MSVC)
     return *atomic;
 #elif defined(COMPILER_GCC) || defined(COMPILER_CLANG)
-    return __atomic_load_n(atomic, __ATOMIC_ACQ_REL);
+    // NOTE(hugo): __ATOMIC_ACQ_REL is invalid for __atomic_load_n
+    __atomic_thread_fence(__ATOMIC_RELEASE);
+    return __atomic_load_n(atomic, __ATOMIC_ACQUIRE);
 #endif
 }
 
 template<typename T>
 inline void atomic_set(volatile T* atomic, T value){
+    static_assert(__atomic_always_lock_free(sizeof(T), NULL));
     static_assert((sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u),
             "atomic_store is not implemented for this type");
 
 #if defined(COMPILER_GCC) || defined(COMPILER_CLANG)
-    __atomic_store(atomic, &value, __ATOMIC_ACQ_REL);
+    // NOTE(hugo): __ATOMIC_ACQ_REL is invalid for __atomic_store
+    __atomic_thread_fence(__ATOMIC_ACQUIRE);
+    __atomic_store(atomic, &value, __ATOMIC_RELEASE);
 #else
     atomic_exchange<T>(atomic, value);
 #endif
