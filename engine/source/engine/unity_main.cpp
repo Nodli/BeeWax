@@ -137,6 +137,8 @@ namespace bw{
     #include "logprint.cpp"
     #include "logprint_typemacro.h"
 
+    #include "sstring.h"
+
     #include "sort_search.h"
     #include "data_structure.h"
 
@@ -148,9 +150,8 @@ namespace bw{
 
     // ---- debug
 
-    #include "debug_break.h"
-
     #define DEVELOPPER_MODE
+    #include "debug_break.h"
     #include "developper_tools.h"
 
     // ---- os layer
@@ -243,6 +244,9 @@ namespace bw{
 
     #include "font.h"
     #include "font.cpp"
+
+    #include "asset_manager.h"
+    #include "asset_manager.cpp"
 }
 
 // ---- unit testing
