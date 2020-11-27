@@ -1,0 +1,18 @@
+:audio cantina
+audio/CantinaBand60.wav
+
+:audio swtheme
+audio/ImperialMarch60.wav
+
+:audio pinkpanther
+audio/PinkPanther60.wav
+
+:texture running_woman_spritesheet
+animation/running_woman_spritesheet.png
+
+:texture_animation running_woman
+running_woman_spritesheet 8 1 0 0 71 67 6
+
+:font roboto
+font/Roboto-BlackItalic.ttf 100
+' !"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';

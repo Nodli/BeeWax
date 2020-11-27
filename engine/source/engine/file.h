@@ -1,5 +1,5 @@
-#ifndef H_FILE_UTILS
-#define H_FILE_UTILS
+#ifndef H_FILE
+#define H_FILE
 
 // ---- io
 

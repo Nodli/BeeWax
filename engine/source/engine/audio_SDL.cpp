@@ -6,11 +6,63 @@ float volume_to_dB(float volume){
     return 20.f * log10f(volume);
 }
 
-// ---- audio manager
+// ---- audio asset
+
+Audio_Asset audio_asset_from_wav_file(const File_Path& path, Audio_Player* player){
+    SDL_AudioSpec wav_spec;
+    u8* wav_buffer;
+    u32 wav_bytesize;
+    if(!SDL_LoadWAV(path.data, &wav_spec, &wav_buffer, &wav_bytesize)){
+        LOG_ERROR("SDL_LoadWav() FAILED - %s", SDL_GetError());
+    }
+
+    // NOTE(hugo): convert to the device specification when needed
+    SDL_AudioCVT converter;
+    s32 converter_return_code = SDL_BuildAudioCVT(&converter,
+            wav_spec.format, wav_spec.channels, wav_spec.freq,
+            player->device_spec.format, player->device_spec.channels, player->device_spec.freq);
+    if(converter_return_code < 0){
+        LOG_ERROR("SDL_BuildAudioCVT() FAILED - %s", SDL_GetError());
+    }
+
+    Audio_Asset asset;
+
+    // NOTE(hugo): wav_spec is usable by the device_spec
+    if(converter_return_code == 0){
+        asset.data = (s16*)malloc(wav_bytesize);
+        asset.nsamples = wav_bytesize / sizeof(s16);
+
+        memcpy(asset.data, wav_buffer, wav_bytesize);
+        SDL_FreeWAV(wav_buffer);
+
+    // NOTE(hugo): conversion is required
+    }else if(converter_return_code == 1){
+        converter.len = wav_bytesize;
+        converter.buf = (u8*)malloc(converter.len * converter.len_mult);
+
+        memcpy(converter.buf, wav_buffer, wav_bytesize);
+        SDL_FreeWAV(wav_buffer);
+
+        if(SDL_ConvertAudio(&converter)){
+            LOG_ERROR("SDL_ConvertAudio() FAILED - %s", SDL_GetError());
+        }
+
+        asset.data = (s16*)converter.buf;
+        asset.nsamples = converter.len_cvt / sizeof(s16);
+    }
+
+    return asset;
+}
+
+void free_audio_asset(Audio_Asset& asset){
+    ::free(asset.data);
+}
+
+// ---- audio player
 
 static void audio_callback(void* user_ptr, u8* out_stream, s32 out_stream_size);
 
-void Audio_Manager::setup(){
+void Audio_Player::setup(){
     SDL_AudioSpec required_spec;
     required_spec.freq = 44100u;
     required_spec.format = AUDIO_S16;
@@ -40,87 +92,23 @@ void Audio_Manager::setup(){
     SDL_PauseAudioDevice(device, 0);
 }
 
-void Audio_Manager::terminate(){
+void Audio_Player::terminate(){
     SDL_PauseAudioDevice(device, 1);
 
-    buffers.action_on_active([](Buffer_Data& buffer){::free(buffer.data);});
-    buffers.free();
+    ::free(state.buffer);
+    ::free(mix_buffer);
     to_play.free();
 
     SDL_CloseAudioDevice(device);
 }
 
-Audio_Buffer_ID Audio_Manager::buffer_from_wav(const File_Path& path){
-    SDL_AudioSpec wav_spec;
-    u8* wav_buffer;
-    u32 wav_bytesize;
-    if(!SDL_LoadWAV(path.data, &wav_spec, &wav_buffer, &wav_bytesize)){
-        LOG_ERROR("SDL_LoadWav() FAILED - %s", SDL_GetError());
-    }
-
-    // NOTE(hugo): convert to the device specification when needed
-    SDL_AudioCVT converter;
-    s32 converter_return_code = SDL_BuildAudioCVT(&converter,
-            wav_spec.format, wav_spec.channels, wav_spec.freq,
-            device_spec.format, device_spec.channels, device_spec.freq);
-    if(converter_return_code < 0){
-        LOG_ERROR("SDL_BuildAudioCVT() FAILED - %s", SDL_GetError());
-    }
-
-    Buffer_Data buffer;
-
-    // NOTE(hugo): wav_spec is usable by the device_spec
-    if(converter_return_code == 0){
-        buffer.data = (s16*)malloc(wav_bytesize);
-        buffer.nsamples = wav_bytesize / sizeof(s16);
-
-        memcpy(buffer.data, wav_buffer, wav_bytesize);
-        SDL_FreeWAV(wav_buffer);
-
-    // NOTE(hugo): conversion is required
-    }else if(converter_return_code == 1){
-        converter.len = wav_bytesize;
-        converter.buf = (u8*)malloc(converter.len * converter.len_mult);
-
-        memcpy(converter.buf, wav_buffer, wav_bytesize);
-        SDL_FreeWAV(wav_buffer);
-
-        if(SDL_ConvertAudio(&converter)){
-            LOG_ERROR("SDL_ConvertAudio() FAILED - %s", SDL_GetError());
-        }
-
-        buffer.data = (s16*)converter.buf;
-        buffer.nsamples = converter.len_cvt / sizeof(s16);
-    }
-
-    return buffers.insert(buffer);
-}
-
-void Audio_Manager::remove_buffer(Audio_Buffer_ID buffer){
-    Buffer_Data& buffer_entry = buffers[buffer];
-
-    u32 index, counter;
-    for(index = to_play.get_first(), counter = 0u;
-        index < to_play.capacity && counter != to_play.size;
-        index = to_play.get_next(index), ++counter){
-
-        if(to_play[index].buffer == buffer){
-            to_play.remove(index);
-            --counter;
-        }
-    }
-    ::free(buffer_entry.data);
-    buffers.remove(buffer);
-}
-
-Audio_Playing_ID Audio_Manager::start_playing(Audio_Buffer_ID buffer){
+Audio_Playing_ID Audio_Player::start_playing(Audio_Asset* asset){
     Play_Data play_data;
-    play_data.buffer = buffer;
+    play_data.asset = asset;
     play_data.cursor = 0u;
     play_data.generation = manager_generation;
 
-    u32 index = to_play.size;
-    to_play.insert(play_data);
+    u32 index = to_play.insert(play_data);
     u32 generation = manager_generation;
 
     ++manager_generation;
@@ -128,13 +116,13 @@ Audio_Playing_ID Audio_Manager::start_playing(Audio_Buffer_ID buffer){
     return {index, generation};
 }
 
-void Audio_Manager::stop_playing(Audio_Playing_ID play){
+void Audio_Player::stop_playing(Audio_Playing_ID play){
     if(to_play.is_active(play.index) && to_play[play.index].generation == play.generation){
         to_play.remove(play.index);
     }
 }
 
-void Audio_Manager::mix_next_frame(){
+void Audio_Player::mix_next_frame(){
     u32 reader_cursor = atomic_get(&state.reader_cursor);
     u32 generator_cursor = state.generator_cursor;
 
@@ -173,16 +161,15 @@ void Audio_Manager::mix_next_frame(){
             index = to_play.get_next(index), ++counter){
 
         Play_Data& play = to_play[index];
-        Buffer_Data& buffer = buffers[play.buffer];
 
         u32 mix_sample = 0u;
         u32 play_cursor = play.cursor;
-        while(mix_sample != total_samples && play_cursor != buffer.nsamples){
-            mix_buffer[mix_sample] += (float)buffer.data[play_cursor];
+        while(mix_sample != total_samples && play_cursor != play.asset->nsamples){
+            mix_buffer[mix_sample] += (float)play.asset->data[play_cursor];
             ++mix_sample;
             ++play_cursor;
         }
-        if(play_cursor == buffer.nsamples){
+        if(play_cursor == play.asset->nsamples){
             LOG_TRACE("removing");
             to_play.remove(index);
             --counter;
@@ -207,7 +194,7 @@ void Audio_Manager::mix_next_frame(){
 }
 
 static void audio_callback(void* user_ptr, u8* out_stream, s32 out_stream_size){
-    Audio_Manager::Audio_State* state = (Audio_Manager::Audio_State*)user_ptr;
+    Audio_Player::Audio_State* state = (Audio_Player::Audio_State*)user_ptr;
 
     u32 reader_cursor = state->reader_cursor;
     u32 generator_cursor = atomic_get(&state->generator_cursor);
@@ -253,11 +240,11 @@ static void audio_callback(void* user_ptr, u8* out_stream, s32 out_stream_size){
     atomic_set<u32>(&state->reader_cursor, new_reader_cursor);
 }
 
-void Audio_Manager::pause_audio(){
+void Audio_Player::pause_audio(){
     SDL_PauseAudioDevice(device, 0);
 }
 
-void Audio_Manager::resume_audio(){
+void Audio_Player::resume_audio(){
     SDL_PauseAudioDevice(device, 1);
 }
 

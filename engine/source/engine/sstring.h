@@ -1,6 +1,7 @@
 template<u32 capacity>
 struct sstring{
-    constexpr sstring(const char (&idata)[capacity]);
+    template<u32 cstring_capacity>
+    constexpr sstring(const char (&cstring)[cstring_capacity]);
     sstring(){};
 
     void extract_from(const char* iptr, u32 isize);
@@ -26,9 +27,11 @@ static u32 dhashmap_hash_key(const sstring<capacity>& key);
 // ----
 
 template<u32 capacity>
-constexpr sstring<capacity>::sstring(const char (&idata)[capacity]){
-    memcpy(data, idata, capacity);
-    size = capacity - 1u;
+template<u32 cstring_capacity>
+constexpr sstring<capacity>::sstring(const char (&cstring)[cstring_capacity]){
+    assert(cstring_capacity <= capacity);
+    memcpy(data, cstring, cstring_capacity);
+    size = cstring_capacity - 1u;
 }
 
 template<u32 capacity>

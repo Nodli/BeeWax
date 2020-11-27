@@ -10,59 +10,53 @@ namespace BEEWAX_INTERNAL{
     };
 }
 
-void Font_Manager::terminate(){
-    fonts.action_on_active([this](Font_Data& font){
-        renderer->free_texture(font.texture);
-        ::free(font.file.data);
-        ::free(font.bitmap_data);
-        font.codepoint_to_info.free();
-    });
-    fonts.free();
-}
+Font_Asset font_asset_from_ttf_file(const File_Path& path,
+        const char* character_string, u32 character_string_size, float font_size,
+        Renderer* renderer){
 
-Font_ID Font_Manager::font_from_file(const File_Path& path, const char* string, float font_size, s32 glyph_padding, s32 glyph_edge_value){
-    u32 font_index = fonts.insert_empty();
-    Font_Data& font = fonts[font_index];
+    constexpr s32 glyph_padding = 5;
+    constexpr s32 glyph_edge_value = 180;
 
-    font.file = read_file(path);
-    if(!font.file.data || font.file.size == 0u){
+    Font_Asset asset;
+
+    asset.file = read_file(path);
+    if(!asset.file.data || asset.file.size == 0u){
         LOG_ERROR("stbtt_InitFont() - FAILED for path: %s", path.data);
-        return font_index;
+        return asset;
     }
 
-    if(!stbtt_InitFont(&font.info, (const u8*)font.file.data, 0)){
+    if(!stbtt_InitFont(&asset.info, (const u8*)asset.file.data, 0)){
         LOG_ERROR("stbtt_InitFont() - FAILED for path: %s", path.data);
-        return font_index;
+        return asset;
     }
 
-    assert(*string != '\0');
+    assert(*character_string != '\0');
 
-    font.bitmap_font_size = font_size;
+    asset.bitmap_font_size = font_size;
 
     // ----
 
-    float font_scale = stbtt_ScaleForPixelHeight(&font.info, font_size);
+    float font_scale = stbtt_ScaleForPixelHeight(&asset.info, font_size);
     float glyph_value_delta = (float)glyph_edge_value / (float)glyph_padding;
-
-    u32 string_size = strlen(string);
 
     // NOTE(hugo): generating an sdf bitmap for each codepoint
     darray<BEEWAX_INTERNAL::stbtt_glyph_data> glyph_data;
-    glyph_data.set_min_capacity(string_size);
+    glyph_data.set_min_capacity(character_string_size);
+    DEFER{ glyph_data.free(); };
 
     s32 width_total = 0u;
     s32 height_max = 0u;
-    for(u32 icodepoint = 0u; icodepoint != string_size; ++icodepoint){
+    for(u32 icodepoint = 0u; icodepoint != character_string_size; ++icodepoint){
         BEEWAX_INTERNAL::stbtt_glyph_data data;
-        data.codepoint = string[icodepoint];
-        data.bitmap = stbtt_GetCodepointSDF(&font.info,
-                font_scale, string[icodepoint], glyph_padding, glyph_edge_value, glyph_value_delta,
+        data.codepoint = character_string[icodepoint];
+        data.bitmap = stbtt_GetCodepointSDF(&asset.info,
+                font_scale, character_string[icodepoint], glyph_padding, glyph_edge_value, glyph_value_delta,
                 &data.width, &data.height, &data.x_offset, &data.y_offset);
 
         data.y_offset = - data.y_offset - data.height;
 
         s32 temp_advance;
-        stbtt_GetCodepointHMetrics(&font.info, string[icodepoint], &temp_advance, nullptr);
+        stbtt_GetCodepointHMetrics(&asset.info, character_string[icodepoint], &temp_advance, nullptr);
         data.advance = (float)temp_advance * font_scale;
 
         glyph_data.push(data);
@@ -72,9 +66,9 @@ Font_ID Font_Manager::font_from_file(const File_Path& path, const char* string, 
     }
 
     // NOTE(hugo): determine the atlas dimensions
-    font.bitmap_width = width_total;
-    font.bitmap_height = height_max;
-    font.bitmap_data = (u8*)calloc(font.bitmap_width * font.bitmap_height, sizeof(u8));
+    asset.bitmap_width = width_total;
+    asset.bitmap_height = height_max;
+    asset.bitmap_data = (u8*)calloc(asset.bitmap_width * asset.bitmap_height, sizeof(u8));
 
     // NOTE(hugo): copy the glyph bitmaps in the atlas
     //             cursor starts at the top left of the bitmap
@@ -86,11 +80,11 @@ Font_ID Font_Manager::font_from_file(const File_Path& path, const char* string, 
         // NOTE(hugo): stbtt_GetCodepointSDF returns nullptr for empty codepoints
         //             glyph bitmaps need to be flipped
         if(glyph.bitmap){
-            u32 dest_offset = cursor_y * font.bitmap_width + cursor_x;
+            u32 dest_offset = cursor_y * asset.bitmap_width + cursor_x;
             u32 src_offset = 0u;
             for(u32 codepoint_y = 0; codepoint_y != glyph.height; ++codepoint_y){
-                memcpy(font.bitmap_data + dest_offset, glyph.bitmap + src_offset, glyph.width);
-                dest_offset += font.bitmap_width;
+                memcpy(asset.bitmap_data + dest_offset, glyph.bitmap + src_offset, glyph.width);
+                dest_offset += asset.bitmap_width;
                 src_offset += glyph.width;
             }
             stbtt_FreeSDF(glyph.bitmap, nullptr);
@@ -98,14 +92,14 @@ Font_ID Font_Manager::font_from_file(const File_Path& path, const char* string, 
 
         // NOTE(hugo): adding the codepoint to the hashmap
         bool entry_created;
-        CodePoint_Info* cp_info = font.codepoint_to_info.get(glyph.codepoint, entry_created);
+        Font_Asset::CodePoint_Info* cp_info = asset.codepoint_to_info.get(glyph.codepoint, entry_created);
         cp_info->uv_min = {
-            (float)cursor_x / (float)font.bitmap_width,
-            (float)(cursor_y + glyph.height) / (float)font.bitmap_height
+            (float)cursor_x / (float)asset.bitmap_width,
+            (float)(cursor_y + glyph.height) / (float)asset.bitmap_height
         };
         cp_info->uv_max = {
-            (float)(cursor_x + glyph.width) / (float)font.bitmap_width,
-            (float)cursor_y / (float)font.bitmap_height
+            (float)(cursor_x + glyph.width) / (float)asset.bitmap_width,
+            (float)cursor_y / (float)asset.bitmap_height
         };
         cp_info->quad_offset_x = glyph.x_offset;
         cp_info->quad_offset_y = glyph.y_offset;
@@ -116,7 +110,7 @@ Font_ID Font_Manager::font_from_file(const File_Path& path, const char* string, 
         cursor_x += glyph.width;
     }
 
-    font.texture = renderer->get_texture(TEXTURE_FORMAT_R, font.bitmap_width, font.bitmap_height, TYPE_UBYTE, font.bitmap_data);
+    asset.texture = renderer->get_texture(TEXTURE_FORMAT_R, asset.bitmap_width, asset.bitmap_height, TYPE_UBYTE, asset.bitmap_data);
 
 #if 0
     // TODO(hugo): use a better atlas size determination method to have a square atlas
@@ -138,41 +132,28 @@ Font_ID Font_Manager::font_from_file(const File_Path& path, const char* string, 
     }
 #endif
 
-    return font_index;
+    return asset;
 }
 
-void Font_Manager::remove_font(Font_ID index){
-    Font_Data& font = fonts[index];
-
-    renderer->free_texture(font.texture);
-    ::free(font.file.data);
-    ::free(font.bitmap_data);
-    font.codepoint_to_info.free();
-
-    fonts.remove(index);
+void free_font_asset(Font_Asset& asset, Renderer* renderer){
+    ::free(asset.file.data);
+    asset.codepoint_to_info.free();
+    ::free(asset.bitmap_data);
+    renderer->free_texture(asset.texture);
 }
 
-void Font_Manager::start_frame(Font_ID index){
-    Font_Data& font = fonts[index];
-    font.batch = renderer->get_vertex_batch(xyuv, PRIMITIVE_TRIANGLES);
-}
+float Font_Renderer::render_string(Font_Asset* asset, const char* string, float baseline_x, float baseline_y, float font_size){
 
-void Font_Manager::end_frame(Font_ID index){
-    Font_Data& font = fonts[index];
-    renderer->free_vertex_batch(font.batch);
-}
+    Vertex_Batch_ID batch = renderer->get_vertex_batch(xyuv, PRIMITIVE_TRIANGLES);
 
-float Font_Manager::batch_string(Font_ID index, const char* string, float baseline_x, float baseline_y, float font_size){
-    Font_Data& font = fonts[index];
-
-    float relative_font_scale = font_size / font.bitmap_font_size;
+    float relative_font_scale = font_size / asset->bitmap_font_size;
     u32 string_size = strlen(string);
 
-    vertex_xyuv* vertices = (vertex_xyuv*)renderer->get_vertices(font.batch, 6u * string_size);
+    vertex_xyuv* vertices = (vertex_xyuv*)renderer->get_vertices(batch, 6u * string_size);
 
     for(u32 icodepoint = 0u; icodepoint != string_size; ++icodepoint){
         char cp = string[icodepoint];
-        CodePoint_Info* cp_info = font.codepoint_to_info.search(cp);
+        Font_Asset::CodePoint_Info* cp_info = asset->codepoint_to_info.search(cp);
         assert(cp_info);
 
         ivec2 iquad_min = {
@@ -184,8 +165,15 @@ float Font_Manager::batch_string(Font_ID index, const char* string, float baseli
             (s32)fast_floor<float>((float)iquad_min.y + (float)cp_info->quad_height * relative_font_scale)
         };
 
-        vec2 quad_min = window->pixel_to_screen_coordinates(iquad_min);
-        vec2 quad_max = window->pixel_to_screen_coordinates(iquad_max);
+        auto pixel_to_render_coordinates = [this](ivec2 pcoord) -> vec2 {
+            vec2 output;
+            output.x = (float)pcoord.x / (float)width * 2.f - 1.f;
+            output.y = (float)pcoord.y / (float)height * 2.f - 1.f;
+            return output;
+        };
+
+        vec2 quad_min = pixel_to_render_coordinates(iquad_min);
+        vec2 quad_max = pixel_to_render_coordinates(iquad_max);
 
         vertices[0] = {{quad_min.x, quad_min.y}, cp_info->uv_min};
         vertices[1] = {{quad_max.x, quad_min.y}, {cp_info->uv_max.x, cp_info->uv_min.y}};
@@ -199,13 +187,10 @@ float Font_Manager::batch_string(Font_ID index, const char* string, float baseli
         baseline_x += cp_info->cursor_advance * relative_font_scale;
     }
 
-    return baseline_x;
-}
-
-void Font_Manager::render_batch(Font_ID index){
-    Font_Data& font = fonts[index];
-
     renderer->use_shader(font_2D);
-    renderer->setup_texture_unit(0u, font.texture, linear_clamp);
-    renderer->submit_vertex_batch(font.batch);
+    renderer->setup_texture_unit(0u, asset->texture, linear_clamp);
+    renderer->submit_vertex_batch(batch);
+    renderer->free_vertex_batch(batch);
+
+    return baseline_x;
 }

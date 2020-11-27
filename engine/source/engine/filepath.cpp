@@ -8,6 +8,17 @@ char path_separator(){
 #endif
 }
 
+File_Path asset_path(){
+    return "./data";
+}
+
+void File_Path::extract_from(const char* iptr, u32 isize){
+    assert(size + 1u < file_path_capacity);
+    memcpy(data, iptr, isize);
+    size = isize;
+    data[size] = '\0';
+}
+
 File_Path& File_Path::operator=(const File_Path& rhs){
     memcpy(data, rhs.data, rhs.size);
     size = rhs.size;
@@ -25,24 +36,28 @@ File_Path& File_Path::operator=(const char* rhs){
 }
 
 File_Path& File_Path::operator/(const File_Path& rhs){
-    assert((size + rhs.size + 1u + 1u) <= file_path_capacity);
+    assert((size + 1u + rhs.size + 1u) <= file_path_capacity);
     data[size] = path_separator();
     memcpy(data + size + 1u, rhs.data, rhs.size);
-    size += rhs.size;
+    size = size + 1u + rhs.size;
     data[size] = '\0';
     return *this;
 }
 
 File_Path& File_Path::operator/(const char* rhs){
     u32 rhs_size = strlen(rhs);
-    assert((size + rhs_size + 1u + 1u) <= file_path_capacity);
+    assert((size + 1u + rhs_size + 1u) <= file_path_capacity);
     data[size] = path_separator();
     memcpy(data + size + 1u, rhs, rhs_size);
-    size += rhs_size;
+    size = size + 1u + rhs_size;
     data[size] = '\0';
     return *this;
 }
 
 bool File_Path::operator==(const File_Path& rhs) const{
     return (size == rhs.size) && (memcmp(data, rhs.data, size) == 0);
+}
+
+static u32 dhashmap_hash_key(const File_Path& key){
+    return FNV1a_32ptr((uchar*)key.data, key.size);
 }

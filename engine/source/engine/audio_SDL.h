@@ -1,26 +1,36 @@
 #ifndef H_AUDIO
 #define H_AUDIO
 
+struct Audio_Player;
+
+// ---- audio asset
+
+struct Audio_Asset{
+    s16* data = nullptr;
+    u32 nsamples = 0u;
+};
+
+Audio_Asset audio_asset_from_wav_file(const File_Path& path, Audio_Player* player);
+void free_audio_asset(Audio_Asset& asset);
+
+// ---- audio player
+
 // NOTE(hugo): 735 samples per frame per channel at 60 fps with a frequency of 44100Hz
 constexpr u32 audio_device_buffer_in_samples = 512u;
 constexpr u32 audio_manager_buffer_in_samples = 4096u;
 // NOTE(hugo): generator should be at least one frame ahead of reader at all times
 constexpr u32 audio_manager_generator_offset_in_samples = audio_manager_buffer_in_samples - 1u;
 
-typedef u32 Audio_Buffer_ID;
 struct Audio_Playing_ID{
     u32 index;
     u64 generation;
 };
 
-struct Audio_Manager{
+struct Audio_Player{
     void setup();
     void terminate();
 
-    Audio_Buffer_ID buffer_from_wav(const File_Path& path);
-    void remove_buffer(Audio_Buffer_ID buffer);
-
-    Audio_Playing_ID start_playing(Audio_Buffer_ID buffer);
+    Audio_Playing_ID start_playing(Audio_Asset* asset);
     void stop_playing(Audio_Playing_ID play);
 
     void mix_next_frame();
@@ -45,15 +55,8 @@ struct Audio_Manager{
         volatile u32 generator_cursor = 0u;
     } state;
 
-    struct Buffer_Data{
-        s16* data = nullptr;
-        u32 nsamples = 0u;
-        Buffer_Data* next = nullptr;
-    };
-    dpool<Buffer_Data> buffers;
-
     struct Play_Data{
-        Audio_Buffer_ID buffer;
+        Audio_Asset* asset;
         u32 cursor = 0u;
         u64 generation = 0u;
     };

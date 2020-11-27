@@ -8,26 +8,7 @@
 // http://chanae.walon.org/pub/ttf/ttf_glyphs.htm
 // https://github.com/justinmeiners/stb-truetype-example/blob/master/main.c
 
-typedef u32 Font_ID;
-
-struct Font_Manager{
-    // NOTE(hugo): do not use this between start_frame() and end_frame()
-    void terminate();
-
-    // NOTE(hugo): the shader has hard-coded values for /glyph_padding/ & /glyph_edge_value/
-    Font_ID font_from_file(const File_Path& path, const char* character_string, float font_size, s32 glyph_padding = 5, s32 glyph_edge_value = 180);
-    void remove_font(Font_ID font);
-
-    // NOTE(hugo): acquisition & release of the renderer resources to render strings using this font
-    void start_frame(Font_ID font);
-    void end_frame(Font_ID font);
-
-    // NOTE(hugo): returns baseline_x at the end of the string
-    float batch_string(Font_ID font, const char* string, float baseline_x, float baseline_y, float font_size);
-    void render_batch(Font_ID font);
-
-    // ---- font data
-
+struct Font_Asset{
     struct CodePoint_Info{
         vec2 uv_min;
         vec2 uv_max;
@@ -38,25 +19,31 @@ struct Font_Manager{
         float cursor_advance;
     };
 
-    struct Font_Data{
-        buffer<u8> file;
-        stbtt_fontinfo info;
-        dhashmap<char, CodePoint_Info> codepoint_to_info;
+    buffer<u8> file;
+    stbtt_fontinfo info;
+    dhashmap<char, CodePoint_Info> codepoint_to_info;
 
-        // NOTE(hugo): keep the cpu bitmap to make texture updates
-        float bitmap_font_size = 0.f;
-        u32 bitmap_width = 0u;
-        u32 bitmap_height = 0u;
-        u8* bitmap_data = nullptr;
+    // NOTE(hugo): keep the cpu bitmap to make texture updates
+    float bitmap_font_size = 0.f;
+    u32 bitmap_width = 0u;
+    u32 bitmap_height = 0u;
+    u8* bitmap_data = nullptr;
 
-        Texture_ID texture;
-        Vertex_Batch_ID batch;
-    };
-    dpool<Font_Data> fonts;
+    Texture_ID texture;
+};
 
-    // ---- rendering data
+Font_Asset font_asset_from_ttf_file(const File_Path& path,
+    const char* character_string, u32 character_string_size, float font_size,
+    Renderer* renderer);
+void free_font_asset(Font_Asset& asset, Renderer* renderer);
 
-    Window* window = nullptr;
+struct Font_Renderer{
+    float render_string(Font_Asset* asset, const char* string, float baseline_x, float baseline_y, float font_size);
+
+    // ---- data
+
+    u32 width;
+    u32 height;
     Renderer* renderer = nullptr;
 };
 
