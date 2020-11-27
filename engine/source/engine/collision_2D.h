@@ -1,6 +1,9 @@
 #ifndef H_COLLISION
 #define H_COLLISION
 
+// REF(hugo): https://www.youtube.com/watch?v=-_IspRG548E
+// REF(hugo): https://www.youtube.com/watch?v=MDusDn8oTSE
+
 namespace c2D{
     // ---- boolean collision
     inline bool point_circle(const vec2& point, const Circle& circle);

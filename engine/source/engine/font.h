@@ -43,6 +43,7 @@ struct Font_Manager{
         stbtt_fontinfo info;
         dhashmap<char, CodePoint_Info> codepoint_to_info;
 
+        // NOTE(hugo): keep the cpu bitmap to make texture updates
         float bitmap_font_size = 0.f;
         u32 bitmap_width = 0u;
         u32 bitmap_height = 0u;

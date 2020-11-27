@@ -1,10 +1,14 @@
 #ifndef H_FILE_UTILS
 #define H_FILE_UTILS
 
+// ---- io
+
 buffer<u8> read_file(const File_Path& path); // NOTE(hugo): free required
 char* read_file_cstring(const File_Path& path); // NOTE(hugo): free required
 
 void write_file(const File_Path& path, const u8* data, size_t bytesize);
+
+// ---- packing / unpacking
 
 template<typename T>
 T get_bytes(u8*& cursor);

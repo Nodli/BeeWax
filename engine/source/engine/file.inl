@@ -1,3 +1,5 @@
+// ---- packing / unpacking
+
 template<typename T>
 T get_bytes(u8*& cursor){
     T output = *(T*)cursor;

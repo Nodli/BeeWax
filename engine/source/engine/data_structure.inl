@@ -715,8 +715,6 @@ void dpool<T>::clear(){
         }
         //memory[capacity - 1u].type.~T();
         memory[capacity - 1u].next_element = dpool_no_element_available;
-
-        size = 0u;
     }
 }
 
@@ -740,7 +738,7 @@ template<typename T>
 void deep_copy(dpool<T>& dest, dpool<T>& src){
     if(dest.capacity != src.capacity){
         dest.capacity = src.capacity;
-        dpool_reallocate_to_capacity(this);
+        dpool_reallocate_to_capacity(dest);
     }
 
     memcpy(dest.memory, src.memory, sizeof(typename dpool<T>::element) * dest.capacity);

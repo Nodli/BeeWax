@@ -105,6 +105,8 @@ DEFER{                                                                          
 
 // ---- tweakable
 
+// NOTE(hugo): parsing the following expression
+// DEV_Tweak(__spaces__ type __spaces__ , __spaces__ value __spaces__)
 // REF(hugo): https://blog.tuxedolabs.com/2018/03/13/hot-reloading-hardcoded-parameters.html
 
 namespace BEEWAX_INTERNAL{
@@ -170,7 +172,7 @@ namespace BEEWAX_INTERNAL{
 
             // NOTE(hugo): type checking
             char* type_position = tweakable_position;
-            while(*type_position == ' '){++type_position;};
+            while(*type_position == ' '){++type_position;}
 
             switch(entry.type){
                 case Tweakable_bool:
@@ -204,8 +206,9 @@ namespace BEEWAX_INTERNAL{
             }
 
             char* value_position = type_position;
+            while(*value_position == ' '){++value_position;}
             assert(*value_position++ == ',');
-            while(*value_position == ' '){++value_position;};
+            while(*value_position == ' '){++value_position;}
 
             // NOTE(hugo): parsing the tweakable value
             switch(entry.type){
@@ -218,18 +221,22 @@ namespace BEEWAX_INTERNAL{
                     }else if(memcmp(value_position, false_expression, strlen(false_expression)) == 0u){
                         entry.value.as_bool = false;
                     }else{
-                        LOG_ERROR("DEV_Tweak of type bool has an unknown value expression");
+                        assert(false);
                     }
                     break;
                 }
                 case Tweakable_s32:
                 {
-                    entry.value.as_s32 = atoi(value_position);
+                    char* endptr;
+                    entry.value.as_s32 = (s32)strtol(value_position, &endptr, 10);
+                    assert(endptr != value_position);
                     break;
                 }
                 case Tweakable_float:
                 {
-                    entry.value.as_float = atof(value_position);
+                    char* endptr;
+                    entry.value.as_float = strtof(value_position, &endptr);
+                    assert(endptr != value_position);
                     break;
                 }
                 case Tweakable_string:
@@ -238,7 +245,7 @@ namespace BEEWAX_INTERNAL{
                     assert(*string_start++ == '"');
 
                     char* string_end = string_start;
-                    while(*string_end != '"'){++string_end;};
+                    while(*string_end != '"'){++string_end;}
 
                     char* tweakable_memory = (char*)malloc(string_end - string_start);
                     assert(tweakable_memory);
