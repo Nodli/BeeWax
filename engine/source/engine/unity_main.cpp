@@ -178,6 +178,8 @@ namespace bw{
     #include "rot.h"
     #include "quat.h"
 
+    #include "dense_grid.h"
+
     #include "shape_2D.h"
     #include "shape_2D.cpp"
 

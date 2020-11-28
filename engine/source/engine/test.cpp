@@ -847,6 +847,41 @@ namespace bw::utest{
             LOG_INFO("utest::t_constexpr_sqrt() SUCCESS");
         }
     }
+
+    void t_Dense_Grid(){
+        bool success = true;
+
+        Dense_Grid<u32> grid;
+        grid.set_dimensions(5u, 5u);
+
+        success = success && grid.origin.x == 0 && grid.origin.y == 0 && grid.size_x == 5u && grid.size_y == 5u;
+
+        for(s32 y = 4; y >= 0; --y){
+            for(s32 x = 0; x <= 4; ++x){
+                grid.at(x, y) = 10 * x + y;
+            }
+        }
+
+        grid.extend_to_fit({-1, 7});
+
+        success = success && grid.origin.x == -1 && grid.origin.y == 0 && grid.size_x == 6u && grid.size_y == 8u;
+
+        for(s32 y = 7; y >= 0; --y){
+            for(s32 x = -1; x <= 4; ++x){
+                if(x >= 0 && x <= 4 && y >= 0 && y <= 4){
+                    success = success && grid.at(x, y) == 10 * x + y;
+                }else{
+                    success = success && grid.at(x, y) == 0;
+                }
+            }
+        }
+
+        if(!success){
+            LOG_ERROR("utest::t_Dense_Grid() FAILED");
+        }else{
+            LOG_INFO("utest::t_Dense_Grid() SUCCESS");
+        }
+    }
 }
 
 int main(int argc, char* argv[]){
@@ -868,6 +903,7 @@ int main(int argc, char* argv[]){
     bw::utest::t_isort();
     bw::utest::t_binsearch();
     bw::utest::t_constexpr_sqrt();
+    bw::utest::t_Dense_Grid();
 
     return 0;
 }
