@@ -31,13 +31,13 @@ inline u32 texture_format_channels(Texture_Format format){
     }
 };
 
-constexpr u32 unknown_vertex_batch = UINT_MAX;
-constexpr u32 unknown_texture = UINT_MAX;
-constexpr u32 unknown_sampler = UINT_MAX;
-
 typedef u32 Vertex_Batch_ID;
 typedef u32 Texture_ID;
 typedef u32 Sampler_ID;
+
+constexpr Vertex_Batch_ID unknown_vertex_batch = UINT_MAX;
+constexpr Texture_ID unknown_texture = UINT_MAX;
+constexpr Sampler_ID unknown_sampler = UINT_MAX;
 
 struct Renderer_GL3{
     void setup_resources();
