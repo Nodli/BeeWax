@@ -117,12 +117,9 @@ Audio_Playing_ID Audio_Player::start_playing(Audio_Asset* asset){
 }
 
 bool Audio_Player::is_valid(Audio_Playing_ID play){
-    if(play.index < to_play.capacity
-    && to_play[play.index].generation == play.generation
-    && to_play.is_active(play.index)){
-        return true;
-    }
-    return false;
+    return play.index < to_play.capacity
+        && to_play.is_active(play.index)
+        && to_play[play.index].generation == play.generation;
 }
 
 void Audio_Player::stop_playing(Audio_Playing_ID play){
