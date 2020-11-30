@@ -116,8 +116,17 @@ Audio_Playing_ID Audio_Player::start_playing(Audio_Asset* asset){
     return {index, generation};
 }
 
+bool Audio_Player::is_valid(Audio_Playing_ID play){
+    if(play.index < to_play.capacity
+    && to_play[play.index].generation == play.generation
+    && to_play.is_active(play.index)){
+        return true;
+    }
+    return false;
+}
+
 void Audio_Player::stop_playing(Audio_Playing_ID play){
-    if(to_play.is_active(play.index) && to_play[play.index].generation == play.generation){
+    if(is_valid(play)){
         to_play.remove(play.index);
     }
 }
@@ -157,8 +166,8 @@ void Audio_Player::mix_next_frame(){
     // NOTE(hugo): mix the samples
     u32 index, counter;
     for(index = to_play.get_first(), counter = 0u;
-            index < to_play.capacity;
-            index = to_play.get_next(index), ++counter){
+        index < to_play.capacity;
+        index = to_play.get_next(index), ++counter){
 
         Play_Data& play = to_play[index];
 

@@ -25,12 +25,14 @@ struct Audio_Playing_ID{
     u32 index;
     u64 generation;
 };
+constexpr Audio_Playing_ID unknown_audio_playing = {UINT_MAX, UINT_MAX};
 
 struct Audio_Player{
     void setup();
     void terminate();
 
     Audio_Playing_ID start_playing(Audio_Asset* asset);
+    bool is_valid(Audio_Playing_ID play);
     void stop_playing(Audio_Playing_ID play);
 
     void mix_next_frame();
