@@ -2,8 +2,6 @@ TODO(jam) -------------
 
 TODO(engine) ----------
 
-- reimplement tweening
-- sprite batching
 - renderer static buffers
 - review dring, dpool, diterpool
 - allow object destruction through a template parameter in data structures
@@ -22,6 +20,26 @@ FUTURE(engine) --------
 CURRENT ---------------
 
 DONE ------------------
+
+30/11/2020
+- reimplement better tweening
+
+28/11/2020
+- dense grid
+
+27/11/2020
+- asset manager for font, texture and animations
+
+26/11/2020
+- work on the asset manager
+- animation player
+
+25/11/2020
+- work on the asset manager
+
+24/11/2020
+- implement sstring
+- work on the animation manager
 
 23/11/2020
 - parse & hotreload tweakable values directly in the __FILE__

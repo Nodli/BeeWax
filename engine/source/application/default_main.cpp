@@ -1,7 +1,7 @@
 using namespace bw;
 
-
 typedef u32 Texture_Animation_Playing_ID;
+
 struct Texture_Animation_Player{
     void terminate(){
         to_play.free();
@@ -95,9 +95,9 @@ int main(int argc, char* argv[]){
 
     //DEV_DEBUG_RENDERER;
 
-    // ---- sprites & animations
+    // ---- tween
 
-
+    Tween_Manager tween;
 
     // ---- audio
 
@@ -141,6 +141,9 @@ int main(int argc, char* argv[]){
     Texture_ID simplex_texture = renderer.get_texture(TEXTURE_FORMAT_RGB, 256u, 256u, TYPE_UBYTE, simplex_value);
     free(simplex_value);
 
+    vec2 red_square_position;
+    Tween_ID<vec2> red_square_position_tween = unknown_tween<vec2>;
+
 	// ---- main loop ---- //
 
 	while(running){
@@ -170,6 +173,13 @@ int main(int argc, char* argv[]){
                 audio.start_playing(asset.get_audio("cantina"));
             }
 
+            if(keyboard.arrow_up.npressed > 0){
+                if(red_square_position_tween != unknown_tween<vec2>){
+                    tween.stop_tween(red_square_position_tween);
+                }
+                red_square_position_tween = tween.start_tween(&red_square_position, {-1.f, -1.f}, {1.f, 1.f}, 120);
+            }
+
             if(keyboard.function_F1.npressed > 0){
                 BEEWAX_INTERNAL::DEV_reparse_tweakables();
             }
@@ -179,6 +189,7 @@ int main(int argc, char* argv[]){
             keyboard.next_frame();
             mouse.next_frame();
             audio.mix_next_frame();
+            tween.next_tick();
         }
 
         // ---- render
@@ -196,7 +207,7 @@ int main(int argc, char* argv[]){
         renderer.submit_uniform(camera_2D);
 
         // NOTE(hugo): red square
-        if(false)
+        if(true)
         {
             Vertex_Batch_ID vertex_batch = renderer.get_vertex_batch(xyrgba, PRIMITIVE_TRIANGLE_STRIP);
             vertex_xyrgba* vertices = (vertex_xyrgba*)renderer.get_vertices(vertex_batch, 4u);
@@ -204,6 +215,11 @@ int main(int argc, char* argv[]){
             vertices[1] = {{0.1f, -0.1f}, {1.f, 0.f, 0.f, 1.f}};
             vertices[2] = {{-0.1f, 0.1f}, {1.f, 0.f, 0.f, 1.f}};
             vertices[3] = {{0.1f, 0.1f}, {1.f, 0.f, 0.f, 1.f}};
+
+            vertices[0].vposition += red_square_position;
+            vertices[1].vposition += red_square_position;
+            vertices[2].vposition += red_square_position;
+            vertices[3].vposition += red_square_position;
 
             renderer.use_shader(polygon_2D);
             renderer.submit_vertex_batch(vertex_batch);
