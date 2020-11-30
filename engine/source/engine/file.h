@@ -3,7 +3,7 @@
 
 // ---- io
 
-buffer<u8> read_file(const File_Path& path); // NOTE(hugo): free required
+buffer<u8> read_file(const File_Path& path, const char* mode); // NOTE(hugo): free required
 char* read_file_cstring(const File_Path& path); // NOTE(hugo): free required
 
 void write_file(const File_Path& path, const u8* data, size_t bytesize);

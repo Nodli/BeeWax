@@ -19,7 +19,7 @@ Font_Asset font_asset_from_ttf_file(const File_Path& path,
 
     Font_Asset asset;
 
-    asset.file = read_file(path);
+    asset.file = read_file(path, "rb");
     if(!asset.file.data || asset.file.size == 0u){
         LOG_ERROR("stbtt_InitFont() - FAILED for path: %s", path.data);
         return asset;

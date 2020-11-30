@@ -153,7 +153,7 @@ namespace BEEWAX_INTERNAL{
             bool file_not_loaded;
             buffer<u8>* file_content = path_to_content.get(entry.file, file_not_loaded);
             if(file_not_loaded){
-                *file_content = read_file(entry.file);
+                *file_content = read_file(entry.file, "r");
             }
 
             // NOTE(hugo): go to the line of the DEV_Tweak

@@ -1,7 +1,7 @@
 // ---- io
 
-buffer<u8> read_file(const File_Path& path){
-    FILE* f = fopen(path.data, "rb");
+buffer<u8> read_file(const File_Path& path, const char* mode){
+    FILE* f = fopen(path.data, mode);
     if(f == NULL){
         LOG_ERROR("read_file(%s) FAILED - returning buffer with nullptr", path.data);
         return {nullptr, 0u};
@@ -17,7 +17,7 @@ buffer<u8> read_file(const File_Path& path){
     buffer.data = (unsigned char*)malloc((size_t)fsize);
     if(buffer.data){
         size_t fread_size = fread(buffer.data, sizeof(char), (size_t)fsize, f);
-        assert(fread_size == (size_t)fsize);
+        assert(fread_size <= (size_t)fsize);
         buffer.size = (u32)fread_size;
     }
 
@@ -27,7 +27,7 @@ buffer<u8> read_file(const File_Path& path){
 }
 
 char* read_file_cstring(const File_Path& path){
-    FILE* f = fopen(path.data, "rb");
+    FILE* f = fopen(path.data, "r");
     if(f == NULL){
         LOG_ERROR("read_file_cstring(%s) FAILED - returning nullptr", path.data);
         return nullptr;

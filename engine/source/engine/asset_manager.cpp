@@ -31,7 +31,7 @@ void Asset_Manager::terminate(){
 }
 
 void Asset_Manager::from_asset_file(const File_Path& path){
-    buffer<u8> file = read_file(path);
+    buffer<u8> file = read_file(path, "r");
     assert(file.data);
     DEFER{::free(file.data);};
     const char* end_char_ptr = (const char*)file.data + (file.size - 1u);
@@ -40,7 +40,7 @@ void Asset_Manager::from_asset_file(const File_Path& path){
 
     constexpr char asset_start_char = ':';
 
-    auto go_to_declaration = [&end_char_ptr](const char* icursor) -> const char*{
+    auto go_to_declaration = [&end_char_ptr, &asset_start_char](const char* icursor) -> const char*{
 
         while(*icursor != asset_start_char ){
             while(*icursor != '\n'){
