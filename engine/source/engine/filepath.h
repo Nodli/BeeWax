@@ -3,7 +3,9 @@
 
 struct File_Path;
 
-char path_separator();
+constexpr char path_separator();
+constexpr char path_separator_to_replace();
+void set_correct_path_separator(char* str);
 File_Path asset_path();
 
 // NOTE(hugo): using File_Path instead of const char* as a function parameter
@@ -38,6 +40,12 @@ template<size_t isize>
 constexpr File_Path::File_Path(const char (&idata)[isize]){
     memcpy(data, idata, isize);
     size = isize - 1u;
+
+    for(u32 ichar = 0u; ichar != size; ++ichar){
+        if(data[ichar] == path_separator_to_replace()){
+            data[ichar] = path_separator();
+        }
+    }
 }
 
 #endif
