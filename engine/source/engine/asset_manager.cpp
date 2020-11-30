@@ -212,19 +212,23 @@ const char* Asset_Manager::make_texture_animation_asset(Asset_Tag tag, const cha
     u32 frame_height = parse_number();
     u32 duration = parse_number();
 
+    LOG_TRACE("%d %d %d %d %d %d %d", ncolumns, nrows, origin_x, origin_y, frame_width, frame_height, duration);
+
     // NOTE(hugo): create the asset
     bool new_asset;
     Texture_Animation_Asset* asset = texture_animation.get(tag, new_asset);
     assert(new_asset);
 
-    for(u32 irow = 0u; irow != ncolumns; ++irow){
+    asset->frames.set_capacity(nrows * ncolumns);
+
+    for(u32 irow = 0u; irow != nrows; ++irow){
         for(u32 icol = 0u; icol != ncolumns; ++icol){
             Texture_Animation_Frame frame;
 
             frame.texture = texture_asset->texture;
-            frame.uvmin.x = (float)(origin_x + irow * frame_width) / (float)texture_asset->width;
-            frame.uvmin.y = (float)(origin_y + icol * frame_height) / (float)texture_asset->height;
-            frame.uvmax.x = (float)(origin_x + (irow + 1u) * frame_width) / (float)texture_asset->width;
+            frame.uvmin.x = (float)(origin_x + icol * frame_width) / (float)texture_asset->width;
+            frame.uvmin.y = (float)(origin_y + irow * frame_height) / (float)texture_asset->height;
+            frame.uvmax.x = (float)(origin_x + (icol + 1u) * frame_width) / (float)texture_asset->width;
             frame.uvmax.y = (float)(origin_x + (irow + 1u) * frame_height) / (float)texture_asset->height;
 
             asset->frames.push(frame);

@@ -1,60 +1,5 @@
 using namespace bw;
 
-typedef u32 Texture_Animation_Playing_ID;
-
-struct Texture_Animation_Player{
-    void terminate(){
-        to_play.free();
-    }
-
-    Texture_Animation_Playing_ID start_playing(Texture_Animation_Asset* asset){
-        Play_Data play_data;
-        play_data.asset = asset;
-        play_data.counter = 0u;
-        play_data.frame_index = 0u;
-
-        u32 index = to_play.insert(play_data);
-
-        return index;
-    }
-    void stop_playing(Texture_Animation_Playing_ID play){
-        to_play.remove(play);
-    }
-
-    Texture_Animation_Frame* get_frame(Texture_Animation_Playing_ID play){
-        Play_Data& play_data = to_play[play];
-        return &play_data.asset->frames[play_data.frame_index];
-    }
-
-    void next_frame(){
-        u32 index, counter;
-        for(index = to_play.get_first(), counter = 0u;
-                index < to_play.capacity;
-                index = to_play.get_next(index), ++counter){
-
-            Play_Data& play = to_play[index];
-            ++play.counter;
-            if(play.counter == play.asset->frame_duration){
-                play.counter = 0u;
-                ++play.frame_index;
-                if(play.frame_index == play.asset->frames.size){
-                    play.frame_index = 0u;
-                }
-            }
-        }
-    }
-
-    // ---- data
-
-    struct Play_Data{
-        Texture_Animation_Asset* asset;
-        u32 counter;
-        u32 frame_index;
-    };
-    u64 manager_generation;
-    diterpool<Play_Data> to_play;
-};
-
 int main(int argc, char* argv[]){
 
 	// ---- initialization ---- //
@@ -104,6 +49,10 @@ int main(int argc, char* argv[]){
     Audio_Player audio;
     audio.setup();
 
+    // ---- texture animation
+
+    Texture_Animation_Player texture_animation;
+
     // ---- assets
 
     Asset_Manager asset;
@@ -144,6 +93,8 @@ int main(int argc, char* argv[]){
     vec2 red_square_position;
     Tween_ID<vec2> red_square_position_tween = unknown_tween<vec2>;
 
+    Texture_Animation_Playing_ID anim = unknown_texture_animation_playing;
+
 	// ---- main loop ---- //
 
 	while(running){
@@ -180,6 +131,13 @@ int main(int argc, char* argv[]){
                 red_square_position_tween = tween.start_tween(&red_square_position, {-1.f, -1.f}, {1.f, 1.f}, 120);
             }
 
+            if(keyboard.arrow_down.npressed > 0){
+                if(anim != unknown_texture_animation_playing){
+                    texture_animation.stop_playing(anim);
+                }
+                anim = texture_animation.start_playing(asset.get_texture_animation("running_woman"));
+            }
+
             if(keyboard.function_F1.npressed > 0){
                 BEEWAX_INTERNAL::DEV_reparse_tweakables();
             }
@@ -190,6 +148,7 @@ int main(int argc, char* argv[]){
             mouse.next_frame();
             audio.mix_next_frame();
             tween.next_tick();
+            texture_animation.next_frame();
         }
 
         // ---- render
@@ -304,6 +263,24 @@ int main(int argc, char* argv[]){
             renderer.setup_texture_unit(0u, simplex_texture, nearest_clamp);
             renderer.submit_vertex_batch(texture_batch);
             renderer.free_vertex_batch(texture_batch);
+        }
+
+        // NOTE(hugo): texture animation
+        if(anim != unknown_texture_animation_playing)
+        {
+            Texture_Animation_Frame* anim_frame = texture_animation.get_frame(anim);
+
+            Vertex_Batch_ID animation_batch = renderer.get_vertex_batch(xyuv, PRIMITIVE_TRIANGLE_STRIP);
+            vertex_xyuv* animation_vertices = (vertex_xyuv*)renderer.get_vertices(animation_batch, 4u);
+            animation_vertices[0] = {{0.25f, -0.25f}, anim_frame->uvmin};
+            animation_vertices[1] = {{0.75f, -0.25f}, {anim_frame->uvmax.x, anim_frame->uvmin.y}};
+            animation_vertices[2] = {{0.25f, 0.25f}, {anim_frame->uvmin.x, anim_frame->uvmax.y}};
+            animation_vertices[3] = {{0.75f, 0.25f}, anim_frame->uvmax};
+
+            renderer.use_shader(polygon_tex_2D);
+            renderer.setup_texture_unit(0u, anim_frame->texture, nearest_clamp);
+            renderer.submit_vertex_batch(animation_batch);
+            renderer.free_vertex_batch(animation_batch);
         }
 
         // ---- setup the next rendering frame

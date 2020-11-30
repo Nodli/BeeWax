@@ -247,6 +247,9 @@ namespace bw{
     #include "font.h"
     #include "font.cpp"
 
+    #include "texture_animation.h"
+    #include "texture_animation.cpp"
+
     #include "asset_manager.h"
     #include "asset_manager.cpp"
 }

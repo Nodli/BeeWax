@@ -16,7 +16,7 @@ Texture_Asset texture_asset_from_png_file(const File_Path& path, Renderer* rende
     asset.width = width;
     asset.height = height;
 
-    asset.texture = renderer->get_texture(TEXTURE_FORMAT_RGB, width, height, TYPE_UBYTE, asset.bitmap);
+    asset.texture = renderer->get_texture(TEXTURE_FORMAT_RGBA, width, height, TYPE_UBYTE, asset.bitmap);
 
     return asset;
 }
@@ -24,21 +24,6 @@ Texture_Asset texture_asset_from_png_file(const File_Path& path, Renderer* rende
 void free_texture_asset(Texture_Asset& asset, Renderer* renderer){
     ::free(asset.bitmap);
     renderer->free_texture(asset.texture);
-}
-
-struct Texture_Animation_Frame{
-    Texture_ID texture;
-    vec2 uvmin;
-    vec2 uvmax;
-};
-
-struct Texture_Animation_Asset{
-    darray<Texture_Animation_Frame> frames;
-    u32 frame_duration;
-};
-
-void free_texture_animation_asset(Texture_Animation_Asset& asset){
-    asset.frames.free();
 }
 
 struct Asset_Manager{
