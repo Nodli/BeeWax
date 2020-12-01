@@ -159,7 +159,12 @@ static const char* fragment_shader_polygon_tex_2D = R"(
     out vec4 output_color;
 
     void main(){
-        output_color = texture(texA, fragment_texcoord);
+        vec4 sample_color = texture(texA, fragment_texcoord);
+
+        if(sample_color.a == 0.)
+            discard;
+
+        output_color = sample_color;
     }
 )";
 
@@ -193,8 +198,10 @@ static const char* fragment_shader_font_2D = R"(
     void main(){
         float font_sample = texture(font_bitmap, fragment_texcoord).r;
         font_sample = smoothstep(smoothing_value, edge_value, font_sample);
+
         if(font_sample == 0.)
             discard;
+
         output_color = vec4(font_sample);
     }
 )";
