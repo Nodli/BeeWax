@@ -1,6 +1,11 @@
 template<typename T>
 void Dense_Grid<T>::set_dimensions(u32 isize_x, u32 isize_y){
-    data = (T*)calloc(isize_x * isize_y, sizeof(T));
+    data = (T*)malloc(isize_x * isize_y, sizeof(T));
+
+    for(u32 iT = 0u; iT != isize_x * isize_y; ++iT){
+        new((void*)&data[iT]) T{};
+    }
+
     assert(data);
     size_x = isize_x;
     size_y = isize_y;
@@ -21,8 +26,14 @@ void Dense_Grid<T>::extend_to_fit(ivec2 coord){
         u32 new_size_x = (u32)max(max((s32)size_x, (s32)size_x - data_coord.x), data_coord.x + 1);
         u32 new_size_y = (u32)max(max((s32)size_y, (s32)size_y - data_coord.y), data_coord.y + 1);
 
-        T* new_data = (T*)calloc(new_size_x * new_size_y, sizeof(T));
+        T* new_data = (T*)malloc(new_size_x * new_size_y, sizeof(T));
         assert(new_data);
+
+        // TODO(hugo): make something more efficient to initialize only those that won't be copied
+        for(u32 iT = 0u; iT != isize_x * isize_y; ++iT){
+            new((void*)&data[iT]) T{};
+        }
+
         for(u32 irow = 0u; irow != size_y; ++irow){
             u32 src_offset = irow * size_x;
             u32 dst_offset = (origin.y + irow - new_origin.y) * new_size_x

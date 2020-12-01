@@ -209,6 +209,7 @@ void darray<T>::insert_empty(u32 index){
         memmove(&data[index + 1], &data[index], sizeof(T) * (size - index));
     }
 
+    new((void*)&data[index]) T{};
     ++size;
 }
 
@@ -289,6 +290,7 @@ void darray<T>::push_empty(){
         darray_reallocate_to_capacity(*this);
     }
 
+    new((void*)&data[size]) T{};
     ++size;
 }
 
