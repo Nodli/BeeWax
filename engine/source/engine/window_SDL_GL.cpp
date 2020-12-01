@@ -30,12 +30,7 @@ void Window_SDL_GL3::initialize(const Window_Settings& settings){
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 
-    if(settings.sync == Window_Settings::SINGLE_BUFFER_NOSYNC){
-        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 0);
-    }else if(settings.sync == Window_Settings::DOUBLE_BUFFER_NOSYNC
-    || settings.sync == Window_Settings::DOUBLE_BUFFER_VSYNC){
-        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
-    }
+    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, settings.buffering);
 
     // ----
 
@@ -63,26 +58,28 @@ void Window_SDL_GL3::initialize(const Window_Settings& settings){
 
     // NOTE(hugo): synchronize the buffer swap with the monitor refresh rate by
     // waiting in the main thread
-    if(settings.sync == Window_Settings::SINGLE_BUFFER_NOSYNC
-    || settings.sync == Window_Settings::DOUBLE_BUFFER_NOSYNC){
-        SDL_GL_SetSwapInterval(0);
-    }else if(settings.sync == Window_Settings::DOUBLE_BUFFER_VSYNC){
-        SDL_GL_SetSwapInterval(1);
+    s32 sync_success = SDL_GL_SetSwapInterval(settings.synchronization);
+    if(sync_success && settings.synchronization == Window_Settings::synchronize_adaptive){
+        sync_success = SDL_GL_SetSwapInterval(Window_Settings::synchronize_vertical);
+    }
+    if(sync_success
+    && (settings.synchronization == Window_Settings::synchronize_adaptive || settings.synchronization == Window_Settings::synchronize_vertical)){
+        sync_success = SDL_GL_SetSwapInterval(Window_Settings::synchronize_none);
+    }
+    if(sync_success){
+        LOG_ERROR("SDL_GL_SetSwapInterval FAILED - %s", SDL_GetError());
     }
 
     // ----
 
     // NOTE(hugo): ---- settings that do not require to recreate a window
-    // TODO(hugo): properly handle the window resize / settings change
 
-    Window_Settings::Mode screen_mode_to_use = settings.mode;
-
-    if(screen_mode_to_use == Window_Settings::WINDOWED){
-        SDL_SetWindowResizable(handle, SDL_TRUE);
-    }else if(screen_mode_to_use == Window_Settings::BORDERLESS){
+    if(settings.mode == Window_Settings::mode_windowed){
+        SDL_SetWindowResizable(handle, SDL_FALSE);
+    }else if(settings.mode == Window_Settings::mode_borderless){
         SDL_SetWindowResizable(handle, SDL_FALSE);
         SDL_SetWindowBordered(handle, SDL_FALSE);
-    }else if(screen_mode_to_use == Window_Settings::FULLSCREEN){
+    }else if(settings.mode == Window_Settings::mode_fullscreen){
         SDL_SetWindowFullscreen(handle, SDL_TRUE);
     }
 
