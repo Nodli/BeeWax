@@ -29,19 +29,18 @@ struct Tween_Manager{
         u32 generation;
     };
 
+    void terminate();
+
     void next_tick();
 
-#define DECLARE_TWEEN_START(Type) Tween_ID<Type> start_tween(Type* ptr, Type start, Type stop, u32 tick_duration);
-#define DECLARE_TWEEN_IS_VALID(Type) bool is_valid(Tween_ID<Type> tween);
-#define DECLARE_TWEEN_STOP(Type) void stop_tween(Tween_ID<Type> tween);
+#define DECLARE_TWEEN_METHODS(Type)                                                     \
+    Tween_ID<Type> start_tween(Type* ptr, Type start, Type stop, u32 tick_duration);    \
+    bool is_valid(Tween_ID<Type> tween);                                                \
+    void stop_tween(Tween_ID<Type> tween);
 
-    FOR_EACH_TWEEN_TYPE(DECLARE_TWEEN_START)
-    FOR_EACH_TWEEN_TYPE(DECLARE_TWEEN_IS_VALID)
-    FOR_EACH_TWEEN_TYPE(DECLARE_TWEEN_STOP)
+    FOR_EACH_TWEEN_TYPE(DECLARE_TWEEN_METHODS)
 
-#undef DECLARE_TWEEN_START
-#undef DECLARE_TWEEN_IS_VALID
-#undef DECLARE_TWEEN_STOP
+#undef DECLARE_TWEEN_METHODS
 
     // --- data
 
@@ -51,6 +50,12 @@ struct Tween_Manager{
     FOR_EACH_TWEEN_TYPE(DECLARE_TWEEN_STORAGE)
 #undef DECLARE_TWEEN_STORAGE
 };
+
+void Tween_Manager::terminate(){
+#define TWEEN_TERMINATE(Type) CONCATENATE(storage_, Type).free();
+    FOR_EACH_TWEEN_TYPE(TWEEN_TERMINATE)
+#undef TWEEN_TERMINATE
+}
 
 template<typename T>
 static void storage_next_tick(diterpool<Tween_Manager::Tween<T>>& storage){
@@ -66,6 +71,12 @@ static void storage_next_tick(diterpool<Tween_Manager::Tween<T>>& storage){
             storage.remove(index);
         }
     }
+}
+
+void Tween_Manager::next_tick(){
+#define TWEEN_STORAGE_NEXT_TICK(Type) storage_next_tick(CONCATENATE(storage_, Type));
+    FOR_EACH_TWEEN_TYPE(TWEEN_STORAGE_NEXT_TICK)
+#undef TWEEN_STORAGE_NEXT_TICK
 }
 
 template<typename T>
@@ -97,31 +108,19 @@ static void storage_stop_tween(diterpool<Tween_Manager::Tween<T>>& storage, Twee
     }
 }
 
-void Tween_Manager::next_tick(){
-#define DEFINE_TWEEN_STORAGE_NEXT_TICK(Type) storage_next_tick(CONCATENATE(storage_, Type));
-    FOR_EACH_TWEEN_TYPE(DEFINE_TWEEN_STORAGE_NEXT_TICK)
-#undef DEFINE_TWEEN_STORAGE_NEXT_TICK
-}
-
-#define DEFINE_TWEEN_START(Type)                                                                            \
+#define DEFINE_TWEEN_METHODS(Type)                                                                          \
 Tween_ID<Type> Tween_Manager::start_tween(Type* ptr, Type start, Type stop, u32 tick_duration){             \
     return storage_start_tween(generation, CONCATENATE(storage_, Type), ptr, start, stop, tick_duration);   \
+}                                                                                                           \
+bool Tween_Manager::is_valid(Tween_ID<Type> tween){                                                         \
+    return storage_is_valid(CONCATENATE(storage_, Type), tween);                                            \
+}                                                                                                           \
+void Tween_Manager::stop_tween(Tween_ID<Type> tween){                                                       \
+    storage_stop_tween(CONCATENATE(storage_, Type), tween);                                                 \
 }
-    FOR_EACH_TWEEN_TYPE(DEFINE_TWEEN_START)
-#undef DEFINE_TWEEN_START
 
-#define DEFINE_TWEEN_IS_VALID(Type)                                 \
-bool Tween_Manager::is_valid(Tween_ID<Type> tween){                 \
-    return storage_is_valid(CONCATENATE(storage_, Type), tween);    \
-}
-    FOR_EACH_TWEEN_TYPE(DEFINE_TWEEN_IS_VALID)
-#undef DEFINE_TWEEN_IS_VALID
+    FOR_EACH_TWEEN_TYPE(DEFINE_TWEEN_METHODS)
 
-#define DEFINE_TWEEN_STOP(Type)                             \
-void Tween_Manager::stop_tween(Tween_ID<Type> tween){       \
-    storage_stop_tween(CONCATENATE(storage_, Type), tween); \
-}
-    FOR_EACH_TWEEN_TYPE(DEFINE_TWEEN_STOP)
-#undef DEFINE_TWEEN_STOP
+#undef DEFINE_TWEEN_METHODS
 
 #endif
