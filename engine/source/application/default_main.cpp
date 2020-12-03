@@ -17,7 +17,9 @@ int main(int argc, char* argv[]){
 	window_settings.name = window_name;
 	window_settings.width = 1280;
 	window_settings.height = 720;
-	//window_settings.sync = Window_Settings::SINGLE_BUFFER_NOSYNC;
+	window_settings.mode = Window_Settings::mode_windowed;
+	//window_settings.synchronization = Window_Settings::synchronize_adaptive;
+	//window_settings.buffering = Window_Settings::buffering_double;
 
 	Window window;
 	window.initialize(window_settings);
@@ -38,11 +40,7 @@ int main(int argc, char* argv[]){
     font_renderer.height = window.height;
     font_renderer.renderer = &renderer;
 
-    //DEV_DEBUG_RENDERER;
-
-    // ---- tween
-
-    Tween_Manager tween;
+    //DEV_Debug_Renderer;
 
     // ---- audio
 
@@ -90,8 +88,7 @@ int main(int argc, char* argv[]){
     Texture_ID simplex_texture = renderer.get_texture(TEXTURE_FORMAT_RGB, 256u, 256u, TYPE_UBYTE, simplex_value);
     free(simplex_value);
 
-    vec2 red_square_position;
-    Tween_ID<vec2> red_square_position_tween = unknown_tween<vec2>;
+    Tween<vec2> red_square_position = {{0.f, 0.f}};
 
     Texture_Animation_Playing_ID anim = unknown_texture_animation_playing;
 
@@ -124,11 +121,9 @@ int main(int argc, char* argv[]){
                 audio.start_playing(asset.get_audio("cantina"));
             }
 
+            red_square_position.tick();
             if(keyboard.arrow_up.npressed > 0){
-                if(red_square_position_tween != unknown_tween<vec2>){
-                    tween.stop_tween(red_square_position_tween);
-                }
-                red_square_position_tween = tween.start_tween(&red_square_position, {-1.f, -1.f}, {1.f, 1.f}, 120);
+                red_square_position.from({-1.f, -1.f}, {1.f, 1.f}, 120u);
             }
 
             if(keyboard.arrow_down.npressed > 0){
@@ -147,7 +142,6 @@ int main(int argc, char* argv[]){
             keyboard.next_frame();
             mouse.next_frame();
             audio.mix_next_frame();
-            tween.next_tick();
             texture_animation.next_frame();
         }
 

@@ -1,16 +1,17 @@
-// ---- engine
-
 void Engine::setup(){
-    // ---- developper tools
 
-    DEV_INITIALIZE;
-    DEV_DISPLAY_TWEAKABLE_ENTRIES;
-
-    // ---- initialization ---- //
+    // ---- externals
 
     if(SDL_Init(SDL_INIT_EVERYTHING) != 0){
         printf("Failed SDL_Init() %s\n", SDL_GetError());
     }
+
+    stbi_set_flip_vertically_on_load(true);
+
+    // ---- input
+
+    keyboard.initialize();
+    mouse.initialize();
 
     // ---- window
 
@@ -19,7 +20,9 @@ void Engine::setup(){
     window_settings.name = window_name;
     window_settings.width = 1280;
     window_settings.height = 720;
-    //window_settings.sync = Window_Settings::SINGLE_BUFFER_NOSYNC;
+    window_settings.mode = Window_Settings::mode_windowed;
+    window_settings.synchronization = Window_Settings::synchronize_vertical;
+    window_settings.buffering = Window_Settings::buffering_double;
 
     window.initialize(window_settings);
 
@@ -28,35 +31,51 @@ void Engine::setup(){
     gl3wInit();
     glClearColor(0.f, 0.f, 0.f, 1.f);
 
-    renderer.setup_resources();
+    //DEV_Debug_Renderer;
 
-    //DEV_DEBUG_RENDERER;
+    renderer.setup_resources();
 
     // ---- font
 
-    font.window = &window;
+    font.width = window.width;
+    font.height = window.height;
     font.renderer = &renderer;
-    font.make_bitmap_from_file("./data/Roboto_Font/Roboto-Black.ttf", ASCII_PRINTABLE, window_settings.height / 10.f, 5, 180);
+
+    // ---- texture animation
 
     // ---- audio
 
     audio.setup();
+
+    // ---- asset
+
+    asset.audio_player = &audio;
+    asset.renderer = &renderer;
+
+    // ---- dev tools
+
+    DEV_setup();
 }
 
 void Engine::terminate(){
+    // ---- dev tools
+
+    DEV_terminate();
+
+    // ---- engine
+
+    asset.terminate();
     audio.terminate();
-    font.free();
+    texture_animation.terminate();
     renderer.free_resources();
     window.terminate();
 
-    SDL_Quit();
+    // ---- external
 
-    DEV_TERMINATE;
+    SDL_Quit();
 }
 
 u32 Engine::update_start(){
-    //DEV_LOG_FRAME_TIME;
-
     // ---- event handling
 
     SDL_Event event;
@@ -71,81 +90,69 @@ u32 Engine::update_start(){
         keyboard.register_event(event);
         mouse.register_event(event);
     }
+
     return 0u;
 }
 
 void Engine::update_end(){
-    keyboard.reset();
-    mouse.reset();
-    audio.next_frame();
+    keyboard.next_frame();
+    mouse.next_frame();
+    audio.mix_next_frame();
+    texture_animation.next_frame();
 }
 
 void Engine::render_start(){
     renderer.start_frame();
-    font.start_frame();
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void Engine::render_end(){
-    font.end_frame();
     renderer.end_frame();
     window.swap_buffers();
 
-    DEV_DISPLAY_TIMING_ENTRIES;
-    DEV_NEXT_FRAME;
+    DEV_LOG_timing_entries();
+    DEV_next_frame();
 }
 
-// ---- scene manager
+int main(int argc, char* argv[]){
 
-template<typename T>
-T* Scene_Manager::push_scene(const char* scene_name){
-    T* scene = new_struct<T>();
-    T::setup((void*)scene);
+    Frame_Timing frame_timing;
+    frame_timing.initialize(60u);
 
-    Scene to_push;
-    to_push.name = scene_name;
-    to_push.data = (void*)scene;
-    to_push.update = &T::update;
-    to_push.render = &T::render;
-    to_push.terminate = &T::terminate;
-    scene_stack.push(to_push);
+    g_engine.setup();
 
-    return scene;
-}
+    // ---- easy setup
+    void* user_data = easy_setup();
+    // ----
 
-void Scene_Manager::pop_scene(){
-    assert(scene_stack.size);
-    Scene& scene = scene_stack[scene_stack.size - 1u];
-    scene.terminate(scene.data);
-    free(scene.data);
-    scene_stack.pop();
-}
+    // NOTE(hugo): signals to close the application
+    // scene : scene_stack.size == 0u
+    // engine : update_start() != 0u
+    while(g_engine.scene.scene_stack.size != 0u){
+        //DEV_LOG_frame_duration;
 
-void Scene_Manager::interpret_scene_action(u32 action, u32& index){
-    switch(action){
-        case action_continue:
-            ++index;
-            break;
-        default:
-        case action_stop:
-            index = scene_stack.size;
+        u32 nupdates = frame_timing.nupdates_before_render();
+        for(u32 iupdate = 0; iupdate != nupdates; ++iupdate){
+            if(g_engine.update_start() != 0u){
+                goto exit_gameloop;
+            }
+            g_engine.scene.update();
+            g_engine.update_end();
+        }
+        g_engine.render_start();
+        g_engine.scene.render();
+        g_engine.render_end();
     }
+
+    exit_gameloop:
+
+    // ---- scene termination
+    easy_terminate(user_data);
+    // ----
+
+    g_engine.scene.terminate();
+    g_engine.terminate();
+
+    return 0;
 }
 
-void Scene_Manager::update(){
-    u32 scene_index = 0u;
-    while(scene_index < scene_stack.size){
-        Scene& scene = scene_stack[scene_stack.size - 1u - scene_index];
-        u32 scene_action = scene.update(scene.data);
-        interpret_scene_action(scene_action, scene_index);
-    }
-}
-
-void Scene_Manager::render(){
-    u32 scene_index = 0u;
-    while(scene_index < scene_stack.size){
-        Scene& scene = scene_stack[scene_stack.size - 1u - scene_index];
-        u32 scene_action = scene.render(scene.data);
-        interpret_scene_action(scene_action, scene_index);
-    }
-}

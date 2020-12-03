@@ -13,8 +13,6 @@
     #define COMPILER_MSVC
 #elif defined(__GNUG__)
     #define COMPILER_GCC
-#elif defined(__clang__)
-    #define COMPILER_CLANG
 #else
     static_assert(false, "no compiler was identified");
 #endif
@@ -82,6 +80,8 @@
 
 #if defined(COMPILER_MSVC)
     #include <intrin.h>
+    #pragma intrinsic(_BitScanReverse)
+    #pragma intrinsic(_BitScanForward)
 #elif defined(COMPILER_GCC)
     #include <cpuid.h>
     #include <x86intrin.h>
@@ -252,12 +252,17 @@ namespace bw{
 
     #include "asset_manager.h"
     #include "asset_manager.cpp"
+
+    #include "scene_manager.h"
+    #include "scene_manager.cpp"
 }
 
-// ---- unit testing
+// ---- testing
 
 //#include "test.cpp"
+#include "../application/default_main.cpp"
 
 // ----
 
-#include "../application/default_main.cpp"
+//#include "easy_setup.h"
+//#include "easy_setup.cpp"
