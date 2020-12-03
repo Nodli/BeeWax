@@ -19,7 +19,7 @@ constexpr char path_separator_to_replace(){
 }
 
 void set_correct_path_separator(char* str){
-    while(str = strchr(str, path_separator_to_replace())){
+    while(str = strchr(str, path_separator_to_replace()), str != nullptr){
         *str = path_separator();
     }
 }
