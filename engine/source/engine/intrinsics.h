@@ -21,6 +21,18 @@ u64 cycle_counter();
 template<typename T>
 inline T atomic_byteswap(T value);
 
+// ---- bitscan
+
+// NOTE(hugo):
+// returns the number of zero bits before encountering a one bit
+// /!\ undefined behavior when value = 0u /!\
+// LM = Least significant bit to Most  significant bit
+// ML = Most  significant bit to Least significant bit
+u32 bitscan_LM(u32 value);
+u32 bitscan_ML(u32 value);
+u32 bitscan_LM(u64 value);
+u32 bitscan_ML(u64 value);
+
 // ---- cpu capabilities
 
 // NOTE(hugo): detects the SSE version supported by the CPU
