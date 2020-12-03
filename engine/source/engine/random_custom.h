@@ -1,6 +1,8 @@
 #ifndef H_RANDOM_CUSTOM
 #define H_RANDOM_CUSTOM
 
+// ---- seed
+
 namespace BEEWAX_INTERNAL{
     static union {
         u32 seed32;
@@ -8,7 +10,10 @@ namespace BEEWAX_INTERNAL{
     } seed = {((u64)rand()) << 32 || (u64)rand()};
 }
 
+void seed_random_with(u64 to_use, u64& seed = BEEWAX_INTERNAL::seed.seed64);
 void seed_random_with_time(u64& seed = BEEWAX_INTERNAL::seed.seed64);
+
+// ----
 
 s32 random_s32(u32& seed = BEEWAX_INTERNAL::seed.seed32);
 u32 random_u32(u32& seed = BEEWAX_INTERNAL::seed.seed32);
@@ -20,10 +25,13 @@ float random_float_normalized(u32& seed = BEEWAX_INTERNAL::seed.seed32); // NOTE
 float random_float_normalized_positive(u32& seed = BEEWAX_INTERNAL::seed.seed32); // NOTE(hugo): [0, 1)
 float random_float_range(float min, float max, u32& seed = BEEWAX_INTERNAL::seed.seed32); // NOTE(hugo): [min, max)
 
-// NOTE(hugo): may retry multiple times
-u32 random_u32_range_uniform(u32 max, u32& seed = BEEWAX_INTERNAL::seed.seed32); // NOTE(hugo): [0, max[
+// ---- rejection sampling
+
+// NOTE(hugo): [0, max[
+u32 random_u32_range_uniform(u32 max, u32& seed = BEEWAX_INTERNAL::seed.seed32);
 float random_float_uniform(u32& seed = BEEWAX_INTERNAL::seed.seed32);
-// ----
+
+// ---- permutation
 
 u32* random_permutation(u32 permutation_size, u32& seed = BEEWAX_INTERNAL::seed.seed32);
 void random_permutation_in_place(u32* data, u32 permutation_size, u32& seed = BEEWAX_INTERNAL::seed.seed32);
