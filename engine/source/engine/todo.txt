@@ -1,13 +1,13 @@
-TODO(jam) -------------
-
 TODO(engine) ----------
 
+- looping audio & animation
 - renderer static buffers
 - review dring, dpool, diterpool
 - allow object destruction through a template parameter in data structures
 
 FUTURE(engine) --------
 
+- window resize / settings change
 - custom assert with message
 - vulkan renderer
 - other noise functions: voronoise, worley, ...
@@ -16,10 +16,16 @@ FUTURE(engine) --------
 - small-buffer-optimized vector (based of sarray)
 - data structures template of the bytesize as a base with a template of the typename as frontend
 - coroutines (https://www.chiark.greenend.org.uk/~sgtatham/coroutines.html)
+- https://blog.demofox.org/2016/05/18/who-cares-about-dynamic-array-growth-strategies/
+- https://twitter.com/lisyarus/status/1318605976786919424
 
 CURRENT ---------------
 
 DONE ------------------
+
+03/12/2020
+- replace tweening_manager with a tween struct
+- implement tweening using easing functions
 
 30/11/2020
 - reimplement better tweening
