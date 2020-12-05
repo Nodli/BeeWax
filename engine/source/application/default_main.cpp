@@ -58,17 +58,17 @@ int main(int argc, char* argv[]){
     particle_emitter.shape = Particle_Emitter::Disc;
     particle_emitter.desc.circle.center = {0.f, 0.f};
     particle_emitter.desc.circle.radius = 0.1f;
-    particle_emitter.duration_min_range[0] = 60u;
+    particle_emitter.duration_min_range[0] = 1000u;
     particle_emitter.duration_min_range[1] = 1u;
     particle_emitter.theta_min_range[0] = 0.f;
     particle_emitter.theta_min_range[1] = TWO_PI<float>;
     particle_emitter.velocity_min_range[0] = 0.005f;
     particle_emitter.velocity_min_range[1] = 0.f;
     particle_emitter.angular_velocity_min_range[0] = 0.f;
-    particle_emitter.angular_velocity_min_range[1] = 0.f;
-    particle_emitter.size_min_range[0] = 0.01f;
-    particle_emitter.size_min_range[1] = 0.01f;
-    particle_emitter.particles_per_frame = -10;
+    particle_emitter.angular_velocity_min_range[1] = 0.03f;
+    particle_emitter.size_min_range[0] = 0.40f;
+    particle_emitter.size_min_range[1] = 0.f;
+    particle_emitter.particles_per_frame = -100;
 
     // ---- assets
 
@@ -309,7 +309,7 @@ int main(int argc, char* argv[]){
             Vertex_Batch_ID particle_batch = particle_emitter.batch_as_quad_xyuv(&renderer);
 
             renderer.use_shader(polygon_tex_2D);
-            renderer.setup_texture_unit(0u, simplex_texture, nearest_clamp);
+            renderer.setup_texture_unit(0u, asset.get_texture("me_draw")->texture, nearest_clamp);
             renderer.submit_vertex_batch(particle_batch);
             renderer.free_vertex_batch(particle_batch);
         }
