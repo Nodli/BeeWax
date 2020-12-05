@@ -37,4 +37,10 @@ u32* random_permutation(u32 permutation_size, u32& seed = BEEWAX_INTERNAL::seed.
 void random_permutation_in_place(u32* data, u32 permutation_size, u32& seed = BEEWAX_INTERNAL::seed.seed32);
 void random_partial_permutation_in_place(u32* data, u32 data_size, u32 permutation_size, u32& seed = BEEWAX_INTERNAL::seed.seed32);
 
+// ---- n-sphere sampling
+// REF(hugo): http://extremelearning.com.au/how-to-generate-uniformly-random-points-on-n-spheres-and-n-balls/
+
+vec2 random_on_unit_circle();
+vec2 random_on_unit_disc();
+
 #endif

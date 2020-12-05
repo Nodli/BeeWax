@@ -127,3 +127,24 @@ void random_partial_permutation_in_place(u32* data, u32 data_size, u32 permutati
         swap(data[istep], data[istep + random_index]);
     }
 }
+// NOTE(hugo): Muller , Marsaglia (‘Normalised Gaussians’)
+vec2 random_on_unit_circle(){
+    float angle = TWO_PI<float> * random_float_normalized_positive();
+    return {cos(angle), sin(angle)};
+}
+
+vec2 random_on_unit_disc(){
+    float a = random_float_normalized();
+    float b = random_float_normalized();
+
+    float r, theta;
+    if(a * a > b * b){
+        r = a;
+        theta = PI<float> * 0.25f * b / a;
+    }else{
+        r = b;
+        theta = PI<float> * 0.5f - PI<float> * 0.25f * a / b;
+    }
+
+    return {r * cos(theta), r * sin(theta)};
+}
