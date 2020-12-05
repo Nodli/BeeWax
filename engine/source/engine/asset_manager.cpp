@@ -212,8 +212,6 @@ const char* Asset_Manager::make_texture_animation_asset(Asset_Tag tag, const cha
     u32 frame_height = parse_number();
     u32 duration = parse_number();
 
-    LOG_TRACE("%d %d %d %d %d %d %d", ncolumns, nrows, origin_x, origin_y, frame_width, frame_height, duration);
-
     // NOTE(hugo): create the asset
     bool new_asset;
     Texture_Animation_Asset* asset = texture_animation.get(tag, new_asset);

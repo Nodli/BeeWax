@@ -88,7 +88,7 @@ struct Keyboard_State{
 
     u64 state_generation = 0u;
     union{
-        Device_Button storage[NUMBER_OF_KEYBOARD_BUTTONS];
+        Device_Button storage[NUMBER_OF_KEYBOARD_BUTTONS] = {};
         struct{
 #define DECLARE_KEYBOARD_BUTTON_VARIABLE(name, keycode) Device_Button name;
             FOR_EACH_KEYBOARD_BUTTON(DECLARE_KEYBOARD_BUTTON_VARIABLE)

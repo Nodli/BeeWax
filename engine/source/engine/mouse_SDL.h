@@ -78,7 +78,7 @@ struct Mouse_State{
 
     u64 state_generation = 0u;
     union{
-        Device_Button storage[5];
+        Device_Button storage[5] = {};
         struct{
             Device_Button left;
             Device_Button middle;

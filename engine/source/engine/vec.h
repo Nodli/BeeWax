@@ -1,6 +1,8 @@
 #ifndef H_VEC
 #define H_VEC
 
+// NOTE(hugo): vec members are default-initialized ie value-initialized ie zero-initialized
+
 namespace vec{
     template<typename T>
     struct vec2;
@@ -52,7 +54,7 @@ struct vec::vec2{
     T operator[](const u32 index) const;
 
     union{
-        T data[2] = {(T)(0), (T)(0)};
+        T data[2] = {};
         struct{
             T x;
             T y;
@@ -130,7 +132,7 @@ struct vec::vec3{
     T operator[](const u32 index) const;
 
     union{
-        T data[3] = {(T)(0), (T)(0), (T)(0)};
+        T data[3] = {};
         struct{
             T x;
             T y;
@@ -214,7 +216,7 @@ struct vec::vec4{
     T operator[](const u32 index) const;
 
     union{
-        T data[4] = {(T)(0), (T)(0), (T)(0), (T)(0)};
+        T data[4] = {};
         struct{
             T x;
             T y;

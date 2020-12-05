@@ -229,7 +229,7 @@ struct diterpool{
 
     struct element{
         union {
-            T type;
+            T type = {};
             u32 next_element;
         };
     };
