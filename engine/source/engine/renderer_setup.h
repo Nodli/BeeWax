@@ -65,19 +65,6 @@ enum Renderer_Texture_Parameters{
     WRAP_REPEAT = GL_REPEAT,
 };
 
-// ---- user setup
-
-#if defined(RENDERER_SETUP_USER)
-    #include RENDERER_SETUP_USER
-#else
-    #define FOR_EACH_UNIFORM_NAME_USER(FUNCTION)
-    #define FOR_EACH_VERTEX_FORMAT_NAME_USER(FUNCTION)
-    #define FOR_EACH_SHADER_NAME_USER(FUNCTION)
-    #define FOR_EACH_UNIFORM_SHADER_PAIR_USER(FUNCTION)
-    #define FOR_EACH_TEXTURE_SHADER_PAIR_USER(FUNCTION)
-    #define FOR_EACH_SAMPLER_NAME_USER(FUNCTION)
-#endif
-
 // ----------------- engine setup
 
 struct uniform_camera_2D{
@@ -245,6 +232,19 @@ FUNCTION(font_bitmap, 0, font_2D)                       \
 #define FOR_EACH_SAMPLER_NAME_ENGINE(FUNCTION)                                                  \
 FUNCTION(nearest_clamp, FILTER_NEAREST, FILTER_NEAREST, WRAP_CLAMP, WRAP_CLAMP, WRAP_CLAMP)     \
 FUNCTION(linear_clamp, FILTER_LINEAR, FILTER_LINEAR, WRAP_CLAMP, WRAP_CLAMP, WRAP_CLAMP)        \
+
+// ---- user setup
+
+#if defined(RENDERER_SETUP_USER)
+    #include RENDERER_SETUP_USER
+#else
+    #define FOR_EACH_UNIFORM_NAME_USER(FUNCTION)
+    #define FOR_EACH_VERTEX_FORMAT_NAME_USER(FUNCTION)
+    #define FOR_EACH_SHADER_NAME_USER(FUNCTION)
+    #define FOR_EACH_UNIFORM_SHADER_PAIR_USER(FUNCTION)
+    #define FOR_EACH_TEXTURE_SHADER_PAIR_USER(FUNCTION)
+    #define FOR_EACH_SAMPLER_NAME_USER(FUNCTION)
+#endif
 
 // ---- setup
 
