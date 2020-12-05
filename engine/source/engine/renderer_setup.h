@@ -1,6 +1,26 @@
 #ifndef H_RENDERER_USER_DEFINES
 #define H_RENDERER_USER_DEFINES
 
+// ----- RENDERER SETUP MANUAL -----
+
+// UNIFORM DECLARATION :
+// - declare a uniform struct /uniform_NAME/
+// - insert NAME in the FOR_EACH_UNIFORM_NAME macro
+// - use the uniform in a shader as : layout (std140) uniform u_NAME { /*/ } NAME;
+// - insert NAME in the FOR_EACH_UNIFORM_SHADER_PAIR macro as (NAME, SHADER_NAME)
+
+// VERTEX FORMAT DECLARATION :
+// - declare a vertex struct /vertex_NAME/
+// - define a static description of the vertex format as /vertex_format_attributes_NAME/
+// - insert NAME in the FOR_EACH_VERTEX_FORMAT_NAME macro
+
+// SHADER DECLARATION :
+// - define the static shader code as /vertex_shader_NAME/ and /fragment_shader_NAME/
+// - insert NAME in the FOR_EACH_SHADER_NAME macro
+
+// SAMPLER DECLARATION :
+// - insert NAME in the FOR_EACH_SAMPLER_NAME macro as (NAME, MIN_FILTER, MAG_FILTER, WRAP_S, WRAP_T, WRAP_R)
+
 // ---- setup types and enums
 
 enum Renderer_Data_Type{
@@ -44,27 +64,20 @@ enum Renderer_Texture_Parameters{
     WRAP_REPEAT = GL_REPEAT,
 };
 
-// ----- MANUAL -----
+// ---- user setup
 
-// UNIFORM DECLARATION :
-// - declare a uniform struct /uniform_NAME/
-// - insert NAME in the FOR_EACH_UNIFORM_NAME macro
-// - use the uniform in a shader as : layout (std140) uniform u_NAME { /*/ } NAME;
-// - insert NAME in the FOR_EACH_UNIFORM_SHADER_PAIR macro as (NAME, SHADER_NAME)
+#if defined(RENDERER_SETUP_USER)
+    #include RENDERER_SETUP_USER
+#else
+    #define FOR_EACH_UNIFORM_NAME_USER(FUNCTION)
+    #define FOR_EACH_VERTEX_FORMAT_NAME_USER(FUNCTION)
+    #define FOR_EACH_SHADER_NAME_USER(FUNCTION)
+    #define FOR_EACH_UNIFORM_SHADER_PAIR_USER(FUNCTION)
+    #define FOR_EACH_TEXTURE_SHADER_PAIR_USER(FUNCTION)
+    #define FOR_EACH_SAMPLER_NAME_USER(FUNCTION)
+#endif
 
-// VERTEX FORMAT DECLARATION :
-// - declare a vertex struct /vertex_NAME/
-// - define a static description of the vertex format as /vertex_format_attributes_NAME/
-// - insert NAME in the FOR_EACH_VERTEX_FORMAT_NAME macro
-
-// SHADER DECLARATION :
-// - define the static shader code as /vertex_shader_NAME/ and /fragment_shader_NAME/
-// - insert NAME in the FOR_EACH_SHADER_NAME macro
-
-// SAMPLER DECLARATION :
-// - insert NAME in the FOR_EACH_SAMPLER_NAME macro as (NAME, MIN_FILTER, MAG_FILTER, WRAP_S, WRAP_T, WRAP_R)
-
-// -----------------
+// ----------------- engine setup
 
 struct uniform_camera_2D{
     mat3_std140 matrix;
@@ -206,33 +219,57 @@ static const char* fragment_shader_font_2D = R"(
     }
 )";
 
-#define FOR_EACH_UNIFORM_NAME(FUNCTION)         \
-FUNCTION(camera_2D)                             \
+#define FOR_EACH_UNIFORM_NAME_ENGINE(FUNCTION)          \
+FUNCTION(camera_2D)                                     \
 
-#define FOR_EACH_VERTEX_FORMAT_NAME(FUNCTION)   \
-FUNCTION(xyrgba)                                \
-FUNCTION(xyuv)                                  \
+#define FOR_EACH_VERTEX_FORMAT_NAME_ENGINE(FUNCTION)    \
+FUNCTION(xyrgba)                                        \
+FUNCTION(xyuv)                                          \
 
-#define FOR_EACH_SHADER_NAME(FUNCTION)          \
-FUNCTION(polygon_2D)                            \
-FUNCTION(screen_polygon_2D)                     \
-FUNCTION(polygon_tex_2D)                        \
-FUNCTION(screen_polygon_tex_2D)                 \
-FUNCTION(font_2D)                               \
+#define FOR_EACH_SHADER_NAME_ENGINE(FUNCTION)           \
+FUNCTION(polygon_2D)                                    \
+FUNCTION(screen_polygon_2D)                             \
+FUNCTION(polygon_tex_2D)                                \
+FUNCTION(screen_polygon_tex_2D)                         \
+FUNCTION(font_2D)                                       \
 
-#define FOR_EACH_UNIFORM_SHADER_PAIR(FUNCTION)  \
-FUNCTION(camera_2D, polygon_2D)                 \
-FUNCTION(camera_2D, polygon_tex_2D)             \
+#define FOR_EACH_UNIFORM_SHADER_PAIR_ENGINE(FUNCTION)   \
+FUNCTION(camera_2D, polygon_2D)                         \
+FUNCTION(camera_2D, polygon_tex_2D)                     \
 
-#define FOR_EACH_TEXTURE_SHADER_PAIR(FUNCTION)  \
-FUNCTION(texA, 0, polygon_tex_2D)               \
-FUNCTION(font_bitmap, 0, font_2D)               \
+#define FOR_EACH_TEXTURE_SHADER_PAIR_ENGINE(FUNCTION)   \
+FUNCTION(texA, 0, polygon_tex_2D)                       \
+FUNCTION(font_bitmap, 0, font_2D)                       \
 
-#define FOR_EACH_SAMPLER_NAME(FUNCTION)                                                         \
+#define FOR_EACH_SAMPLER_NAME_ENGINE(FUNCTION)                                                  \
 FUNCTION(nearest_clamp, FILTER_NEAREST, FILTER_NEAREST, WRAP_CLAMP, WRAP_CLAMP, WRAP_CLAMP)     \
 FUNCTION(linear_clamp, FILTER_LINEAR, FILTER_LINEAR, WRAP_CLAMP, WRAP_CLAMP, WRAP_CLAMP)        \
 
 // ---- setup
+
+#define FOR_EACH_UNIFORM_NAME(FUNCTION)     \
+FOR_EACH_UNIFORM_NAME_ENGINE(FUNCTION)      \
+FOR_EACH_UNIFORM_NAME_USER(FUNCTION)
+
+#define FOR_EACH_VERTEX_FORMAT_NAME(FUNCTION)     \
+FOR_EACH_VERTEX_FORMAT_NAME_ENGINE(FUNCTION)      \
+FOR_EACH_VERTEX_FORMAT_NAME_USER(FUNCTION)
+
+#define FOR_EACH_SHADER_NAME(FUNCTION)     \
+FOR_EACH_SHADER_NAME_ENGINE(FUNCTION)      \
+FOR_EACH_SHADER_NAME_USER(FUNCTION)
+
+#define FOR_EACH_UNIFORM_SHADER_PAIR(FUNCTION)     \
+FOR_EACH_UNIFORM_SHADER_PAIR_ENGINE(FUNCTION)      \
+FOR_EACH_UNIFORM_SHADER_PAIR_USER(FUNCTION)
+
+#define FOR_EACH_TEXTURE_SHADER_PAIR(FUNCTION)     \
+FOR_EACH_TEXTURE_SHADER_PAIR_ENGINE(FUNCTION)      \
+FOR_EACH_TEXTURE_SHADER_PAIR_USER(FUNCTION)
+
+#define FOR_EACH_SAMPLER_NAME(FUNCTION)     \
+FOR_EACH_SAMPLER_NAME_ENGINE(FUNCTION)      \
+FOR_EACH_SAMPLER_NAME_USER(FUNCTION)
 
 enum Uniform_Name{
     FOR_EACH_UNIFORM_NAME(ADD_TO_ENUM)
