@@ -7,7 +7,6 @@
 // - declare a uniform struct /uniform_NAME/
 // - insert NAME in the FOR_EACH_UNIFORM_NAME macro
 // - use the uniform in a shader as : layout (std140) uniform u_NAME { /*/ } NAME;
-// - insert NAME in the FOR_EACH_UNIFORM_SHADER_PAIR macro as (NAME, SHADER_NAME)
 
 // VERTEX FORMAT DECLARATION :
 // - declare a vertex struct /vertex_NAME/
@@ -17,6 +16,8 @@
 // SHADER DECLARATION :
 // - define the static shader code as /vertex_shader_NAME/ and /fragment_shader_NAME/
 // - insert NAME in the FOR_EACH_SHADER_NAME macro
+// - declare the uniforms used by the shader in FOR_EACH_UNIFORM_SHADER_PAIR macro as (UNIFORM_NAME, SHADER_NAME)
+// - declare the texture variables used by the shader in FOR_EACH_TEXTURE_SHADER_PAIR macro as (TEX_VAR_NAME, SHADER_NAME)
 
 // SAMPLER DECLARATION :
 // - insert NAME in the FOR_EACH_SAMPLER_NAME macro as (NAME, MIN_FILTER, MAG_FILTER, WRAP_S, WRAP_T, WRAP_R)
