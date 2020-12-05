@@ -822,8 +822,8 @@ namespace bw::utest{
     void t_constexpr_sqrt(){
         bool success = true;
 
-#define t_constexpr_sqrt_display(VALUE) LOG_TRACE("%.10f %.10f", (float)constexpr_sqrt(VALUE), std::sqrt(VALUE));
-#define t_constexpr_sqrt_unit(VALUE) success = success && almost_equal((float)constexpr_sqrt(VALUE), std::sqrt(VALUE), 0.0000001f, 1);
+#define t_constexpr_sqrt_display(VALUE) LOG_TRACE("%.10f %.10f", (float)constexpr_sqrt(VALUE), sqrt(VALUE));
+#define t_constexpr_sqrt_unit(VALUE) success = success && almost_equal((float)constexpr_sqrt(VALUE), sqrt(VALUE), 0.0000001f, 1);
 
         t_constexpr_sqrt_unit(3.f);
         t_constexpr_sqrt_unit(11.f);

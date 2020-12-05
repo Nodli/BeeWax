@@ -37,7 +37,7 @@ mat4 mat_orthographic3D(float width, float height, float znear, float zfar){
 
 mat4 mat_perspective3D(float vfov, float aspect_ratio, float znear, float zfar){
     assert(znear > 0.f && znear < zfar);
-    float half_height = std::tan(vfov * 0.5f);
+    float half_height = tan(vfov * 0.5f);
     float half_width = aspect_ratio * half_height;
     float div_dz = 1.f / (zfar - znear);
     return mat4_rm(
@@ -49,7 +49,7 @@ mat4 mat_perspective3D(float vfov, float aspect_ratio, float znear, float zfar){
 }
 
 mat4 mat_infinite_perspective3D(float vfov, float aspect_ratio, float znear){
-    float half_height = std::tan(vfov * 0.5f);
+    float half_height = tan(vfov * 0.5f);
     float half_width = aspect_ratio * half_height;
 
 DISABLE_WARNING_PUSH

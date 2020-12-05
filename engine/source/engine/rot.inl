@@ -21,7 +21,7 @@ rot::rot3<T> operator*(const rot::rot3<T>& lhs, const rot::rot3<T>& rhs){
 
 template<typename T>
 rot::rot3<T> normalize(const rot::rot3<T>& rot){
-    const T div = std::sqrt(rot.s * rot.s + rot.xy * rot.xy + rot.xz * rot.xz + rot.yz * rot.yz);
+    const T div = sqrt(rot.s * rot.s + rot.xy * rot.xy + rot.xz * rot.xz + rot.yz * rot.yz);
     return {rot.s / div, rot.xy / div, rot.xz / div, rot.yz / div};
 }
 
@@ -32,8 +32,8 @@ rot::rot3<T> make_rot(const vec::vec3<T> from, const vec::vec3<T> to){
 }
 template<typename T>
 rot::rot3<T> make_rot(const T angle, const vec::vec3<T> bivector){
-    const T sin_temp = - std::sin(angle / 2);
-    return {std::cos(angle / 2), sin_temp * bivector.x, sin_temp * bivector.y, sin_temp * bivector.z};
+    const T sin_temp = - sin(angle / 2);
+    return {cos(angle / 2), sin_temp * bivector.x, sin_temp * bivector.y, sin_temp * bivector.z};
 }
 template<typename T>
 vec::vec3<T> rotate(const vec::vec3<T>& v, const rot::rot3<T>& r){

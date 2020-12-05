@@ -129,7 +129,7 @@ namespace c2D{
 
         manifold.count = 0u;
         if(sqdistance < sqradius){
-            float distance = std::sqrt(sqdistance);
+            float distance = sqrt(sqdistance);
             vec2 normal;
             if(distance != 0.f){
                 normal = center_center / distance;

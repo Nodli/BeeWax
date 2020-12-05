@@ -5,7 +5,7 @@ float dot(const vec2& vA, const vec2& vB){
 }
 
 float length(const vec2& vec){
-    return std::sqrt(vec.x * vec.x + vec.y * vec.y);
+    return sqrt(vec.x * vec.x + vec.y * vec.y);
 }
 
 float sqlength(const vec2& vec){
@@ -36,7 +36,7 @@ vec3 wedge(const vec3& vA, const vec3& vB){
 }
 
 float length(const vec3& vec){
-    return std::sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
+    return sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z);
 }
 
 float sqlength(const vec3& vec){
@@ -54,7 +54,7 @@ float dot(const vec4& vA, const vec4& vB){
 }
 
 float length(const vec4& vec){
-    return std::sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z + vec.w * vec.w);
+    return sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z + vec.w * vec.w);
 }
 
 float sqlength(const vec4& vec){

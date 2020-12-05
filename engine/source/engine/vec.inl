@@ -151,7 +151,7 @@ vec::vec2<T> operator/(const T lhs, const vec::vec2<T>& rhs){
 
 template<typename T>
 vec::vec2<T> abs(const vec::vec2<T>& vec){
-    return vec::vec2<T>(std::abs(vec.x), std::abs(vec.y));
+    return vec::vec2<T>(abs(vec.x), abs(vec.y));
 }
 
 // ---- vec::vec3
@@ -317,7 +317,7 @@ vec::vec3<T> operator/(const T lhs, const vec::vec3<T>& rhs){
 
 template<typename T>
 vec::vec3<T> abs(const vec::vec3<T>& vec){
-    return vec::vec3<T>(std::abs(vec.x), std::abs(vec.y), std::abs(vec.z));
+    return vec::vec3<T>(abs(vec.x), abs(vec.y), abs(vec.z));
 }
 
 // ---- vec::vec4
@@ -493,5 +493,5 @@ vec::vec4<T> operator/(const T lhs, const vec::vec4<T>& rhs){
 
 template<typename T>
 vec::vec4<T> abs(const vec::vec4<T>& vec){
-    return vec::vec4<T>(std::abs(vec.x), std::abs(vec.y), std::abs(vec.z), std::abs(vec.w));
+    return vec::vec4<T>(abs(vec.x), abs(vec.y), abs(vec.z), abs(vec.w));
 }

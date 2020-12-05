@@ -19,7 +19,7 @@ quaternion::quat<T> operator*(const quaternion::quat<T>& lhs, const quaternion::
 
 template<typename T>
 quaternion::quat<T> normalized(const quaternion::quat<T>& quat){
-    const T div = std::sqrt(quat.s * quat.s + quat.i * quat.i + quat.j * quat.j + quat.k * quat.k);
+    const T div = sqrt(quat.s * quat.s + quat.i * quat.i + quat.j * quat.j + quat.k * quat.k);
     return {quat.s / div, quat.i / div, quat.j / div, quat.k / div};
 }
 
@@ -82,7 +82,7 @@ namespace BEEWAX_INTERNAL{
             }
         }
 
-        T multiplicator = (T)(0.5) / std::sqrt(interm);
+        T multiplicator = (T)(0.5) / sqrt(interm);
         return {output.s * multiplicator, output.i * multiplicator, output.j * multiplicator, output.k * multiplicator};
     }
 }
@@ -121,8 +121,8 @@ quaternion::quat<T> from_mat4(const mat::mat4<T>& matrix){
 template<typename T>
 quaternion::quat<T> quat_from_axis(const T angle, const vec::vec3<T> axis){
     const T half_angle = angle / (T)2;
-    const T temp_sin = std::sin(half_angle);
-    return {std::cos(half_angle), temp_sin * axis.x, temp_sin * axis.y, temp_sin * axis.z};
+    const T temp_sin = sin(half_angle);
+    return {cos(half_angle), temp_sin * axis.x, temp_sin * axis.y, temp_sin * axis.z};
 }
 
 template<typename T>
@@ -131,13 +131,13 @@ quaternion::quat<T> quat_from_euler(const T pitch, const T yaw, const T roll){
     float half_yaw = 0.5f * yaw;
     float half_roll = 0.5f * roll;
 
-    float cosX = std::cos(half_pitch);
-    float cosY = std::cos(half_yaw);
-    float cosZ = std::cos(half_roll);
+    float cosX = cos(half_pitch);
+    float cosY = cos(half_yaw);
+    float cosZ = cos(half_roll);
 
-    float sinX = std::sin(half_pitch);
-    float sinY = std::sin(half_yaw);
-    float sinZ = std::sin(half_roll);
+    float sinX = sin(half_pitch);
+    float sinY = sin(half_yaw);
+    float sinZ = sin(half_roll);
 
     return {
         cosX * cosY * cosZ + sinX * sinY * sinZ,
@@ -196,10 +196,10 @@ quaternion::quat<T> slerp(const quaternion::quat<T>& qA, const quaternion::quat<
         };
     }
 
-    float arc_angle = std::acos(quat_dot);
+    float arc_angle = acos(quat_dot);
     float subarc_angle = t * arc_angle;
-    float sin_arc_angle = std::sin(arc_angle);
-    float sin_subarc_angle = std::sin(arc_angle);
+    float sin_arc_angle = sin(arc_angle);
+    float sin_subarc_angle = sin(arc_angle);
     float ratio = sin_subarc_angle / sin_arc_angle;
 
     float qA_factor = cos(subarc_angle) - quat_dot * ratio;
