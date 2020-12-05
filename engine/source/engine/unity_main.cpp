@@ -1,3 +1,7 @@
+// ---- user defines
+
+#define RENDERER_SETUP_USER "../application/default_main_renderer_setup.h"
+
 // ---- precompiler
 // REF(hugo): https://blog.kowalczyk.info/article/j/guide-to-predefined-macros-in-c-compilers-gcc-clang-msvc-etc..html
 
@@ -123,6 +127,7 @@ namespace bw{
     #include "intrinsics.cpp"
 
     #include "constexpr.h"
+    #include "utils.h"
 
     #include "byteoperation.h"
     #include "byteoperation.cpp"
@@ -164,9 +169,6 @@ namespace bw{
     #include "array_indexing.h"
     #include "array_indexing.cpp"
 
-    #include "random_custom.h"
-    #include "random_custom.cpp"
-
     #include "time.h"
 
     #include "frame_timing.h"
@@ -177,6 +179,9 @@ namespace bw{
     #include "mat.h"
     #include "rot.h"
     #include "quat.h"
+
+    #include "random_custom.h"
+    #include "random_custom.cpp"
 
     #include "dense_grid.h"
 
@@ -250,6 +255,9 @@ namespace bw{
     #include "texture_animation.h"
     #include "texture_animation.cpp"
 
+    #include "particle.h"
+    #include "particle.cpp"
+
     #include "asset_manager.h"
     #include "asset_manager.cpp"
 
@@ -262,7 +270,8 @@ namespace bw{
 //#include "test.cpp"
 #include "../application/default_main.cpp"
 
-// ----
+// ---- easy setup
 
 //#include "easy_setup.h"
 //#include "easy_setup.cpp"
+//#include "../application/minijam67_void.cpp"

@@ -35,12 +35,12 @@ int main(int argc, char* argv[]){
     Renderer renderer;
     renderer.setup_resources();
 
+    //DEV_Debug_Renderer;
+
     Font_Renderer font_renderer;
     font_renderer.width = window.width;
     font_renderer.height = window.height;
     font_renderer.renderer = &renderer;
-
-    //DEV_Debug_Renderer;
 
     // ---- audio
 
@@ -50,6 +50,25 @@ int main(int argc, char* argv[]){
     // ---- texture animation
 
     Texture_Animation_Player texture_animation;
+
+    // ---- particles
+
+    Particle_Emitter particle_emitter;
+
+    particle_emitter.shape = Particle_Emitter::Disc;
+    particle_emitter.desc.circle.center = {0.f, 0.f};
+    particle_emitter.desc.circle.radius = 0.1f;
+    particle_emitter.duration_min_range[0] = 60u;
+    particle_emitter.duration_min_range[1] = 1u;
+    particle_emitter.theta_min_range[0] = 0.f;
+    particle_emitter.theta_min_range[1] = TWO_PI<float>;
+    particle_emitter.velocity_min_range[0] = 0.005f;
+    particle_emitter.velocity_min_range[1] = 0.f;
+    particle_emitter.angular_velocity_min_range[0] = 0.f;
+    particle_emitter.angular_velocity_min_range[1] = 0.f;
+    particle_emitter.size_min_range[0] = 0.01f;
+    particle_emitter.size_min_range[1] = 0.01f;
+    particle_emitter.particles_per_frame = -10;
 
     // ---- assets
 
@@ -117,8 +136,10 @@ int main(int argc, char* argv[]){
                 mouse.register_event(event);
             }
 
+            particle_emitter.update();
+
             if(keyboard.space.npressed > 0){
-                audio.start_playing(asset.get_audio("cantina"));
+                audio.start_playing(asset.get_audio("second"));
             }
 
             red_square_position.tick();
@@ -131,6 +152,10 @@ int main(int argc, char* argv[]){
                     texture_animation.stop_playing(anim);
                 }
                 anim = texture_animation.start_playing(asset.get_texture_animation("running_woman"));
+            }
+
+            if(keyboard.arrow_left.npressed > 0){
+                particle_emitter.burst(10u);
             }
 
             if(keyboard.function_F1.npressed > 0){
@@ -275,6 +300,17 @@ int main(int argc, char* argv[]){
             renderer.setup_texture_unit(0u, anim_frame->texture, nearest_clamp);
             renderer.submit_vertex_batch(animation_batch);
             renderer.free_vertex_batch(animation_batch);
+        }
+
+        // NOTE(hugo): particles
+        if(particle_emitter.particles.size > 0u)
+        {
+            Vertex_Batch_ID particle_batch = particle_emitter.batch_as_quad_xyuv(&renderer);
+
+            renderer.use_shader(polygon_tex_2D);
+            renderer.setup_texture_unit(0u, simplex_texture, nearest_clamp);
+            renderer.submit_vertex_batch(particle_batch);
+            renderer.free_vertex_batch(particle_batch);
         }
 
         // ---- setup the next rendering frame
