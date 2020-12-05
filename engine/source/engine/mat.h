@@ -250,6 +250,31 @@ mat2_std140 to_std140(const mat2& mat);
 mat3_std140 to_std140(const mat3& mat);
 mat4_std140 to_std140(const mat4& mat);
 
+// ---- identity matrix
+
+// NOTE(hugo): identity_matrix is undefined without specialization
+template<typename T>
+constexpr T identity_matrix;
+
+template<typename T>
+constexpr mat::mat2<T> identity_matrix<mat::mat2<T>> = {
+    (T)1, (T)0,
+    (T)0, (T)1
+};
+template<typename T>
+constexpr mat::mat3<T> identity_matrix<mat::mat3<T>> = {
+    (T)1, (T)0, (T)0,
+    (T)0, (T)1, (T)0,
+    (T)0, (T)0, (T)1
+};
+template<typename T>
+constexpr mat::mat4<T> identity_matrix<mat::mat4<T>> = {
+    (T)1, (T)0, (T)0, (T)0,
+    (T)0, (T)1, (T)0, (T)0,
+    (T)0, (T)0, (T)1, (T)0,
+    (T)0, (T)0, (T)0, (T)1
+};
+
 #include "mat.inl"
 
 #endif
