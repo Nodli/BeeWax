@@ -1,6 +1,8 @@
 #ifndef H_MAT
 #define H_MAT
 
+// NOTE(hugo): mat members
+
 namespace mat{
     template<typename T>
     struct mat2;
@@ -66,7 +68,7 @@ struct mat::mat2{
     // NOTE(hugo): OpenGL uses column-major matrices ie faster on the y axis
     static_assert(4u * sizeof(T) == 2u * sizeof(vec::vec2<T>));
     union{
-        T data[4] = {(T)(1), (T)(0), (T)(0), (T)(1)};
+        T data[4] = {};
         vec::vec2<T> column[2];
     };
 };
@@ -126,7 +128,7 @@ struct mat::mat3{
     // NOTE(hugo): OpenGL uses column-major matrices ie faster on the y axis
     static_assert(9u * sizeof(T) == 3u * sizeof(vec::vec3<T>));
     union{
-        T data[9] = {(T)(1), (T)(0), (T)(0), (T)(0), (T)(1), (T)(0), (T)(0), (T)(0), (T)(1)};
+        T data[9] = {};
         vec::vec3<T> column[3];
     };
 };
@@ -186,7 +188,7 @@ struct mat::mat4{
     // NOTE(hugo): OpenGL uses column-major matrices ie faster on the y axis
     static_assert(16u * sizeof(T) == 4u * sizeof(vec::vec4<T>));
     union{
-        T data[16] = {(T)(1), (T)(0), (T)(0), (T)(0), (T)(0), (T)(1), (T)(0), (T)(0), (T)(0), (T)(0), (T)(1), (T)(0), (T)(0), (T)(0), (T)(0), (T)(1)};
+        T data[16] = {};
         vec::vec4<T> column[4];
     };
 };

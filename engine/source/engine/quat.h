@@ -19,7 +19,7 @@ struct quaternion::quat{
     quat<T>& operator*=(const quat<T>& rhs);
 
     union{
-        T data[4] = {1, 0, 0, 0};
+        T data[4] = {};
         struct{
             T s;
             T i;
@@ -64,6 +64,14 @@ template<typename T>
 // NOTE(hugo): qA and qB must be unit quaternions
 template<typename T>
 quaternion::quat<T> slerp(const quaternion::quat<T>& qA, const quaternion::quat<T>& qB, float t);
+
+// ---- identity quaternion
+
+template<typename T>
+constexpr T identity_quaternion;
+
+template<typename T>
+constexpr quaternion::quat<T> identity_quaternion<quaternion::quat<T>> = {(T)1, (T)0, (T)0, (T)0};
 
 #include "quat.inl"
 

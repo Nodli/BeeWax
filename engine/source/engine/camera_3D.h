@@ -29,7 +29,7 @@ struct Camera_3D_FP{
 
     vec3 position;
     float camera_near_plane;
-    quat camera_quaternion;
+    quat camera_quaternion = identity_quaternion<quat>;
     float vertical_fov;
     float aspect_ratio; // NOTE(hugo): width / height
 };
@@ -53,7 +53,7 @@ struct Camera_3D_Orbit{
     vec3 orbit_center;
     float orbit_radius;
     float camera_near_plane;
-    quat camera_quaternion;
+    quat camera_quaternion = identity_quaternion<quat>;
     float vertical_fov;
     float aspect_ratio; // NOTE(hugo): width / height
 };
