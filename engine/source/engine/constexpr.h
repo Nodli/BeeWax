@@ -75,7 +75,7 @@ template<typename T>
 constexpr T euclidian_division(const T dividend, const T divisor, T& quotient, T& remainder);
 
 template<typename T>
-constexpr T mix(const T begin, const T end, const T interpolator);
+constexpr T mix(const T begin, const T end, const float interpolator);
 
 template<typename T>
 constexpr T to_radians(const T value_degree);

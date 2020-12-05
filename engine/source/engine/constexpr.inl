@@ -91,8 +91,8 @@ constexpr T divide_round(const T dividend, const T divisor){
 };
 
 template<typename T>
-constexpr T mix(const T begin, const T end, const T interpolator){
-    return (T(1) - interpolator) * begin + interpolator * end;
+constexpr T mix(const T begin, const T end, const float interpolator){
+    return begin + (T)(interpolator * (end - begin));
 }
 
 template<typename T>
