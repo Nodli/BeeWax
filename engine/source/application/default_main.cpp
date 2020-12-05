@@ -296,7 +296,8 @@ int main(int argc, char* argv[]){
             animation_vertices[2] = {{0.25f, 0.25f}, {anim_frame->uvmin.x, anim_frame->uvmax.y}};
             animation_vertices[3] = {{0.75f, 0.25f}, anim_frame->uvmax};
 
-            renderer.use_shader(polygon_tex_2D);
+            //renderer.use_shader(polygon_tex_2D);
+            renderer.use_shader(glitchy_tex);
             renderer.setup_texture_unit(0u, anim_frame->texture, nearest_clamp);
             renderer.submit_vertex_batch(animation_batch);
             renderer.free_vertex_batch(animation_batch);
