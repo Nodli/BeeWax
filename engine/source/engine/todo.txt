@@ -23,6 +23,13 @@ CURRENT ---------------
 
 DONE ------------------
 
+05/12/2020
+- particle system
+
+04/12/2020
+- particle system
+- random sampling discs and circles
+
 03/12/2020
 - replace tweening_manager with a tween struct
 - implement tweening using easing functions
