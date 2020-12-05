@@ -81,7 +81,6 @@ void Tween<T>::set(const T& ivalue){
     range = {};
     tick_count = 1u;
     repeat_tick_duration = 1u;
-    return *this;
 }
 
 template<typename T>

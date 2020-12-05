@@ -123,8 +123,8 @@ u32 bitscan_LM(u32 value){
     u32 output;
     _BitScanForward((unsigned long*)&output, value);
     return output;
-#elif defined(COMPIILER_GCC)
-    return __builtin_ctz(value)
+#elif defined(COMPILER_GCC)
+    return __builtin_ctz(value);
 #else
     static_assert(false, "bitsan_LM(u32) not implemented");
 #endif

@@ -30,7 +30,7 @@ void Dense_Grid<T>::extend_to_fit(ivec2 coord){
         assert(new_data);
 
         // TODO(hugo): make something more efficient to initialize only those that won't be copied
-        for(u32 iT = 0u; iT != isize_x * isize_y; ++iT){
+        for(u32 iT = 0u; iT != new_size_x * new_size_y; ++iT){
             new((void*)&data[iT]) T{};
         }
 
