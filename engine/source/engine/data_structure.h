@@ -4,6 +4,27 @@
 template<typename T>
 T* new_struct();
 
+// --- pair
+
+template<typename U, typename V>
+struct pair{
+    U first;
+    V second;
+};
+
+template<typename U, typename V>
+bool operator==(const pair<U, V>& lhs, const pair<U, V>& rhs);
+template<typename U, typename V>
+bool operator!=(const pair<U, V>& lhs, const pair<U, V>& rhs);
+template<typename U, typename V>
+bool operator<(const pair<U, V>& lhs, const pair<U, V>& rhs);
+template<typename U, typename V>
+bool operator<=(const pair<U, V>& lhs, const pair<U, V>& rhs);
+template<typename U, typename V>
+bool operator>(const pair<U, V>& lhs, const pair<U, V>& rhs);
+template<typename U, typename V>
+bool operator>=(const pair<U, V>& lhs, const pair<U, V>& rhs);
+
 // ---- buffer
 
 template<typename T>

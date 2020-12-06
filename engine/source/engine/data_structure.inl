@@ -7,6 +7,33 @@ T* new_struct(){
     return (T*)(new(ptr) T{});
 };
 
+// ---- pair
+
+template<typename U, typename V>
+bool operator==(const pair<U, V>& lhs, const pair<U, V>& rhs){
+    return lhs.first == rhs.first && lhs.second == rhs.second;
+}
+template<typename U, typename V>
+bool operator!=(const pair<U, V>& lhs, const pair<U, V>& rhs){
+    return !(lhs == rhs);
+}
+template<typename U, typename V>
+bool operator<(const pair<U, V>& lhs, const pair<U, V>& rhs){
+    return (lhs.first < rhs.first) || (!(lhs.first < rhs.first) && lhs.second < rhs.second);
+}
+template<typename U, typename V>
+bool operator>(const pair<U, V>& lhs, const pair<U, V>& rhs){
+    return rhs < lhs;
+}
+template<typename U, typename V>
+bool operator<=(const pair<U, V>& lhs, const pair<U, V>& rhs){
+    return !(rhs < lhs)
+}
+template<typename U, typename V>
+bool operator>=(const pair<U, V>& lhs, const pair<U, V>& rhs){
+    return !(rhs > lhs)
+}
+
 // ---- buffer
 
 template<typename T>
