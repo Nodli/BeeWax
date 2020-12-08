@@ -287,10 +287,10 @@ namespace bw::utest{
         }
     }
 
-    void t_dpool(){
+    void t_diterpool(){
         bool success = true;
 
-        dpool<u32> pool;
+        diterpool<u32> pool;
         success &= (pool.capacity == 0 && pool.memory == nullptr && pool.available_element == dpool_no_element_available);
 
         pool.set_min_capacity(1u);
@@ -856,24 +856,38 @@ namespace bw::utest{
 
         success = success && grid.origin.x == 0 && grid.origin.y == 0 && grid.size_x == 5u && grid.size_y == 5u;
 
-        for(s32 y = 4; y >= 0; --y){
-            for(s32 x = 0; x <= 4; ++x){
+        auto display_grid = [&](){
+            LOG_TRACE("origin: %d %d size: %d %d", grid.origin.x, grid.origin.y, grid.size_x, grid.size_y);
+            for(s32 y = grid.size_y - 1; y >= 0; --y){
+                for(s32 x = 0; x < grid.size_x; ++x){
+                    printf("%d ", grid.at(grid.origin.x + x, grid.origin.y + y));
+                }
+                printf("\n");
+            }
+            printf("\n");
+        };
+
+        for(s32 y = 0; y < 5; ++y){
+            for(s32 x = 0; x < 5; ++x){
                 grid.at(x, y) = 10 * x + y;
             }
         }
 
         grid.extend_to_fit({-1, 7});
-
         success = success && grid.origin.x == -1 && grid.origin.y == 0 && grid.size_x == 6u && grid.size_y == 8u;
 
-        for(s32 y = 7; y >= 0; --y){
-            for(s32 x = -1; x <= 4; ++x){
+        for(s32 y = 0; y < 8; ++y){
+            for(s32 x = -1; x < 5; ++x){
                 if(x >= 0 && x <= 4 && y >= 0 && y <= 4){
                     success = success && grid.at(x, y) == 10 * x + y;
                 }else{
                     success = success && grid.at(x, y) == 0;
                 }
+                if(!success){
+                    LOG_TRACE("%d %d %d", x, y, grid.at(x, y));
+                }
             }
+
         }
 
         if(!success){
@@ -895,7 +909,7 @@ int main(int argc, char* argv[]){
     bw::utest::t_darena();
     bw::utest::t_darray();
     bw::utest::t_dring();
-    bw::utest::t_dpool();
+    bw::utest::t_diterpool();
     bw::utest::t_dhashmap();
     bw::utest::t_dhashmap_randomized();
     bw::utest::t_daryheap();

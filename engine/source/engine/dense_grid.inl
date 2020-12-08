@@ -16,7 +16,7 @@ void Dense_Grid<T>::extend_to_fit(ivec2 coord){
     ivec2 data_coord = coord - origin;
 
     if(data_coord.x < 0 || data_coord.x >= size_x
-            || data_coord.y < 0 || data_coord.y >= size_y){
+    || data_coord.y < 0 || data_coord.y >= size_y){
 
         ivec2 new_origin = {min(origin.x, coord.x), min(origin.y, coord.y)};
 
@@ -29,9 +29,31 @@ void Dense_Grid<T>::extend_to_fit(ivec2 coord){
         T* new_data = (T*)malloc(new_size_x * new_size_y * sizeof(T));
         assert(new_data);
 
-        // TODO(hugo): make something more efficient to initialize only those that won't be copied
-        for(u32 iT = 0u; iT != new_size_x * new_size_y; ++iT){
-            new((void*)&data[iT]) T{};
+        ivec2 dorigin = origin - new_origin;
+        // NOTE(hugo): bottom
+        for(u32 iy = 0u; iy != dorigin.y; ++iy){
+            for(u32 ix = 0u; ix != new_size_x; ++ix){
+                LOG_TRACE("%d %d", ix, iy);
+                new((void*)&new_data[iy * new_size_x + ix]) T{};
+            }
+        }
+        // NOTE(hugo): middle-left & middle-right
+        for(u32 iy = dorigin.y; iy != size_y + dorigin.y; ++iy){
+            for(u32 ix = 0u; ix != dorigin.x; ++ix){
+                LOG_TRACE("%d %d", ix, iy);
+                new((void*)&new_data[iy * new_size_x + ix]) T{};
+            }
+            for(u32 ix = dorigin.x + size_x; ix != new_size_x; ++ix){
+                LOG_TRACE("%d %d", ix, iy);
+                new((void*)&new_data[iy * new_size_x + ix]) T{};
+            }
+        }
+        // NOTE(hugo): top
+        for(u32 iy = dorigin.y + size_y; iy != new_size_y; ++iy){
+            for(u32 ix = 0u; ix != new_size_x; ++ix){
+                LOG_TRACE("%d %d", ix, iy);
+                new((void*)&new_data[iy * new_size_x + ix]) T{};
+            }
         }
 
         for(u32 irow = 0u; irow != size_y; ++irow){
