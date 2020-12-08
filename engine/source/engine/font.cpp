@@ -36,7 +36,7 @@ Font_Asset font_asset_from_ttf_file(const File_Path& path,
 
     // ----
 
-    float font_scale = stbtt_ScaleForPixelHeight(&asset.info, font_size);
+    asset.internal_font_scale = stbtt_ScaleForPixelHeight(&asset.info, font_size);
     float glyph_value_delta = (float)glyph_edge_value / (float)glyph_padding;
 
     // NOTE(hugo): generating an sdf bitmap for each codepoint
@@ -50,14 +50,14 @@ Font_Asset font_asset_from_ttf_file(const File_Path& path,
         BEEWAX_INTERNAL::stbtt_glyph_data data;
         data.codepoint = character_string[icodepoint];
         data.bitmap = stbtt_GetCodepointSDF(&asset.info,
-                font_scale, character_string[icodepoint], glyph_padding, glyph_edge_value, glyph_value_delta,
+                asset.internal_font_scale, character_string[icodepoint], glyph_padding, glyph_edge_value, glyph_value_delta,
                 &data.width, &data.height, &data.x_offset, &data.y_offset);
 
         data.y_offset = - data.y_offset - data.height;
 
         s32 temp_advance;
         stbtt_GetCodepointHMetrics(&asset.info, character_string[icodepoint], &temp_advance, nullptr);
-        data.advance = (float)temp_advance * font_scale;
+        data.advance = (float)temp_advance * asset.internal_font_scale;
 
         glyph_data.push(data);
 
@@ -67,9 +67,9 @@ Font_Asset font_asset_from_ttf_file(const File_Path& path,
 
     s32 temp_ascent, temp_descent, temp_linegap;
     stbtt_GetFontVMetrics(&asset.info, &temp_ascent, &temp_descent, &temp_linegap);
-    asset.ascent = temp_ascent * font_scale;
-    asset.descent = temp_descent * font_scale;
-    asset.linegap = temp_linegap * font_scale;
+    asset.ascent = temp_ascent * asset.internal_font_scale;
+    asset.descent = temp_descent * asset.internal_font_scale;
+    asset.linegap = temp_linegap * asset.internal_font_scale;
 
     // NOTE(hugo): determine the atlas dimensions
     asset.bitmap_width = width_total;
@@ -198,7 +198,7 @@ vec2 Font_Renderer::render_string(Font_Asset* asset, const char* string, vec2 ba
 
         vertices = vertices + 6u;
 
-        float kerning = (float)stbtt_GetGlyphKernAdvance(&asset->info, cp, next_cp) * font_size;
+        float kerning = (float)stbtt_GetCodepointKernAdvance(&asset->info, cp, next_cp) * asset->internal_font_scale * font_size;
         new_baseline.x += cp_info->cursor_advance * relative_font_scale + kerning;
     }
 
@@ -227,7 +227,7 @@ Text_Box compute_string_text_box(Font_Asset* asset, const char* string, vec2 bas
         Font_Asset::CodePoint_Info* cp_info = asset->codepoint_to_info.search(cp);
         assert(cp_info);
 
-        float kerning = (float)stbtt_GetGlyphKernAdvance(&asset->info, cp, next_cp) * font_size;
+        float kerning = (float)stbtt_GetGlyphKernAdvance(&asset->info, cp, next_cp) * asset->internal_font_scale * font_size;
         output.max.x += cp_info->cursor_advance * relative_font_scale + kerning;
     }
 

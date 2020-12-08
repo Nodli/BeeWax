@@ -22,6 +22,7 @@ struct Font_Asset{
     buffer<u8> file;
     stbtt_fontinfo info;
     dhashmap<char, CodePoint_Info> codepoint_to_info;
+    float internal_font_scale;
     float ascent;
     float descent;
     float linegap;
