@@ -22,6 +22,9 @@ struct Font_Asset{
     buffer<u8> file;
     stbtt_fontinfo info;
     dhashmap<char, CodePoint_Info> codepoint_to_info;
+    float ascent;
+    float descent;
+    float linegap;
 
     // NOTE(hugo): keep the cpu bitmap to make texture updates
     float bitmap_font_size = 0.f;
@@ -37,8 +40,28 @@ Font_Asset font_asset_from_ttf_file(const File_Path& path,
     Renderer* renderer);
 void free_font_asset(Font_Asset& asset, Renderer* renderer);
 
+float baseline_to_baseline(Font_Asset* asset, float font_size);
+
+struct Text_Box{
+    vec2 baseline;
+    vec2 min;
+    vec2 max;
+    float above_baseline;
+    float below_baseline;
+};
+Text_Box compute_string_text_box(Font_Asset* asset, const char* string, vec2 baseline, float font_size);
+
+struct Layout_Box{
+    vec2 min;
+    vec2 max;
+};
+void center_vertical(Text_Box& text, const Layout_Box& layout);
+void center_horizontal(Text_Box& text, const Layout_Box& layout);
+
+// NOTE(hugo): baseline coordinates are in pixels with the origin at the bottom left corner of the screen
 struct Font_Renderer{
-    float render_string(Font_Asset* asset, const char* string, float baseline_x, float baseline_y, float font_size);
+    // NOTE(hugo): returns the new baseline position after rendering the string
+    vec2 render_string(Font_Asset* asset, const char* string, vec2 baseline, float font_size);
 
     // ---- data
 

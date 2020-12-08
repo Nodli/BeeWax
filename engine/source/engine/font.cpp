@@ -65,6 +65,12 @@ Font_Asset font_asset_from_ttf_file(const File_Path& path,
         height_max = max(height_max, data.height);
     }
 
+    s32 temp_ascent, temp_descent, temp_linegap;
+    stbtt_GetFontVMetrics(&asset.info, &temp_ascent, &temp_descent, &temp_linegap);
+    asset.ascent = temp_ascent * font_scale;
+    asset.descent = temp_descent * font_scale;
+    asset.linegap = temp_linegap * font_scale;
+
     // NOTE(hugo): determine the atlas dimensions
     asset.bitmap_width = width_total;
     asset.bitmap_height = height_max;
@@ -142,23 +148,31 @@ void free_font_asset(Font_Asset& asset, Renderer* renderer){
     renderer->free_texture(asset.texture);
 }
 
-float Font_Renderer::render_string(Font_Asset* asset, const char* string, float baseline_x, float baseline_y, float font_size){
+float baseline_to_baseline(Font_Asset* asset, float font_size){
+    float relative_font_scale = font_size / asset->bitmap_font_size;
+    return (asset->ascent - asset->descent + asset->linegap) * relative_font_scale;
+}
+
+vec2 Font_Renderer::render_string(Font_Asset* asset, const char* string, vec2 baseline, float font_size){
 
     Vertex_Batch_ID batch = renderer->get_vertex_batch(xyuv, PRIMITIVE_TRIANGLES);
 
     float relative_font_scale = font_size / asset->bitmap_font_size;
+    vec2 new_baseline = baseline;
     u32 string_size = strlen(string);
 
     vertex_xyuv* vertices = (vertex_xyuv*)renderer->get_vertices(batch, 6u * string_size);
 
     for(u32 icodepoint = 0u; icodepoint != string_size; ++icodepoint){
         char cp = string[icodepoint];
+        char next_cp = string[icodepoint + 1u];
+
         Font_Asset::CodePoint_Info* cp_info = asset->codepoint_to_info.search(cp);
         assert(cp_info);
 
         ivec2 iquad_min = {
-            (s32)fast_floor<float>(baseline_x + (float)cp_info->quad_offset_x * relative_font_scale),
-            (s32)fast_floor<float>(baseline_y + (float)cp_info->quad_offset_y * relative_font_scale)
+            (s32)fast_floor<float>(new_baseline.x + (float)cp_info->quad_offset_x * relative_font_scale),
+            (s32)fast_floor<float>(new_baseline.y + (float)cp_info->quad_offset_y * relative_font_scale)
         };
         ivec2 iquad_max = {
             (s32)fast_floor<float>((float)iquad_min.x + (float)cp_info->quad_width * relative_font_scale),
@@ -184,7 +198,8 @@ float Font_Renderer::render_string(Font_Asset* asset, const char* string, float 
 
         vertices = vertices + 6u;
 
-        baseline_x += cp_info->cursor_advance * relative_font_scale;
+        float kerning = (float)stbtt_GetGlyphKernAdvance(&asset->info, cp, next_cp) * font_size;
+        new_baseline.x += cp_info->cursor_advance * relative_font_scale + kerning;
     }
 
     renderer->use_shader(font_2D);
@@ -192,5 +207,38 @@ float Font_Renderer::render_string(Font_Asset* asset, const char* string, float 
     renderer->submit_vertex_batch(batch);
     renderer->free_vertex_batch(batch);
 
-    return baseline_x;
+    return new_baseline;
+}
+
+Text_Box compute_string_text_box(Font_Asset* asset, const char* string, vec2 baseline, float font_size){
+    u32 string_size = strlen(string);
+    float relative_font_scale = font_size / asset->bitmap_font_size;
+
+    Text_Box output;
+    output.baseline = baseline;
+    output.min.x = 0.f;
+    output.min.y = asset->descent * relative_font_scale;
+    output.max.x = 0.f;
+    output.max.y = asset->ascent * relative_font_scale;
+
+    for(u32 icodepoint = 0u; icodepoint != string_size; ++icodepoint){
+        char cp = string[icodepoint];
+        char next_cp = string[icodepoint + 1u];
+        Font_Asset::CodePoint_Info* cp_info = asset->codepoint_to_info.search(cp);
+        assert(cp_info);
+
+        float kerning = (float)stbtt_GetGlyphKernAdvance(&asset->info, cp, next_cp) * font_size;
+        output.max.x += cp_info->cursor_advance * relative_font_scale + kerning;
+    }
+
+    return output;
+}
+
+void center_vertical(Text_Box& text, const Layout_Box& layout){
+    text.baseline.y = (layout.min.y + layout.max.y) * 0.5f;
+}
+
+void center_horizontal(Text_Box& text, const Layout_Box& layout){
+    float text_width = text.max.x - text.min.x;
+    text.baseline.x = ((layout.min.x + layout.max.x) - text_width) * 0.5f;
 }
