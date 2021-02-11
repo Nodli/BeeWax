@@ -1,29 +1,13 @@
 #ifndef H_DATA_STRUCTURE
 #define H_DATA_STRUCTURE
 
-template<typename T>
-T* new_struct();
-
-// --- pair
-
-template<typename U, typename V>
-struct pair{
-    U first;
-    V second;
-};
-
-template<typename U, typename V>
-bool operator==(const pair<U, V>& lhs, const pair<U, V>& rhs);
-template<typename U, typename V>
-bool operator!=(const pair<U, V>& lhs, const pair<U, V>& rhs);
-template<typename U, typename V>
-bool operator<(const pair<U, V>& lhs, const pair<U, V>& rhs);
-template<typename U, typename V>
-bool operator<=(const pair<U, V>& lhs, const pair<U, V>& rhs);
-template<typename U, typename V>
-bool operator>(const pair<U, V>& lhs, const pair<U, V>& rhs);
-template<typename U, typename V>
-bool operator>=(const pair<U, V>& lhs, const pair<U, V>& rhs);
+// REF(hugo):
+// https://ourmachinery.com/post/data-structures-part-1-bulk-data/
+// https://ourmachinery.com/post/data-structures-part-2-indices/
+// https://ourmachinery.com/post/data-structures-part-3-arrays-of-arrays/
+// https://ourmachinery.com/post/minimalist-container-library-in-c-part-1/
+// https://ourmachinery.com/post/minimalist-container-library-in-c-part-2/
+// http://bitsquid.blogspot.com/2011/09/managing-decoupling-part-4-id-lookup.html
 
 // ---- buffer
 
@@ -32,66 +16,104 @@ struct buffer{
     T& operator[](u32 index);
     const T& operator[](u32 index) const;
 
-    // ---- data
-
-    void* data = nullptr;
+    T* data = 0u;
     u32 size = 0u;
 };
 
-// ---- darena
-
-struct darena{
-    void reserve(size_t arena_bytesize);
-    void free();
-
-    // NOTE(hugo): memory is not initialized
-    void* push(size_t bytesize, size_t alignment);
-
-    // NOTE(hugo): elements are initialized
-    template<typename T>
-    void* push();
-
-    // NOTE(hugo): extensions are freed and base memory is extended to fit them
-    void clear();
-
-    // ---- data
-    u8* memory = nullptr;
-    size_t memory_bytesize = 0u;
-    size_t position = 0u;
-
-    // NOTE(hugo): extensions are allocated with the following layout : [header] | [padding] | [data]
-    struct extension_header{
-        extension_header* next = nullptr;
-    };
-    size_t extension_bytesize = 0u;
-    extension_header* extension_head = nullptr;
-};
-
-// ---- dchunkarena
-
-template<typename T, u16 chunk_capacity>
-struct dchunkarena{
-    T* get();
-    void clear();
-    void free();
-
-    // ---- data
-
-    struct chunk{
-        T data[chunk_capacity];
-        chunk* next;
-    };
-
-    chunk* head = nullptr;
-    chunk* storage_head = nullptr;
-    u16 current_chunk_space = 0u;
-};
-
-// ---- darray
+// -------- storage types
+// ---- contiguous
 
 template<typename T>
-struct darray{
+struct contiguous_iterator{
+    T& operator*();
+    const T& operator*() const;
 
+    contiguous_iterator<T>& operator++();
+    bool operator!=(const contiguous_iterator<T>& rhs) const;
+
+    // ---- data
+
+    T* ptr = nullptr;
+};
+
+template<typename T>
+struct contiguous_storage{
+    T& operator[](u32 index);
+    const T& operator[](u32 index) const;
+
+    void increase_capacity();
+    void increase_capacity_min(u32 min_capacity);
+    void free();
+
+    void copy(u32 dest, u32 src, u32 size);
+    void move(u32 dest, u32 src, u32 size);
+    void zero(u32 start, u32 size);
+
+    // ---- iterator
+
+    contiguous_iterator<T> begin();
+    contiguous_iterator<T> end();
+    contiguous_iterator<T> iterator(u32 index);
+
+    // ---- data
+
+    u32 capacity = 0u;
+    T* data = nullptr;
+};
+
+template<typename T>
+contiguous_storage<T> deep_copy(contiguous_storage<T> to_copy, u32 copy_size);
+
+// ---- bucketized
+
+template<typename T, u32 bucket_size>
+struct bucketized_iterator{
+    T& operator*();
+    const T& operator*() const;
+
+    bucketized_iterator<T, bucket_size>& operator++();
+    bool operator!=(const bucketized_iterator<T, bucket_size>& rhs) const;
+
+    // ---- data
+
+    T** bucket_array = nullptr;
+    u32 index = 0u;
+    u32 subindex = 0u;
+};
+
+template<typename T, u32 bucket_size>
+struct bucketized_storage{
+    T& operator[](u32 index);
+    const T& operator[](u32 index) const;
+
+    void increase_capacity();
+    void increase_capacity_min(u32 min_capacity);
+    void free();
+
+    void copy(u32 dest, u32 src, u32 size);
+    void move(u32 dest, u32 src, u32 size);
+    void zero(u32 start, u32 size);
+
+    // ---- iterator
+
+    bucketized_iterator<T, bucket_size> begin();
+    bucketized_iterator<T, bucket_size> end();
+    bucketized_iterator<T, bucket_size> iterator(u32 index);
+
+    // ---- data
+
+    u32 capacity = 0u;
+    T** bucket_array = nullptr;
+};
+
+template<typename T>
+using bucketized_storage_32 = bucketized_storage<T, 32u>;
+
+// -------- containers
+// ---- array
+
+template<typename T, typename Storage_Type = contiguous_storage<T>>
+struct array{
     T& operator[](u32 index);
     const T& operator[](u32 index) const;
 
@@ -104,77 +126,47 @@ struct darray{
     // NOTE(hugo): removes the /index/th element and replaces it with the one at the end of the array
     void remove_swap(u32 index);
 
-    void push_empty();
-    void push(const T& value);
-    void push_multi(u32 nelement);
+    u32 push_empty();
+    u32 push(const T& value);
     void pop();
-    void pop_multi(u32 nelement);
 
     void set_size(u32 new_size);
-    // NOTE(hugo): elements are removed from the tail when reducing capacity
-    void set_capacity(u32 new_capacity);
     void set_min_capacity(u32 new_capacity);
 
     void clear();
     void free();
 
-    size_t size_in_bytes();
-    size_t capacity_in_bytes();
+    // ---- iterator
+
+    auto begin();
+    auto end();
 
     // ---- data
 
-    T* data = nullptr;
+    Storage_Type storage;
     u32 size = 0u;
-    u32 capacity = 0u;
 };
 
-template<typename T>
-void deep_copy(darray<T>& dest, darray<T>& src);
+template<typename T, typename Storage_Type>
+array<T, Storage_Type> deep_copy(array<T, Storage_Type> to_copy);
+
+// ---- pool
+// - stable identifiers
+// - access, insert & remove are o(1)
+// - non-iterable
+
+constexpr u32 freelist_no_bucket = UINT32_MAX;
 
 template<typename T>
-bool deep_compare(const darray<T>& A, const darray<T>& src);
-
-// ---- dring
-
-template<typename T>
-struct dring{
-
-    T& operator[](u32 index);
-    const T& operator[](u32 index) const;
-
-    void push_front(const T& value);
-    void pop_front();
-    void push_back(const T& value);
-    void pop_back();
-
-    // NOTE(hugo): elements are removed from the tail when reducing capacity
-    void set_capacity(u32 new_capacity);
-    void set_min_capacity(u32 new_capacity);
-
-    void clear();
-    void free();
-
-    size_t size_in_bytes();
-    size_t capacity_in_bytes();
-
-    // ---- data
-
-    T* data = nullptr;
-    u32 size = 0u;
-    u32 capacity = 0u;
-    u32 head_index = 0u;
+union Pool_Bucket{
+    T type;
+    u32 next;
 };
 
-// ---- dpool
-
-constexpr u32 dpool_no_element_available = UINT32_MAX;
-
-#define DPOOL_KEEP_AVAILABLE_LIST_SORTED
-
-template<typename T>
-struct dpool{
-    T& operator[](u32 index);
-    const T& operator[](u32 index) const;
+template<typename T, typename Storage_Type = bucketized_storage_32<Pool_Bucket<T>>>
+struct pool{
+    T& operator[](u32 identifier);
+    const T& operator[](u32 identifier) const;
 
     u32 insert_empty();
     u32 insert(const T& value);
@@ -182,182 +174,79 @@ struct dpool{
 
     void set_min_capacity(u32 new_capacity);
 
-    // NOTE(hugo): very expensive ! should be used only to terminate / free a dpool
-    // diterpool is a better solution if iteration is needed
-    template<typename Action>
-    void action_on_active(Action&& action);
-
     void clear();
     void free();
-
-    size_t capacity_in_bytes();
 
     // ---- data
 
-    struct element{
-        union {
-            T type;
-            u32 next_element;
-        };
-    };
-
-    element* memory = nullptr;
-    u32 capacity = 0u;
-    u32 available_element = dpool_no_element_available;
-};
-
-template<typename T>
-void deep_copy(dpool<T>& dest, const dpool<T>& src);
-
-// ---- diterpool
-
-constexpr u32 diterpool_no_element_available = UINT32_MAX;
-
-#define DITERPOOL_KEEP_AVAILABLE_LIST_SORTED TRUE
-
-template<typename T>
-struct diterpool{
-    T& operator[](u32 index);
-    const T& operator[](u32 index) const;
-
-    // NOTE(hugo): use to iterate on active elements
-    // u32 index, counter;
-    // for(index = array.get_first(), counter = 0u; index < array.capacity && counter != array.size; index = array.get_next(index), ++counter)
-    u32 get_first();
-    u32 get_next(u32 current_identifier);
-
-    u32 insert_empty();
-    u32 insert(const T& value);
-    void remove(u32 identifier);
-
-    bool is_active(u32 identifier);
-
-    void set_min_capacity(u32 new_capacity);
-
-    void clear();
-    void free();
-
-    size_t capacity_in_bytes();
-
-    // ---- internal / data
-    // NOTE(hugo): the memory layout is [data, bitset]
-    // so that the copy when reallocating is the smallest : the size of bitset
-    // but this may be worse in terms of cache miss ?
-
-    inline u8* get_bitset_ptr();
-    inline void set_active(u32 identifier);
-    inline void set_inactive(u32 identifier);
-
-    struct element{
-        union {
-            T type = {};
-            u32 next_element;
-        };
-    };
-
-    element* memory = nullptr;
+    Storage_Type storage;
     u32 size = 0u;
-    u32 capacity = 0u;
-    u32 available_element = diterpool_no_element_available;
+    u32 head_bucket = freelist_no_bucket;
 };
 
-template<typename T>
-void deep_copy(diterpool<T>& dest, const diterpool<T>& src);
+// ---- hashmap
+// - user-provided identifiers
+// - get, search & remove are o(1)
+// - iterable
 
-// ---- dhashmap
+template<typename Key_Type>
+u32 hashmap_hash_key(const Key_Type& key);
+u32 hashmap_hash_key(const u32& key);
+u32 hashmap_hash_key(const s32& key);
 
-constexpr u32 dhashmap_no_entry = UINT32_MAX;
+// REF(hugo):
+// https://github.com/attractivechaos/klib/blob/master/khash.h
+// https://attractivechaos.wordpress.com/2018/01/13/revisiting-hash-table-performance/
 
-template<typename K, typename T>
-struct dhashmap{
+#define kfree(P) ::free(P)
+#include "khash.h"
 
-    // NOTE(hugo): returned pointers are temporary references ie may change after any other operation
-    T* get(const K& key, bool& was_entry_created);
-    T* search(const K& key);
-    void remove(const K& key);
+// TODO(hugo): get and search should return references
+
+template<typename Key_Type, typename Value_Type>
+struct hashmap{
+    Value_Type* get(const Key_Type& key, bool& was_created);
+    Value_Type* search(const Key_Type& key);
+    void remove(const Key_Type& key);
 
     void set_min_capacity(u32 min_capacity);
 
     void clear();
     void free();
 
-    size_t capacity_in_bytes();
+    // ---- iterator
 
-    // ---- internal / data
+    auto begin();
+    auto end();
 
-    struct entry{
-        K key;
-        T value;
-        u32 next = dhashmap_no_entry;
+    // ---- khash
+
+    #define internal_hash_function(key) hashmap_hash_key(key)
+    #define internal_hash_equal(hashA, hashB) ((hashA) == (hashB))
+    KHASH_INIT(internal, Key_Type, Value_Type, 1, internal_hash_function, internal_hash_equal)
+    #undef internal_hash_function
+    #undef internal_hash_equal
+
+    khash_t(internal) storage = {};
+
+    struct khash_iterator{
+        khash_iterator& operator*();
+        const khash_iterator& operator*() const;
+        khash_iterator& operator++();
+        bool operator!=(const khash_iterator& rhs) const;
+
+        Key_Type& key();
+        const Key_Type& key() const;
+
+        Value_Type& value();
+        const Value_Type& value() const;
+
+        // ---- data
+
+        khash_t(internal)* storage;
+        khiter_t iterator;
     };
-    u32* table = nullptr;
-    u32 table_capacity_minus_one = 0u;
-    u32 nentries = 0u;
-    diterpool<entry> storage;
 };
-
-// ---- daryheap : mindheap, maxdheap
-
-// NOTE(hugo): the highest priority element is stored at the top such as PRIORITY_PARENT >= PRIORITY_CHILD
-//
-// compare(PARENT, CHILD) is
-//  < 0 when PARENT has lower  priority than CHILD ie permutation REQUIRED
-//  = 0 when PARENT has equal  priority with CHILD ie permutation NOT REQUIRED
-//  > 0 when PARENT has higher priority than CHILD ie permutation NOT REQUIRED
-//
-// ex : a max-heap such as PARENT has higher priority than CHILD means compare(PARENT, CHILD) = comparison_increasing_order
-// ex : a min-heap such as PARENT has lower  priority than CHILD means compare(PARENT, CHILD) = comparison_decreasing_order
-template<u32 D, typename T, s32 (*compare)(const T& A, const T& B)>
-struct daryheap{
-    static_assert(D > 1u);
-
-    u32 push(const T& element);
-    void pop(u32 index);
-
-    T& get_top();
-    void pop_top();
-
-    void clear();
-    void free();
-
-    // ----
-
-    u32 size = 0u;
-    u32 capacity = 0u;
-    T* data = nullptr;
-};
-
-template<typename T, u32 D = 4u>
-using maxdheap = daryheap<D, T, &BEEWAX_INTERNAL::comparison_increasing_order>;
-
-template<typename T, u32 D = 4u>
-using mindheap = daryheap<D, T, &BEEWAX_INTERNAL::comparison_decreasing_order>;
-
-// ---- priodheap : minpriodheap, maxpriodheap
-
-namespace BEEWAX_INTERNAL{
-    template<typename PriorityType, typename DataType>
-    struct priodheap_pair{
-        PriorityType priority;
-        DataType data;
-    };
-
-    template<typename PriorityType, typename DataType, s32 (*function)(const PriorityType& A, const PriorityType& B)>
-    s32 priodheap_pair_comparison_wrapper(
-            const priodheap_pair<PriorityType, DataType>& A,
-            const priodheap_pair<PriorityType, DataType>& B){
-        return function(A.priority, B.priority);
-    }
-}
-
-template<u32 D, typename PriorityType, typename DataType, s32 (*compare)(const PriorityType& A, const PriorityType& B)>
-using dprio = daryheap<D, BEEWAX_INTERNAL::priodheap_pair<PriorityType, DataType>, &BEEWAX_INTERNAL::priodheap_pair_comparison_wrapper<PriorityType, DataType, compare>>;
-
-template<typename PriorityType, typename DataType, u32 D = 4u>
-using mindprio = dprio<D, PriorityType, DataType, &BEEWAX_INTERNAL::comparison_increasing_order>;
-
-template<typename PriorityType, typename DataType, u32 D = 4u>
-using maxdprio = dprio<D, PriorityType, DataType, &BEEWAX_INTERNAL::comparison_increasing_order>;
 
 #include "data_structure.inl"
 

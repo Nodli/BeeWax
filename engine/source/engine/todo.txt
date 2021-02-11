@@ -1,27 +1,39 @@
 TODO(engine) ----------
 
-- looping audio & animation
+- audio loop
 - renderer static buffers
-- review dring, dpool, diterpool
 - allow object destruction through a template parameter in data structures
+- function scope temporary allocation
 
 FUTURE(engine) --------
 
 - window resize / settings change
-- custom assert with message
-- vulkan renderer
 - other noise functions: voronoise, worley, ...
-- make Frame_Timing more dynamic instead of using static variables
 - typed quick sort with inlined comparator (sort_search.h)
 - small-buffer-optimized vector (based of sarray)
 - data structures template of the bytesize as a base with a template of the typename as frontend
 - coroutines (https://www.chiark.greenend.org.uk/~sgtatham/coroutines.html)
 - https://blog.demofox.org/2016/05/18/who-cares-about-dynamic-array-growth-strategies/
 - https://twitter.com/lisyarus/status/1318605976786919424
+- https://web.archive.org/web/20140719100333/http://altdev.co/2011/10/27/quasi-compile-time-string-hashing/
 
 CURRENT ---------------
 
 DONE ------------------
+
+09/020/2021
+- Emscripten compilation
+
+??/12/2020 -- 07/02/2021
+- assert & error handling
+- Vulkan sample
+- OpenGL4 PBR sample
+- reusable and configurable Frame_Timing
+- data structure overhaul
+- asset catalog & importation overhaul with JSON
+- geometry primitives
+- static string
+- file path
 
 05/12/2020
 - particle system

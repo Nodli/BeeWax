@@ -61,6 +61,6 @@ float sqlength(const vec4& vec){
     return vec.x * vec.x + vec.y * vec.y + vec.z * vec.z + vec.w * vec.w;
 }
 
-vec4 normalize(const vec4& vec){
+vec4 normalized(const vec4& vec){
     return vec / length(vec);
 }

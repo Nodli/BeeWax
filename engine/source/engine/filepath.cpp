@@ -1,7 +1,7 @@
 constexpr char path_separator(){
 #if defined(PLATFORM_WINDOWS)
     return '\\';
-#elif defined(PLATFORM_LINUX)
+#elif defined(PLATFORM_LINUX) || defined(PLATFORM_EMSCRIPTEN)
     return '/';
 #else
     static_assert(false, "path_separator is not implemented for this platform");
@@ -11,7 +11,7 @@ constexpr char path_separator(){
 constexpr char path_separator_to_replace(){
 #if defined(PLATFORM_WINDOWS)
     return '/';
-#elif defined(PLATFORM_LINUX)
+#elif defined(PLATFORM_LINUX) || defined(PLATFORM_EMSCRIPTEN)
     return '\\';
 #else
     static_assert(false, "path_separator_to_replace is not implemented for this platform");
@@ -90,6 +90,11 @@ bool File_Path::operator==(const File_Path& rhs) const{
     return (size == rhs.size) && (memcmp(data, rhs.data, size) == 0);
 }
 
-static u32 dhashmap_hash_key(const File_Path& key){
+bool File_Path::operator==(const char* rhs) const{
+    u32 rhs_size = strlen(rhs);
+    return (size == rhs_size) && (memcpy((void*)data, rhs, size) == 0u);
+}
+
+u32 hashmap_hash_key(const File_Path& key){
     return FNV1a_32ptr((uchar*)key.data, key.size);
 }

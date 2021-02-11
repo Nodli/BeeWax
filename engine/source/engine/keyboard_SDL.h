@@ -1,6 +1,27 @@
 #ifndef H_DEVICE_STATE
 #define H_DEVICE_STATE
 
+// TODO(hugo): make this a compiler define
+// /DKEYBOARD_KEYS_FILE=keyboard_file.config
+// #include KEYBOARD_KEYS_FILE
+
+#define FOR_EACH_KEYBOARD_BUTTON(FUNCTION)  \
+FUNCTION(function_F1, SDLK_F1)              \
+FUNCTION(key_f, SDLK_f)                     \
+FUNCTION(key_w, SDLK_w)                     \
+FUNCTION(key_a, SDLK_a)                     \
+FUNCTION(key_s, SDLK_s)                     \
+FUNCTION(key_d, SDLK_d)                     \
+FUNCTION(arrow_left, SDLK_LEFT)             \
+FUNCTION(arrow_right, SDLK_RIGHT)           \
+FUNCTION(arrow_up, SDLK_UP)                 \
+FUNCTION(arrow_down, SDLK_DOWN)             \
+FUNCTION(enter, SDLK_RETURN)                \
+FUNCTION(space, SDLK_SPACE)                 \
+FUNCTION(number_1, SDLK_1)                  \
+FUNCTION(number_2, SDLK_2)                  \
+FUNCTION(number_3, SDLK_3)                  \
+
 // ----- MANUAL -----
 
 // - insert (variable_name, SDL_Keycode) in the FOR_EACH_KEYBOARD_BUTTON macro
@@ -11,17 +32,6 @@
 // state_generation serves as a way to know the order in which buttons were pressed
 
 // ------------------
-
-#define FOR_EACH_KEYBOARD_BUTTON(FUNCTION)  \
-FUNCTION(function_F1, SDLK_F1)              \
-FUNCTION(key_f, SDLK_f)                     \
-FUNCTION(arrow_left, SDLK_LEFT)             \
-FUNCTION(arrow_right, SDLK_RIGHT)           \
-FUNCTION(arrow_up, SDLK_UP)                 \
-FUNCTION(arrow_down, SDLK_DOWN)             \
-FUNCTION(enter, SDLK_RETURN)                \
-FUNCTION(space, SDLK_SPACE)                 \
-FUNCTION(escape, SDLK_ESCAPE)               \
 
 // ---- codegen
 

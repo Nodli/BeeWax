@@ -1,19 +1,10 @@
-void LOG_disable_level(u32 level){
-    assert(level < BEEWAX_INTERNAL::nlog_levels);
-    BEEWAX_INTERNAL::log_levels_disabled[level] = true;
-}
-
-void LOG_enable_level(u32 level){
-    assert(level < BEEWAX_INTERNAL::nlog_levels);
-    BEEWAX_INTERNAL::log_levels_disabled[level] = false;
-}
-
-void LOG_output_file(const char* filename){
-    assert(filename);
-    if(BEEWAX_INTERNAL::log_file){
-        fclose(BEEWAX_INTERNAL::log_file);
-    }
-    BEEWAX_INTERNAL::log_file = fopen(filename, "w");
+void setup_LOG(){
+#if defined(PLATFORM_WINDOWS)
+    HANDLE stdo = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD stdo_mode;
+    GetConsoleMode(stdo, &stdo_mode);
+    SetConsoleMode(stdo, stdo_mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING | DISABLE_NEWLINE_AUTO_RETURN);
+#endif
 }
 
 void BEEWAX_INTERNAL::log_function(const char* file, uint line, uint level, const char* format, ...){
@@ -27,19 +18,16 @@ void BEEWAX_INTERNAL::log_function(const char* file, uint line, uint level, cons
             size_t time_length = strftime(time_string, sizeof(time_string), "%H:%M:%S", local_time);
             time_string[time_length] = '\0';
 
-            #if defined(LOG_COLORED)
-                fprintf(stderr, "\x1b[0m" "%s %s%-7s" "\x1b[0m" "\x1b[93m"  " %s:%-5d: " "\x1b[0m", time_string, log_levels_colors[level], log_levels_names[level], file, line);
-            #else
-                fprintf(stderr, "%s %-7s %s:%-5d: ", time_string, log_levels_names[level], file, line);
-            #endif
+            fprintf(stdout, "%s%s %s%-7s %s%s:%-5d: %s",
+                    log_levels_resetcolor, time_string, log_levels_colors[level], log_levels_names[level], log_levels_nocolor, file, line, log_levels_resetcolor);
 
             va_list args;
             va_start(args, format);
-            vfprintf(stderr, format, args);
+            vfprintf(stdout, format, args);
             va_end(args);
 
-            fprintf(stderr, "\n");
-            fflush(stderr);
+            fprintf(stdout, "\n");
+            if(level == LOG_LEVEL_ERROR || level == LOG_LEVEL_TRACE) fflush(stderr);
         }
 
         // NOTE(hugo): file
@@ -56,7 +44,7 @@ void BEEWAX_INTERNAL::log_function(const char* file, uint line, uint level, cons
             va_end(args);
 
             fprintf(log_file, "\n");
-            fflush(log_file);
+            if(level == LOG_LEVEL_ERROR || level == LOG_LEVEL_TRACE) fflush(log_file);
         }
     }
 }

@@ -1,12 +1,16 @@
 namespace GL{
     Handle create_shader(GLenum type,
-            const char* const code,
-            GLint length){
+            const char* const shader_code,
+            const char* const header_code){
 
         Handle output = glCreateShader(type);
-        glShaderSource(output, 1, (const GLchar**) &code, (const GLint*) &length);
+
+        const GLchar* shader_source[2] = {header_code, shader_code};
+        const GLint shader_size[2] = {-1, -1};
+        glShaderSource(output, 2, shader_source, shader_size);
+
         glCompileShader(output);
-        check_error_shader(output, "create_shader(GLenum, char*, GLint)");
+        ENGINE_CHECK(check_error_shader(output, "create_shader(GLenum, char*, GLint)"), "", NULL);
 
         return output;
     }
@@ -46,10 +50,10 @@ namespace GL{
         glDeleteProgram(program);
     }
 
-    Program create_program(GLenum shaderA_type, const char* const shaderA_code){
+    Program create_program(GLenum shaderA_type, const char* const shaderA_code,
+            const char* const header_code){
         Program output = glCreateProgram();
-        glObjectLabel(GL_PROGRAM, output, 8, "nothing");
-        Shader shaderA = create_shader(shaderA_type, shaderA_code);
+        Shader shaderA = create_shader(shaderA_type, shaderA_code, header_code);
         glAttachShader(output, shaderA);
         glLinkProgram(output);
         check_error_program(output, "create_program(GLenum, char*)");
@@ -58,11 +62,12 @@ namespace GL{
     }
 
     Program create_program(GLenum shaderA_type, const char* const shaderA_code,
-            GLenum shaderB_type, const char* const shaderB_code){
+            GLenum shaderB_type, const char* const shaderB_code,
+            const char* const header_code){
 
         Program output = glCreateProgram();
-        Shader shaderA = create_shader(shaderA_type, shaderA_code);
-        Shader shaderB = create_shader(shaderB_type, shaderB_code);
+        Shader shaderA = create_shader(shaderA_type, shaderA_code, header_code);
+        Shader shaderB = create_shader(shaderB_type, shaderB_code, header_code);
         glAttachShader(output, shaderA);
         glAttachShader(output, shaderB);
         glLinkProgram(output);
@@ -74,12 +79,13 @@ namespace GL{
 
     Program create_program(GLenum shaderA_type, const char* const shaderA_code,
             GLenum shaderB_type, const char* const shaderB_code,
-            GLenum shaderC_type, const char* const shaderC_code){
+            GLenum shaderC_type, const char* const shaderC_code,
+            const char* const header_code){
 
         Program output = glCreateProgram();
-        Shader shaderA = create_shader(shaderA_type, shaderA_code);
-        Shader shaderB = create_shader(shaderB_type, shaderB_code);
-        Shader shaderC = create_shader(shaderC_type, shaderC_code);
+        Shader shaderA = create_shader(shaderA_type, shaderA_code, header_code);
+        Shader shaderB = create_shader(shaderB_type, shaderB_code, header_code);
+        Shader shaderC = create_shader(shaderC_type, shaderC_code, header_code);
         glAttachShader(output, shaderA);
         glAttachShader(output, shaderB);
         glAttachShader(output, shaderC);
@@ -116,6 +122,7 @@ namespace GL{
         return output;
     }
 
+#if defined(OPENGL_DESKTOP)
     Texture create_immutable_texture(uint width, uint height, GLenum internal_format){
         assert(width > 0 && height > 0);
 
@@ -131,11 +138,13 @@ namespace GL{
         glInvalidateTexImage(texture, 0);
         glTextureStorage2D(texture, 1, internal_format, (GLsizei)width, (GLsizei)height);
     }
+#endif
 
     void delete_texture(Texture texture){
         glDeleteTextures(1, &texture);
     }
 
+#if defined(OPENGL_DESKTOP)
     Buffer create_immutable_buffer(size_t size, void* data, GLbitfield usage){
         assert(size > 0);
 
@@ -151,27 +160,13 @@ namespace GL{
         glInvalidateBufferData(buffer);
         glNamedBufferStorage(buffer, (GLsizeiptr)size, data, usage);
     }
+#endif
 
     void delete_buffer(Buffer buffer){
         glDeleteBuffers(1, &buffer);
     }
 
-    void enable_depth_test(){
-        glEnable(GL_DEPTH_TEST);
-    }
-
-    void disable_depth_test(){
-        glDisable(GL_DEPTH_TEST);
-    }
-
-    void enable_backface_culling(){
-        glEnable(GL_CULL_FACE);
-    }
-
-    void disable_backface_culling(){
-        glDisable(GL_CULL_FACE);
-    }
-
+#if defined(OPENGL_DESKTOP)
     void* retrieve_texture(Texture texture, uint width, uint height){
         assert(width > 0 && height > 0);
 
@@ -256,6 +251,7 @@ namespace GL{
 
         return output;
     }
+#endif
 
     void display_error_translation(const GLenum error_code){
         switch(error_code){
@@ -271,6 +267,7 @@ namespace GL{
                 printf("GL_INVALID_OPERATION : the specified operation is not allowed in the current state\n");
                 break;
 
+#if defined(OPENGL_DESKTOP)
             case GL_STACK_OVERFLOW:
                 printf("GL_STACK_OVERFLOW : an attempt has been made to perform an operation that would cause an internal stack to overflow\n");
                 break;
@@ -278,6 +275,7 @@ namespace GL{
             case GL_STACK_UNDERFLOW:
                 printf("GL_STACK_UNDERFLOW : an attempt has been made to perform an operation that would cause an internal stack to underflow\n");
                 break;
+#endif
 
             case GL_OUT_OF_MEMORY:
                 printf("GL_OUT_OF_MEMORY : there is not enough memory left to execute the command\n");
@@ -287,8 +285,14 @@ namespace GL{
                 printf("GL_INVALID_FRAMEBUFFER_OPERATION : the framebuffer object is not complete\n");
                 break;
 
+#if defined(OPENGL_DESKTOP)
             case GL_CONTEXT_LOST:
                 printf("GL_CONTEXT_LOST : the OpenGL context has been lost, due to a graphics card reset\n");
+                break;
+#endif
+
+            default:
+                printf("UNKNOWN ERROR: %u", error_code);
                 break;
         }
     }
@@ -307,6 +311,7 @@ namespace GL{
                 printf("GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT : is returned if the framebuffer does not have at least one image attached to it\n");
                 break;
 
+#if defined(OPENGL_DESKTOP)
             case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
                 printf("GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER : is returned if the value of GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE is GL_NONE for any color attachment point(s) named by GL_DRAW_BUFFERi\n");
                 break;
@@ -314,6 +319,7 @@ namespace GL{
             case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
                 printf("GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER : is returned if the value of GL_READ_BUFFER is not GL_NONE and the value of GL_FRAMEBUFFER_ATTACHMENT_OBJECT_TYPE is GL_NONE for the color attachment point named by GL_READ_BUFFER\n");
                 break;
+#endif
 
             case GL_FRAMEBUFFER_UNSUPPORTED:
                 printf("GL_FRAMEBUFFER_UNSUPPORTED : is returned if the combination of internal formats of the attaches images violates an implementation-dependant set of restrictions\n");
@@ -324,8 +330,14 @@ namespace GL{
                 printf("is also returned if the value of GL_TEXTURE_FIXED_SAMPLE_LOCATIONS is not the same for all attached textures; or, if the attached images are a mix of renderbuffers and textures, the value of GL_TEXTURE_FIXED_LOCATIONS is not GL_TRUE for all attached textures2: The value of GL_TEXTURE_FIXED_SAMPLE_LOCATIONS is not the same for all attached textures; or, if the attached images are a mix of renderbuffers and textures, the value of GL_TEXTURE_FIXED_LOCATIONS is not GL_TRUE for all attached textures\n");
                 break;
 
+#if defined(OPENGL_DESKTOP)
             case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
                 printf("GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS : is returned if any framebuffer attachment is layered, and any populated attachment is not layered, or if all populated color attachments are not from textures of the same target\n");
+                break;
+#endif
+
+            default:
+                printf("UNKNOWN FRAMEBUFFER ERROR: %u", error_code);
                 break;
         }
     }
@@ -462,6 +474,7 @@ namespace GL{
         return true;
     }
 
+#if defined(OPENGL_DESKTOP)
     bool check_error_named_framebuffer(const GLuint framebuffer, const char* const message){
         GLenum framebuffer_status = glCheckNamedFramebufferStatus(framebuffer, GL_FRAMEBUFFER);
 
@@ -478,9 +491,11 @@ namespace GL{
 
         return true;
     }
+#endif
 
     void display_source_translation(const GLenum source_code){
         switch(source_code){
+#if defined(OPENGL_DESKTOP)
             case GL_DEBUG_SOURCE_API:
                 printf("SOURCE : GL_DEBUG_SOURCE_API : generated by calls to the OpenGL API\n");
                 break;
@@ -504,14 +519,21 @@ namespace GL{
             case GL_DEBUG_SOURCE_OTHER:
                 printf("SOURCE : GL_DEBUG_SOURCE_OTHER : generated by some unknown source\n");
                 break;
+#endif
+
+            default:
+                printf("UNKNOWN SOURCE ERROR: %u", source_code);
+                break;
         }
     }
 
     void display_type_translation(const GLenum type_code){
         switch(type_code){
+#if defined(OPENGL_DESKTOP)
             case GL_DEBUG_TYPE_ERROR:
                 printf("TYPE : GL_DEBUG_TYPE_ERROR : an error, typically from the API\n");
                 break;
+
             case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
                 printf("TYPE : GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR : some behavior marked deprecated has been used\n");
                 break;
@@ -543,11 +565,17 @@ namespace GL{
             case GL_DEBUG_TYPE_OTHER:
                 printf("TYPE : GL_DEBUG_TYPE_OTHER : unknown error type\n");
                 break;
+#endif
+
+            default:
+                printf("TYPE : UNKNOWN %u", type_code);
+                break;
         }
     }
 
     void display_severity_translation(const GLenum severity_code){
         switch(severity_code){
+#if defined(OPENGL_DESKTOP)
             case GL_DEBUG_SEVERITY_HIGH:
                 printf("SEVERITY : GL_DEBUG_SEVERITY_HIGH : all OpenGL errors, shader compilation / linking errors, or highly-dangerous undefined behavior\n");
                 break;
@@ -563,9 +591,15 @@ namespace GL{
             case GL_DEBUG_SEVERITY_NOTIFICATION:
                 printf("SEVERITY : GL_DEBUG_SEVERITY_NOTIFICATION : anything that isn't an error or performance issue\n");
                 break;
+#endif
+
+            default:
+                printf("UNKNOWN SEVERITY: %u", severity_code);
+                break;
         }
     }
 
+#if defined(OPENGL_DESKTOP)
     void debug_message_callback(GLenum source,
             GLenum type,
             GLuint id,
@@ -573,6 +607,13 @@ namespace GL{
             GLsizei length,
             const GLchar* message,
             const void* userParam){
+
+        if(false
+        || severity == GL_DEBUG_SEVERITY_NOTIFICATION
+        //|| severity == GL_DEBUG_SEVERITY_LOW
+        //|| severity == GL_DEBUG_SEVERITY_MEDIUM
+        //|| severity == GL_DEBUG_SEVERITY_HIGH
+        ) return;
 
         UNUSED(length);
         UNUSED(userParam);
@@ -632,7 +673,9 @@ namespace GL{
     void pop_debug_group(){
         glPopDebugGroup();
     }
+#endif
 
+#if defined(OPENGL_DESKTOP)
     void label_object(GLenum type, GLuint handle, const char* const label){
         glObjectLabel(type, handle, -1, label);
     }
@@ -662,5 +705,5 @@ namespace GL{
 
         return label;
     }
-
+#endif
 }

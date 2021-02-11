@@ -1,3 +1,6 @@
+#ifndef H_INTRINSICS
+#define H_INTRINSICS
+
 // ---- atomic operations
 
 // NOTE(hugo): memory order acquire = memory read / write after the instruction are kept after
@@ -14,7 +17,9 @@ inline void atomic_set(volatile T* atomic, T new_value);
 
 // ---- cycle counter
 
+#if defined(AVAILABLE_RDTSC)
 u64 cycle_counter();
+#endif
 
 // ---- endianness conversion
 
@@ -45,6 +50,9 @@ u32 bitscan_ML(u64 value);
 // REF(hugo): https://github.com/vectorclass/version2/blob/master/instrset_detect.cpp
 s32 detect_vector_capabilities();
 
+#if defined(AVAILABLE_MULTITHREADING)
 // NOTE(hugo):
 u32 detect_physical_cores();
+#endif
 
+#endif

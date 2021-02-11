@@ -1,25 +1,50 @@
 @echo off
-cls
-echo -------- Generating static libraries
 
-echo STB...
+echo -------- Generating external libraries
 
-set P=%cd%
+set externals=%cd%\..\externals
 
-set SourcePath=%P%\..\externals\stb
-set FolderPath=%P%\..\externals\stb\static_library\win_x64
+set LibraryPath=%externals%\lib
+if not exist %LibraryPath% mkdir %LibraryPath%
 
-if not exist %FolderPath% mkdir %FolderPath%
-pushd %FolderPath%
+set Source_stb=%externals%\stb\stb_implementation.cpp
+set Library_stb=stb.lib
+set Compiled_stb=stb.obj
 
-set LibraryName=stb.lib
-set ObjectName=stb.obj
+set Source_cJSON=%externals%\cJSON\cJSON.c
+set Library_cJSON=cjson.lib
+set Compiled_cJSON=cjson.obj
+
+set Source_fast_obj=%externals%\fast_obj\fast_obj_implementation.cpp
+set Library_fast_obj=fast_obj.lib
+set Compiled_fast_obj=fast_obj.obj
+
+pushd %LibraryPath%
+
+echo -------- stb
+
 @echo on
-
-cl /nologo /c /EHsc /Fo%FolderPath%/%ObjectName% %SourcePath%\stb_libraries.cpp
-lib /nologo %FolderPath%/%ObjectName% /out:%FolderPath%\%LibraryName%
-
+cl /nologo /c /FC /EHsc /O2 /Fo%LibraryPath%/%Compiled_stb% %Source_stb%
+lib /nologo %LibraryPath%/%Compiled_stb% /out:%LibraryPath%\%Library_stb%
 @echo off
-popd
-echo Done
+
+echo.
+echo -------- cJSON
+
 @echo on
+cl /nologo /c /FC /EHsc /O2 /Fo%LibraryPath%/%Compiled_cJSON% %Source_cJSON%
+lib /nologo %LibraryPath%/%Compiled_cJSON% /out:%LibraryPath%\%Library_cJSON%
+@echo off
+
+echo.
+echo -------- fast_obj
+
+@echo on
+cl /nologo /c /FC /EHsc /O2 /Fo%LibraryPath%/%Compiled_fast_obj% %Source_fast_obj%
+lib /nologo %LibraryPath%/%Compiled_fast_obj% /out:%LibraryPath%\%Library_fast_obj%
+@echo off
+
+echo.
+echo -------- Finished generating external libraries
+
+popd

@@ -1,136 +1,55 @@
 #ifndef H_RENDERER_GL3
 #define H_RENDERER_GL3
 
-enum Renderer_Primitive{
-    PRIMITIVE_TRIANGLES = GL_TRIANGLES,
-    PRIMITIVE_TRIANGLE_STRIP = GL_TRIANGLE_STRIP,
-    PRIMITIVE_LINES = GL_LINES,
-    PRIMITIVE_LINE_STRIP = GL_LINE_STRIP,
-    PRIMITIVE_LINE_LOOP = GL_LINE_LOOP,
-    PRIMITIVE_NONE
-};
+struct Transient_Buffer_GL3{
+    void* ptr = nullptr;
+    size_t bytesize = 0u;
 
-enum Texture_Format{
-    TEXTURE_FORMAT_R = GL_RED,
-    // NOTE(hugo): GL_RGBA should be prefered because GPUs don't like 24-byte alignment
-    TEXTURE_FORMAT_RGB = GL_RGB,
-    TEXTURE_FORMAT_RGBA = GL_RGBA,
-    TEXTURE_FORMAT_NONE
+    GL::Vertex_Array vao = 0u;
+    GL::Buffer vbo = 0u;
 };
-inline u32 texture_format_channels(Texture_Format format){
-    switch(format){
-        case TEXTURE_FORMAT_RGBA:
-            return 4u;
-        case TEXTURE_FORMAT_RGB:
-            return 3u;
-        case TEXTURE_FORMAT_R:
-            return 1u;
-        default:
-            LOG_ERROR("format with value %d missing in texture_format_channels", format);
-            assert(false);
-            return 0u;
-    }
+struct Texture_GL3{
+    u32 width = 0u;
+    u32 height = 0u;
+
+    Texture_Format format = TEXTURE_FORMAT_NONE;
+    GL::Texture texture = 0u;
 };
-
-typedef u32 Vertex_Batch_ID;
-typedef u32 Texture_ID;
-typedef u32 Sampler_ID;
-
-constexpr Vertex_Batch_ID unknown_vertex_batch = UINT_MAX;
-constexpr Texture_ID unknown_texture = UINT_MAX;
-constexpr Sampler_ID unknown_sampler = UINT_MAX;
 
 struct Renderer_GL3{
-    void setup_resources();
-    void free_resources();
+    void setup();
+    void terminate();
 
-    void start_frame();
-    void end_frame();
+    // -- resources
 
-    // ---- stateful interface
+    Transient_Buffer_GL3 get_transient_buffer(size_t bytesize);
+    void free_transient_buffer(Transient_Buffer_GL3& buffer);
 
-    void* get_uniform(Uniform_Name name);
-    void submit_uniform(Uniform_Name name);
+    void format_transient_buffer(const Transient_Buffer_GL3& buffer, Vertex_Format_Name format);
+    void checkout_transient_buffer(Transient_Buffer_GL3& buffer);
+    void commit_transient_buffer(Transient_Buffer_GL3& buffer);
+
+    Texture_GL3 get_texture(Texture_Format format, u32 witdh, u32 height, Data_Type data_type, void* data);
+    void free_texture(Texture_GL3& texture);
+    void update_texture(Texture_GL3& texture, u32 ox, u32 oy, u32 width, u32 height, Data_Type data_type, void* data);
+
+    // -- state
 
     void use_shader(Shader_Name name);
+    void update_uniform(Uniform_Name name, void* ptr);
+    void setup_texture_unit(u32 texture_unit, const Texture_GL3& texture, Sampler_Name sampler_name);
 
-    // NOTE(hugo):
-    // same primitive and vertex format for everyone
-    // pipeline state must be setup before drawing
-    // !WARNING! vertices in the extensions will need to be reuploaded every time another batch is drawn
-    Vertex_Batch_ID get_vertex_batch(Vertex_Format_Name name, Renderer_Primitive primitive, u32 required_capacity = 0u);
-    void free_vertex_batch(Vertex_Batch_ID batch);
-    void* get_vertices(Vertex_Batch_ID batch, u32 nvertices);
-    void submit_vertex_batch(Vertex_Batch_ID batch);
+    // -- draw
 
-    // NOTE(hugo): data_type & data are optional if texture data are unknown at creation
-    Texture_ID get_texture(Texture_Format format, u32 witdh, u32 height, Renderer_Data_Type data_type = TYPE_UBYTE, void* data = nullptr);
-    void free_texture(Texture_ID texture);
-    void update_texture(Texture_ID texture, Renderer_Data_Type data_type, void* data);
-
-    void setup_texture_unit(u32 texture_unit, Texture_ID texture, Sampler_Name sampler_name = Sampler_Name::SAMPLER_NONE);
+    void draw(const Transient_Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count);
 
     // ---- data
 
-    u64 frame_count = 0u;
-
-    // -- vertex batching
-
-    struct Vertex_Batch_Entry{
-        Vertex_Format_Name format = VERTEX_FORMAT_NONE;
-        Renderer_Primitive primitive;
-
-        size_t vbo_bytesize = 0u;
-        size_t vbo_position = 0u;
-        void* vbo_mapping = nullptr;
-
-        Vertex_Format_Name vao_format = VERTEX_FORMAT_NONE;
-        GL::Vertex_Array vao = 0u;
-        GL::Buffer vbo = 0u;
-
-        darray<GLint> first;
-        darray<GLsizei> count;
-
-        // ----
-
-        darray<u8> extension_data;
-        darray<GLint> extension_first;
-        darray<GLsizei> extension_count;
-    };
-    struct {
-        Vertex_Format_Name shared_format = VERTEX_FORMAT_NONE;
-        GL::Vertex_Array shared_vao = 0u;
-        GL::Vertex_Array shared_vbo = 0u;
-
-        darray<u32> free_batches;
-        darray<Vertex_Batch_Entry> batches;
-    } vertex_batch_storage;
-
-    // -- textures
-
-    struct Texture_Entry{
-        GL::Texture texture = 0u;
-        Texture_Format format = TEXTURE_FORMAT_NONE;
-        u32 width = 0u;
-        u32 height = 0u;
-    };
-    struct{
-        darray<u32> free_textures;
-        darray<Texture_Entry> textures;
-    } texture_storage;
-
-    // -- static storage
-
-    struct Uniform_Storage_Entry{
+    struct Uniform_Entry{
         GL::Buffer buffer = 0u;
-        size_t bytesize = 0u;
+        size_t bytesize;
     };
-    Uniform_Storage_Entry uniform_storage[Uniform_Name::NUMBER_OF_UNIFORM_NAMES];
-
-    struct Shader_Storage_Entry{
-        GL::Shader shader = 0u;
-    };
-    Shader_Storage_Entry shader_storage[Shader_Name::NUMBER_OF_SHADER_NAMES];
+    Uniform_Entry uniform_storage[Uniform_Name::NUMBER_OF_UNIFORM_NAMES];
 
     struct Vertex_Format_Entry{
         u32 number_of_attributes = 0u;
@@ -143,6 +62,11 @@ struct Renderer_GL3{
         GL::Sampler sampler = 0u;
     };
     Sampler_Entry sampler_storage[Sampler_Name::NUMBER_OF_SAMPLER_NAMES];
+
+    struct Shader_Entry{
+        GL::Shader shader = 0u;
+    };
+    Shader_Entry shader_storage[Shader_Name::NUMBER_OF_SHADER_NAMES];
 };
 
 #endif

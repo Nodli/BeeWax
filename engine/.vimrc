@@ -1,6 +1,3 @@
-" code syntax highlighting
-syntax on
-
 " highlight search
 set hlsearch
 
@@ -95,12 +92,8 @@ inoremap <F2> TODO(hugo):
 
 " gui settings
 if has('gui_running')
-    " set a colorscheme because there is no issue with the terminal one
-    colorscheme desert
-
-    " set the autocompletion popup color
-    highlight Pmenu guibg=grey25
-    highlight PmenuSel guibg=yellowgreen
+    " source the syntax highlighting and colorscheme
+    source colorscheme.vim
 
     " disable the windows menu bar
     set guioptions=

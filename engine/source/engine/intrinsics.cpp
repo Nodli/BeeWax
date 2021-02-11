@@ -83,9 +83,11 @@ inline void atomic_set(volatile T* atomic, T value){
 
 // ---- cycle counter
 
+#if defined(AVAILABLE_RDTSC)
 u64 cycle_counter(){
     return __rdtsc();
 }
+#endif
 
 // ---- endianness conversion
 
@@ -176,6 +178,7 @@ u32 bitscan_ML(u64 value){
 
 // ---- cpu capabilities
 
+#if defined(AVAILABLE_CPUID)
 // NOTE(hugo): platform-independant __cpuidex
 // /eax/ contains the code of the information to retrieve
 // /ecx/ contains the value of ECX before calling cpuid
@@ -245,7 +248,9 @@ s32 detect_vector_capabilities(){
 
     return BEEWAX_INTERNAL::simd_instruction_set;
 }
+#endif
 
+#if defined(AVAILABLE_MULTITHREADING)
 u32 detect_physical_cores(){
 #if defined(PLATFORM_WINDOWS)
     SYSTEM_INFO sysinfo;
@@ -260,3 +265,4 @@ u32 detect_physical_cores(){
 
 #endif
 }
+#endif

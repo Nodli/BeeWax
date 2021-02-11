@@ -21,10 +21,10 @@ float perlin_noise(const float x){
     float dR = - 1.f + x_decimal;
 
     // NOTE(hugo): determine gradients
-    u32 seedL = BEEWAX_INTERNAL::noise_hash((u32)origin);
-    u32 seedR = BEEWAX_INTERNAL::noise_hash((u32)origin + 1u);
-    float gradL = random_float_normalized(seedL);
-    float gradR = random_float_normalized(seedR);
+    random_seed_type seedL = {BEEWAX_INTERNAL::noise_hash((u32)origin)};
+    random_seed_type seedR = {BEEWAX_INTERNAL::noise_hash((u32)origin + 1u)};
+    float gradL = random_float(seedL);
+    float gradR = random_float(seedR);
 
     // NOTE(hugo): extrapolate the slopes to x in the unit
     // this corresponds to dot(gradient, direction to x) but in 1D
@@ -56,7 +56,7 @@ static inline vec2 perlin_gradient_2D_compute(u32 hash){
     s32 y_sign = (y_hash & 0x4);
     s32 y_sqrt2 = (y_hash & 0x1);
 
-    constexpr float sqrt_contribution = HALF_SQRT2<float> - 1.f;
+    constexpr float sqrt_contribution = constexpr_sqrt(2.f) - 1.f;
 
     vec2 output;
     output.x = x_sign * (x_value + x_sqrt2 * sqrt_contribution);
@@ -68,13 +68,13 @@ static inline vec2 perlin_gradient_2D_compute(u32 hash){
 static inline vec2 perlin_gradient_2D_cache(u32 hash){
     float cache[8u] = {
         0.f,
-        HALF_SQRT2<float>,
+        constexpr_sqrt(2.f),
         1.f,
-        HALF_SQRT2<float>,
+        constexpr_sqrt(2.f),
         0.f,
-       -HALF_SQRT2<float>,
+       -constexpr_sqrt(2.f),
        -1.f,
-       -HALF_SQRT2<float>
+       -constexpr_sqrt(2.f)
     };
 
     u32 x_index = hash & 0x7;
@@ -224,10 +224,10 @@ float simplex_noise(const float x){
     float dR = - 1.f + x_decimal;
 
     // NOTE(hugo): determine gradients
-    u32 seedL = BEEWAX_INTERNAL::noise_hash((u32)origin);
-    u32 seedR = BEEWAX_INTERNAL::noise_hash((u32)origin + 1u);
-    float gradL = random_float_normalized(seedL);
-    float gradR = random_float_normalized(seedR);
+    random_seed_type seedL = {BEEWAX_INTERNAL::noise_hash((u32)origin)};
+    random_seed_type seedR = {BEEWAX_INTERNAL::noise_hash((u32)origin + 1u)};
+    float gradL = random_float(seedL);
+    float gradR = random_float(seedR);
 
     // NOTE(hugo): determining the weights and adding the weighted contributions
     // the unweighted contributions correspond to dot(gradient, direction to x) but in 1D
@@ -277,8 +277,8 @@ static inline void setup_simplex_noise_2D(const float x, const float y,
     float grid_x = x + skew_temp;
     float grid_y = y + skew_temp;
 
-    grid_x_origin = (s32)fast_floor<float>(grid_x);
-    grid_y_origin = (s32)fast_floor<float>(grid_y);
+    grid_x_origin = (s32)grid_x;
+    grid_y_origin = (s32)grid_y;
 
     float unskew_temp = (float)(grid_x_origin + grid_y_origin) * unskew_factor;
     float origin_x = grid_x_origin - unskew_temp;
@@ -478,7 +478,7 @@ void simplex_noise_and_derivatives(const float x, const float y, float& value, v
     derivatives *= MAGIC_NORMALIZER;
 }
 
-template<float (*noise_derivatives_function)(const float x, const float y)>
+template<vec2 (*noise_derivatives_function)(const float x, const float y)>
 vec2 noise_curl(const float x, const float y){
     vec2 potential = noise_derivatives_function(x, y);
     potential.y = - potential.y;

@@ -1,38 +1,24 @@
-// NOTE(hugo): conversion from decibels to volume percents
-float dB_to_volume(float decibel){
-    return powf(10.f, 0.05f * decibel);
-}
-float volume_to_dB(float volume){
-    return 20.f * log10f(volume);
-}
-
 // ---- audio asset
 
-Audio_Asset audio_asset_from_wav_file(const File_Path& path, Audio_Player* player){
+void make_audio_asset_from_wav_file(Audio_Asset* asset, const File_Path& path, const Audio_Player* player){
     SDL_AudioSpec wav_spec;
     u8* wav_buffer;
     u32 wav_bytesize;
-    if(!SDL_LoadWAV(path.data, &wav_spec, &wav_buffer, &wav_bytesize)){
-        LOG_ERROR("SDL_LoadWav() FAILED - %s", SDL_GetError());
-    }
+    SDL_CHECK(SDL_LoadWAV(path.data, &wav_spec, &wav_buffer, &wav_bytesize));
 
     // NOTE(hugo): convert to the device specification when needed
     SDL_AudioCVT converter;
     s32 converter_return_code = SDL_BuildAudioCVT(&converter,
             wav_spec.format, wav_spec.channels, wav_spec.freq,
             player->device_spec.format, player->device_spec.channels, player->device_spec.freq);
-    if(converter_return_code < 0){
-        LOG_ERROR("SDL_BuildAudioCVT() FAILED - %s", SDL_GetError());
-    }
-
-    Audio_Asset asset;
+    SDL_CHECK(!(converter_return_code < 0));
 
     // NOTE(hugo): wav_spec is usable by the device_spec
     if(converter_return_code == 0){
-        asset.data = (s16*)malloc(wav_bytesize);
-        asset.nsamples = wav_bytesize / sizeof(s16);
+        asset->data = (s16*)malloc(wav_bytesize);
+        asset->nsamples = wav_bytesize / sizeof(s16);
 
-        memcpy(asset.data, wav_buffer, wav_bytesize);
+        memcpy(asset->data, wav_buffer, wav_bytesize);
         SDL_FreeWAV(wav_buffer);
 
     // NOTE(hugo): conversion is required
@@ -43,19 +29,15 @@ Audio_Asset audio_asset_from_wav_file(const File_Path& path, Audio_Player* playe
         memcpy(converter.buf, wav_buffer, wav_bytesize);
         SDL_FreeWAV(wav_buffer);
 
-        if(SDL_ConvertAudio(&converter)){
-            LOG_ERROR("SDL_ConvertAudio() FAILED - %s", SDL_GetError());
-        }
+        SDL_CHECK(SDL_ConvertAudio(&converter) == 0);
 
-        asset.data = (s16*)converter.buf;
-        asset.nsamples = converter.len_cvt / sizeof(s16);
+        asset->data = (s16*)converter.buf;
+        asset->nsamples = converter.len_cvt / sizeof(s16);
     }
-
-    return asset;
 }
 
-void free_audio_asset(Audio_Asset& asset){
-    ::free(asset.data);
+void free_audio_asset(Audio_Asset* asset){
+    ::free(asset->data);
 }
 
 // ---- audio player
@@ -73,21 +55,15 @@ void Audio_Player::setup(){
 
     SDL_AudioSpec returned_spec;
     device = SDL_OpenAudioDevice(nullptr, 0, &required_spec, &returned_spec, 0);
-    if(!device){
-        LOG_ERROR("SDL_OpenAudioDevice() FAILED - %s", SDL_GetError());
-    }
+    SDL_CHECK(device != 0);
     device_spec = returned_spec;
 
     state.nsamples = audio_manager_buffer_in_samples;
     state.buffer = (s16*)malloc(sizeof(s16) * state.nsamples);
-    if(!state.buffer){
-        LOG_ERROR("malloc FAILED");
-    }
+    ENGINE_CHECK(state.buffer, "FAILED MALLOC", NULL);
 
     mix_buffer = (float*)malloc(sizeof(float) * audio_manager_generator_offset_in_samples);
-    if(!mix_buffer){
-        LOG_ERROR("malloc FAILED");
-    }
+    ENGINE_CHECK(mix_buffer, "FAILED MALLOC", NULL);
 
     SDL_PauseAudioDevice(device, 0);
 }
@@ -97,35 +73,26 @@ void Audio_Player::terminate(){
 
     ::free(state.buffer);
     ::free(mix_buffer);
-    to_play.free();
+    asset_playing_queue.free();
 
     SDL_CloseAudioDevice(device);
 }
 
-Audio_Playing_ID Audio_Player::start_playing(Audio_Asset* asset){
-    Play_Data play_data;
-    play_data.asset = asset;
-    play_data.cursor = 0u;
-    play_data.generation = manager_generation;
+Audio_Reference Audio_Player::start_playing(const Audio_Asset* asset){
+    Component_Reference ref;
+    Play_Info* info = asset_playing_queue.create(ref);
+    info->asset = asset;
+    info->cursor = 0u;
 
-    u32 index = to_play.insert(play_data);
-    u32 generation = manager_generation;
-
-    ++manager_generation;
-
-    return {index, generation};
+    return {ref};
 }
 
-bool Audio_Player::is_valid(Audio_Playing_ID play){
-    return play.index < to_play.capacity
-        && to_play.is_active(play.index)
-        && to_play[play.index].generation == play.generation;
+void Audio_Player::stop_playing(const Audio_Reference& ref){
+    asset_playing_queue.remove(ref);
 }
 
-void Audio_Player::stop_playing(Audio_Playing_ID play){
-    if(is_valid(play)){
-        to_play.remove(play.index);
-    }
+bool Audio_Player::is_playing(const Audio_Reference& ref){
+    return asset_playing_queue.is_valid(ref);
 }
 
 void Audio_Player::mix_next_frame(){
@@ -161,36 +128,33 @@ void Audio_Player::mix_next_frame(){
     }
 
     // NOTE(hugo): mix the samples
-    u32 index, counter;
-    for(index = to_play.get_first(), counter = 0u;
-        index < to_play.capacity;
-        index = to_play.get_next(index), ++counter){
-
-        Play_Data& play = to_play[index];
+    for(u32 iplay = 0u; iplay != asset_playing_queue.storage.size; ++iplay){
+        Play_Info& info = asset_playing_queue.storage[iplay].data;
 
         u32 mix_sample = 0u;
-        u32 play_cursor = play.cursor;
-        while(mix_sample != total_samples && play_cursor != play.asset->nsamples){
-            mix_buffer[mix_sample] += (float)play.asset->data[play_cursor];
+        u32 play_cursor = info.cursor;
+        while(mix_sample != total_samples && play_cursor != info.asset->nsamples){
+            mix_buffer[mix_sample] += (float)info.asset->data[play_cursor];
             ++mix_sample;
             ++play_cursor;
         }
-        if(play_cursor == play.asset->nsamples){
-            LOG_TRACE("removing");
-            to_play.remove(index);
-            --counter;
+
+        if(play_cursor != info.asset->nsamples){
+            info.cursor = play_cursor;
+            ++iplay;
+
         }else{
-            play.cursor = play_cursor;
+            asset_playing_queue.remove_by_storage_index(iplay);
         }
     }
 
     // NOTE(hugo): convert to s16 and copy to the ring buffer
     for(u32 isample = 0u; isample != first_samples; ++isample){
-        s16 sample = (s16)clamp<float>(mix_buffer[isample], SHRT_MIN, SHRT_MAX);
+        s16 sample = (s16)min_max<float>(mix_buffer[isample], SHRT_MIN, SHRT_MAX);
         state.buffer[first_start + isample] = sample;
     }
     for(u32 isample = 0u; isample != second_samples; ++isample){
-        s16 sample = (s16)clamp<float>(mix_buffer[first_samples + isample], SHRT_MIN, SHRT_MAX);
+        s16 sample = (s16)min_max<float>(mix_buffer[first_samples + isample], SHRT_MIN, SHRT_MAX);
         state.buffer[second_start + isample] = sample;
     }
 

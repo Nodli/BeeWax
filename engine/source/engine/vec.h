@@ -28,6 +28,7 @@ typedef vec::vec4<float> vec4;
 typedef vec::vec4<double> dvec4;
 
 // ---- vec2 ---- //
+
 template<typename T>
 struct vec::vec2{
 
@@ -52,6 +53,8 @@ struct vec::vec2{
 
     T& operator[](const u32 index);
     T operator[](const u32 index) const;
+
+    // ---- data
 
     union{
         T data[2] = {};
@@ -106,6 +109,7 @@ template<typename T>
 [[nodiscard]] vec2 normalized(const vec2& vec);
 
 // ---- vec3 ---- //
+
 template<typename T>
 struct vec::vec3{
 
@@ -131,6 +135,8 @@ struct vec::vec3{
     T& operator[](const u32 index);
     T operator[](const u32 index) const;
 
+    // ---- data
+
     union{
         T data[3] = {};
         struct{
@@ -147,6 +153,11 @@ struct vec::vec3{
             T s;
             T t;
             T p;
+        };
+        struct{
+            T i;
+            T j;
+            T k;
         };
     };
 };
@@ -190,6 +201,7 @@ template<typename T>
 [[nodiscard]] vec3 normalized(const vec3& vec);
 
 // ---- vec4 ---- //
+
 template<typename T>
 struct vec::vec4{
 
@@ -214,6 +226,8 @@ struct vec::vec4{
 
     T& operator[](const u32 index);
     T operator[](const u32 index) const;
+
+    // ---- data
 
     union{
         T data[4] = {};

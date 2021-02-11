@@ -92,9 +92,9 @@ struct Mouse_State{
         s32 yticks = 0u;
     } wheel;
     struct{
-        ivec2 position;
-        ivec2 previous_position;
-        uivec2 amplitude;
+        ivec2 position = {};
+        ivec2 previous_position = {};
+        uivec2 amplitude = {};
     } motion;
 };
 

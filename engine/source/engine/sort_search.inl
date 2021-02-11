@@ -1,23 +1,13 @@
 namespace BEEWAX_INTERNAL{
     template<typename T, s32 (*function)(const T& A, const T&B)>
-    s32 qsort_comparison_wrapper(const void* A, const void* B){
+    s32 voidptr_comparison_wrapper(const void* A, const void* B){
         return function(*(T*)A, *(T*)B);
-    }
-
-    template<typename T>
-    s32 comparison_increasing_order(const T& A, const T& B){
-        return (A > B) - (A < B);
-    }
-
-    template<typename T>
-    s32 comparison_decreasing_order(const T& A, const T& B){
-        return - comparison_increasing_order<T>(A, B);
     }
 }
 
 template<typename T, s32 (*compare)(const T& A, const T& B)>
 void qsort(T* data, u32 size){
-    ::qsort((void*)data, size, sizeof(T), &BEEWAX_INTERNAL::qsort_comparison_wrapper<T, compare>);
+    ::qsort((void*)data, size, sizeof(T), &BEEWAX_INTERNAL::voidptr_comparison_wrapper<T, compare>);
 }
 
 template<typename T, s32 (*compare)(const T& A, const T& B)>

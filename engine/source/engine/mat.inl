@@ -131,15 +131,15 @@ bool mat::mat2<T>::operator==(const mat::mat2<T>& mat) const{
 
 template<typename T>
 mat::mat2<T> operator+(const mat::mat2<T>& lhs, const mat::mat2<T>& rhs){
-    return mat::mat2<T>(rhs) += rhs;
+    return mat::mat2<T>(lhs) += rhs;
 }
 template<typename T>
 mat::mat2<T> operator-(const mat::mat2<T>& lhs, const mat::mat2<T>& rhs){
-    return mat::mat2<T>(rhs) -= rhs;
+    return mat::mat2<T>(lhs) -= rhs;
 }
 template<typename T>
 mat::mat2<T> operator*(const mat::mat2<T>& lhs, const mat::mat2<T>& rhs){
-    return mat::mat2<T>(rhs) *= rhs;
+    return mat::mat2<T>(lhs) *= rhs;
 }
 
 template<typename T>
@@ -173,7 +173,7 @@ mat::mat2<T> operator*(const T& lhs, const mat::mat2<T>& rhs){
 }
 template<typename T>
 mat::mat2<T> operator/(const T& lhs, const mat::mat2<T>& rhs){
-    return mat::mat2<T>(rhs) /= rhs;
+    return mat::mat2<T>(rhs) /= lhs;
 }
 
 template<typename T>
@@ -374,15 +374,15 @@ bool mat::mat3<T>::operator==(const mat::mat3<T>& mat) const{
 
 template<typename T>
 mat::mat3<T> operator+(const mat::mat3<T>& lhs, const mat::mat3<T>& rhs){
-    return mat::mat3<T>(rhs) += rhs;
+    return mat::mat3<T>(lhs) += rhs;
 }
 template<typename T>
 mat::mat3<T> operator-(const mat::mat3<T>& lhs, const mat::mat3<T>& rhs){
-    return mat::mat3<T>(rhs) -= rhs;
+    return mat::mat3<T>(lhs) -= rhs;
 }
 template<typename T>
 mat::mat3<T> operator*(const mat::mat3<T>& lhs, const mat::mat3<T>& rhs){
-    return mat::mat3<T>(rhs) *= rhs;
+    return mat::mat3<T>(lhs) *= rhs;
 }
 
 template<typename T>
@@ -416,7 +416,7 @@ mat::mat3<T> operator*(const T& lhs, const mat::mat3<T>& rhs){
 }
 template<typename T>
 mat::mat3<T> operator/(const T& lhs, const mat::mat3<T>& rhs){
-    return mat::mat3<T>(rhs) /= rhs;
+    return mat::mat3<T>(rhs) /= lhs;
 }
 
 template<typename T>
@@ -765,7 +765,7 @@ mat::mat4<T> operator*(const T& lhs, const mat::mat4<T>& rhs){
 }
 template<typename T>
 mat::mat4<T> operator/(const T& lhs, const mat::mat4<T>& rhs){
-    return mat::mat4<T>(rhs) /= rhs;
+    return mat::mat4<T>(rhs) /= lhs;
 }
 
 #if 0
@@ -793,16 +793,6 @@ vec::vec4<T> operator*(const mat::mat4<T>& mat, const vec::vec4<T>& vec){
 }
 
 // ---- additional matrix math
-
-template<typename T>
-mat::mat4<T> mat4_from_mat3(const mat::mat3<T>& mat){
-    return {
-        mat.data[0], mat.data[1], mat.data[2], T(0),
-        mat.data[3], mat.data[4], mat.data[5], T(0),
-        mat.data[6], mat.data[7], mat.data[8], T(0),
-        T(0),        T(0),        T(0),        T(1)
-    };
-}
 
 template<typename T>
 mat::mat3<T> mat3_from_orthonormal_basis(const vec::vec3<T> right, const vec::vec3<T> up, const vec::vec3<T> forward){

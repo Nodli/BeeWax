@@ -147,30 +147,54 @@ quaternion::quat<T> quat_from_euler(const T pitch, const T yaw, const T roll){
     };
 }
 
+// REF(hugo):
+// http://lolengine.net/blog/2014/02/24/quaternion-from-two-vectors-final
+template<typename T>
+quaternion::quat<T> quat_from_vector_to_vector(const vec::vec3<T>& vA, const vec::vec3<T>& vB){
+    float normalization = sqrt(dot(vA, vA) * dot(vB, vB));
+    float s = normalization + dot(vA, vB);
+
+    vec3 ijk;
+    // NOTE(hugo): vA and vB are opposite ie arbitrary rotation
+    if(s > 1.e-6f * normalization){
+        ijk = cross(vA, vB);
+    }else{
+        s = 0.f;
+        if(abs(vA.x) > abs(vA.z)){
+            ijk = {-vA.y, vA.x, 0.f};
+        }else{
+            ijk = {0.f, -vA.z, vA.y};
+        }
+    }
+
+    quaternion::quat<T> output = {s, ijk.i, ijk.j, ijk.k};
+    return normalized(output);
+}
+
 template<typename T>
 [[nodiscard]] vec::vec3<T> rotate(const vec::vec3<T>& v, const quaternion::quat<T>& quat){
-    // NOTE(hugo): fast implementation
+    // REF(hugo):
     // https://blog.molecular-matters.com/2013/05/24/a-faster-quaternion-vector-multiplication/
     vec::vec3<T> imaginary_quat = {quat.i, quat.j, quat.k};
     vec::vec3<T> temp = T(2) * cross(imaginary_quat, v);
     return v + quat.s * temp + cross(imaginary_quat, temp);
 
-    // NOTE(hugo): usual expression
-    //quaternion::quat<T> vquat = {0, v.x, v.y, v.z};
-    //return quat * vquat * conjugate(quat);
+    // NOTE(hugo): unoptimized
+    // quaternion::quat<T> vquat = {0, v.x, v.y, v.z};
+    // return quat * vquat * conjugate(quat);
 
-    // NOTE(hugo): full expression
-    //return {
-    //    v.x * (q.s * q.s + q.i * q.i - q.j * q.j - q.k * q.k)
-    //    + v.y * (2 * q.i * q.j - 2 * q.s * q.k)
-    //    + v.z * (2 * q.i * q.k + 2 * q.s * q.j),
-    //    v.x * (2 * q.s * q.k + 2 * q.i * q.j)
-    //    + v.y * (q.s * q.s - q.i * q.i + q.j * q.j - q.k * q.k)
-    //    + v.z * (- 2 * q.s * q.i + 2 * q.j * q.k),
-    //    v.x * (- 2 * q.s * q.j + 2 * q.i * q.k)
-    //    + v.y * (2 * q.s * q.i + 2 * q.j * q.k)
-    //    + v.z * (q.s * q.s - q.i * q.i - q.j * q.j + q.k * q.k)
-    //};
+    // NOTE(hugo): developped
+    // return {
+    //     v.x * (q.s * q.s + q.i * q.i - q.j * q.j - q.k * q.k)
+    //     + v.y * (2 * q.i * q.j - 2 * q.s * q.k)
+    //     + v.z * (2 * q.i * q.k + 2 * q.s * q.j),
+    //     v.x * (2 * q.s * q.k + 2 * q.i * q.j)
+    //     + v.y * (q.s * q.s - q.i * q.i + q.j * q.j - q.k * q.k)
+    //     + v.z * (- 2 * q.s * q.i + 2 * q.j * q.k),
+    //     v.x * (- 2 * q.s * q.j + 2 * q.i * q.k)
+    //     + v.y * (2 * q.s * q.i + 2 * q.j * q.k)
+    //     + v.z * (q.s * q.s - q.i * q.i - q.j * q.j + q.k * q.k)
+    // };
 }
 
 template<typename T>

@@ -10,8 +10,8 @@ struct Audio_Asset{
     u32 nsamples = 0u;
 };
 
-Audio_Asset audio_asset_from_wav_file(const File_Path& path, Audio_Player* player);
-void free_audio_asset(Audio_Asset& asset);
+void make_audio_asset_from_wav_file(Audio_Asset* asset, const File_Path& path, const Audio_Player* player);
+void free_audio_asset(Audio_Asset* asset);
 
 // ---- audio player
 
@@ -21,19 +21,15 @@ constexpr u32 audio_manager_buffer_in_samples = 4096u;
 // NOTE(hugo): generator should be at least one frame ahead of reader at all times
 constexpr u32 audio_manager_generator_offset_in_samples = audio_manager_buffer_in_samples - 1u;
 
-struct Audio_Playing_ID{
-    u32 index;
-    u64 generation;
-};
-constexpr Audio_Playing_ID unknown_audio_playing = {UINT_MAX, UINT_MAX};
+struct Audio_Reference : Component_Reference{};
 
 struct Audio_Player{
     void setup();
     void terminate();
 
-    Audio_Playing_ID start_playing(Audio_Asset* asset);
-    bool is_valid(Audio_Playing_ID play);
-    void stop_playing(Audio_Playing_ID play);
+    Audio_Reference start_playing(const Audio_Asset* asset);
+    void stop_playing(const Audio_Reference& reference);
+    bool is_playing(const Audio_Reference& reference);
 
     void mix_next_frame();
 
@@ -57,13 +53,11 @@ struct Audio_Player{
         volatile u32 generator_cursor = 0u;
     } state;
 
-    struct Play_Data{
-        Audio_Asset* asset;
+    struct Play_Info{
+        const Audio_Asset* asset = nullptr;
         u32 cursor = 0u;
-        u64 generation = 0u;
     };
-    u64 manager_generation = 0u;
-    diterpool<Play_Data> to_play;
+    Component_Storage<Play_Info> asset_playing_queue;
 };
 
 // ---- hardware / software detection

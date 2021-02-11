@@ -2,10 +2,9 @@ void Engine::setup(){
 
     // ---- externals
 
-    if(SDL_Init(SDL_INIT_EVERYTHING) != 0){
-        printf("Failed SDL_Init() %s\n", SDL_GetError());
-    }
-
+    SDL_CHECK(SDL_Init(SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS) == 0);
+    setup_timer();
+    setup_LOG();
     stbi_set_flip_vertically_on_load(true);
 
     // ---- input
@@ -13,35 +12,39 @@ void Engine::setup(){
     keyboard.initialize();
     mouse.initialize();
 
+    // ---- frame timing
+
+    frame_timing.initialize(timer_ticks(), timer_frequency(), 60u, 0.05f, 10u, 10u);
+
     // ---- window
 
-    const char* window_name = "default_main";
     Window_Settings window_settings;
-    window_settings.name = window_name;
     window_settings.width = 1280;
     window_settings.height = 720;
+    window_settings.name = g_config::window_name;
     window_settings.mode = Window_Settings::mode_windowed;
-    window_settings.synchronization = Window_Settings::synchronize_vertical;
+    window_settings.synchronization = Window_Settings::synchronize;
     window_settings.buffering = Window_Settings::buffering_double;
+    window_settings.OpenGL_major = 3u;
+#if defined(OPENGL_DESKTOP)
+    window_settings.OpenGL_minor = 3u;
+#else
+    window_settings.OpenGL_minor = 0u;
+#endif
 
     window.initialize(window_settings);
 
     // ---- renderer
 
+#if defined(OPENGL_DESKTOP)
     gl3wInit();
+#endif
+
+    DEV_Debug_Renderer;
+
     glClearColor(0.f, 0.f, 0.f, 1.f);
 
-    //DEV_Debug_Renderer;
-
-    renderer.setup_resources();
-
-    // ---- font
-
-    font.width = window.width;
-    font.height = window.height;
-    font.renderer = &renderer;
-
-    // ---- texture animation
+    renderer.setup();
 
     // ---- audio
 
@@ -49,12 +52,15 @@ void Engine::setup(){
 
     // ---- asset
 
-    asset.audio_player = &audio;
-    asset.renderer = &renderer;
+    import_asset_catalog_from_json(g_config::asset_catalog_path,
+        &audio_catalog,
+        &texture_catalog,
+        &audio,
+        &renderer);
 
     // ---- dev tools
 
-    DEV_setup();
+    //DEV_setup();
 }
 
 void Engine::terminate(){
@@ -64,10 +70,26 @@ void Engine::terminate(){
 
     // ---- engine
 
-    asset.terminate();
+    scene.terminate();
+
+    {
+        Asset_Catalog_Bucket* ptr = audio_catalog.head;
+        while(ptr){
+            free_audio_asset((Audio_Asset*)asset_from_bucket(ptr));
+            ptr = ptr->next;
+        }
+    }
+    {
+        Asset_Catalog_Bucket* ptr = texture_catalog.head;
+        while(ptr){
+            free_texture_asset((Texture_Asset*)asset_from_bucket(ptr), &renderer);
+            ptr = ptr->next;
+        }
+    }
+    audio_catalog.terminate();
+
     audio.terminate();
-    texture_animation.terminate();
-    renderer.free_resources();
+    renderer.terminate();
     window.terminate();
 
     // ---- external
@@ -75,14 +97,16 @@ void Engine::terminate(){
     SDL_Quit();
 }
 
-u32 Engine::update_start(){
+Engine_Code Engine::update_start(){
+    if(g_engine.scene.scene_stack.size == 0u) return Engine_Code::No_Scene;
+
     // ---- event handling
 
     SDL_Event event;
     while(SDL_PollEvent(&event)){
         switch(event.type){
             case SDL_QUIT:
-                return 1u;
+                return Engine_Code::Window_Quit;
             default:
                 break;
         }
@@ -91,68 +115,101 @@ u32 Engine::update_start(){
         mouse.register_event(event);
     }
 
-    return 0u;
+    return Engine_Code::Nothing;
 }
 
 void Engine::update_end(){
     keyboard.next_frame();
     mouse.next_frame();
     audio.mix_next_frame();
-    texture_animation.next_frame();
 }
 
-void Engine::render_start(){
-    renderer.start_frame();
+Engine_Code Engine::render_start(){
+    if(g_engine.scene.scene_stack.size == 0u) return Engine_Code::No_Scene;
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    return Engine_Code::Nothing;
 }
 
 void Engine::render_end(){
-    renderer.end_frame();
     window.swap_buffers();
 
     DEV_LOG_timing_entries();
     DEV_next_frame();
 }
 
+Engine_Code frame(){
+    if(g_engine.scene.scene_stack.size == 0u) return Engine_Code::No_Scene;
+    Engine_Code error_code = Engine_Code::Nothing;
+
+    u64 timer = timer_ticks();
+    //DEV_LOG_frame_duration(timer);
+    u32 nupdates = g_engine.frame_timing.nupdates_before_render(timer);
+    for(u32 iupdate = 0; iupdate != nupdates; ++iupdate){
+        error_code = g_engine.update_start();
+        if(error_code != Engine_Code::Nothing) return error_code;
+        g_engine.scene.update();
+        g_engine.update_end();
+    }
+    error_code = g_engine.render_start();
+    if(error_code != Engine_Code::Nothing) return error_code;
+    g_engine.scene.render();
+    g_engine.render_end();
+
+    return error_code;
+}
+
+#if defined(PLATFORM_EMSCRIPTEN)
+void emscripten_frame(){
+    if(frame() != Engine_Code::Nothing) emscripten_cancel_main_loop();
+}
+#endif
+
 int main(int argc, char* argv[]){
 
-    Frame_Timing frame_timing;
-    frame_timing.initialize(60u);
+    printf("-- started using easy_setup\n");
+    printf("-- user configuration\n");
+
+    // ---- easy config
+    easy_config();
+    // ----
+
+    printf("-- engine setup\n");
 
     g_engine.setup();
+
+    printf("-- user setup\n");
 
     // ---- easy setup
     void* user_data = easy_setup();
     // ----
 
+    printf("-- mainloop\n");
+
     // NOTE(hugo): signals to close the application
     // scene : scene_stack.size == 0u
     // engine : update_start() != 0u
-    while(g_engine.scene.scene_stack.size != 0u){
-        //DEV_LOG_frame_duration;
 
-        u32 nupdates = frame_timing.nupdates_before_render();
-        for(u32 iupdate = 0; iupdate != nupdates; ++iupdate){
-            if(g_engine.update_start() != 0u){
-                goto exit_gameloop;
-            }
-            g_engine.scene.update();
-            g_engine.update_end();
-        }
-        g_engine.render_start();
-        g_engine.scene.render();
-        g_engine.render_end();
-    }
+#if defined(PLATFORM_WINDOWS) || defined(PLATFORM_LINUX)
+    while(frame() == Engine_Code::Nothing){};
+#elif defined(PLATFORM_EMSCRIPTEN)
+    emscripten_set_main_loop(emscripten_frame, 0, 1);
+#else
+    static_assert(false, "no frame function was specified");
+#endif
 
-    exit_gameloop:
+    printf("-- user termination\n");
 
     // ---- scene termination
     easy_terminate(user_data);
     // ----
 
-    g_engine.scene.terminate();
+    printf("-- engine termination\n");
+
     g_engine.terminate();
+
+    printf("-- finished");
 
     return 0;
 }
-

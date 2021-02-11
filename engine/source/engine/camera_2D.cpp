@@ -1,5 +1,5 @@
-c2D::Rect Camera_2D::view_rect(){
-    c2D::Rect output;
+Camera_Rect Camera_2D::view_rect(){
+    Camera_Rect output;
 
     float half_height = 0.5f * height;
     float half_width = half_height * aspect_ratio;
@@ -15,34 +15,40 @@ float Camera_2D::width(){
     return height * aspect_ratio;
 }
 
+vec2 Camera_2D::right(){
+    return {1.f, 0.f};
+}
+
+vec2 Camera_2D::up(){
+    return {0.f, 1.f};
+}
+
 mat3 Camera_2D::camera_matrix(){
     float width = height * aspect_ratio;
     assert(width > 0.f && height > 0.f);
 
+mat3 mat = mat_orthographic2D(width, height) * mat_translation2D(- center);
     // NOTE(hugo):
     // world --(translation)-> view --(projecion scaling)-> clip
-    // unoptimized is: mat_orthographic2D(width, height) * mat_tranlation2D(- center)
-    return mat3_rm(
-        2.f / width,    0.f,            - 2.f * center.x / width,
-        0.f,            2.f / height,   - 2.f * center.y / height,
-        0.f,            0.f,            1.f
-    );
+    return mat_orthographic2D(width, height) * mat_translation2D(- center);
 }
 
 vec2 Camera_2D::screen_to_world_coordinates(const vec2& screen_coord){
-    float width = height * aspect_ratio;
-    return {screen_coord.x * width + center.x, screen_coord.y * height + center.y};
+    float half_height = 0.5f * height;
+    float half_width = half_height * aspect_ratio;
+    return {screen_coord.x * half_width + center.x, screen_coord.y * half_height + center.y};
 }
 
 vec2 Camera_2D::world_to_screen_coordinates(const vec2& world_coord){
-    float width = height * aspect_ratio;
-    return {(world_coord.x - center.x) / width, (world_coord.y - center.y) / height};
+    float half_height = 0.5f * height;
+    float half_width = half_height * aspect_ratio;
+    return {(world_coord.x - center.x) / half_width, (world_coord.y - center.y) / half_height};
 }
 
 void move_to_show(Camera_2D& camera, vec2 position){
-    float half_height = camera.height / 2.f;
-
+    float half_height = 0.5f * camera.height;
     float half_width = half_height * camera.aspect_ratio;
+
     float x_left = (camera.center.x - half_width) - position.x;
     float x_right = position.x - (camera.center.x + half_width);
     float x_dcenter = - max(x_left, 0.f) + max(x_right, 0.f);
@@ -56,8 +62,8 @@ void move_to_show(Camera_2D& camera, vec2 position){
 }
 
 void extend_to_show(Camera_2D& camera, vec2 position){
-    float half_width = camera.height * camera.aspect_ratio / 2.f;
-    float half_height = camera.height / 2.f;
+    float half_height = 0.5f * camera.height;
+    float half_width = half_height * camera.aspect_ratio;
 
     vec2 required_min = {min(camera.center.x - half_width, position.x), min(camera.center.y - half_height, position.y)};
     vec2 required_max = {max(camera.center.x + half_width, position.x), max(camera.center.y + half_height, position.y)};
@@ -65,9 +71,9 @@ void extend_to_show(Camera_2D& camera, vec2 position){
     camera.center = (required_min + required_max) / 2.f;
 }
 
-void keep_in_box(Camera_2D& camera, vec2 position, c2D::Rect screenspace_box){
+void keep_in_box(Camera_2D& camera, vec2 position, Camera_Rect screenspace_box){
     // NOTE(hugo): no aspect ratio otherwise /screenspace_box/ would have to be aspect ratio corrected too
-    float screenspace_factor = 2.f / camera.height;
+    float screenspace_factor = camera.height * 0.5f;
     vec2 to_position = position - camera.center;
     vec2 screenspace_position = to_position * screenspace_factor;
 

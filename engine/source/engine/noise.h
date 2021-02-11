@@ -48,7 +48,7 @@ vec2 simplex_derivatives(const float x, const float y);
 void simplex_noise_and_derivatives(const float x, const float y, float& value, vec2& derivatives);
 
 // REF(hugo): http://weber.itn.liu.se/~stegu/TNM084-2019/bridson-siggraph2007-curlnoise.pdf
-template<float (*noise_derivatives_function)(const float x, const float y)>
+template<vec2 (*noise_derivatives_function)(const float x, const float y)>
 vec2 noise_curl(const float x, const float y);
 
 template<float (*noise_function)(const float x, const float y)>
@@ -66,6 +66,11 @@ void* generate_noise_derivatives_textures(u32 width, u32 height, u32 nchannels, 
 template<float (*noise_function)(const float x, const float y)>
 u8* generate_noise_texture(u32 width, u32 height, u32 nchannels, vec2 origin, float span){
     u8* texture_data = (u8*)malloc(width * height * nchannels);
+
+    auto color_from_float = [](float value, float min_value, float max_value){
+        float normalized_value = (value - min_value) / (max_value - min_value);
+        return (u8)(normalized_value * 255.f + 0.5f);
+    };
 
     for(u32 iy = 0u; iy != height; ++iy){
         float coord_iy = origin.y + iy * span;
@@ -91,6 +96,11 @@ void* generate_noise_derivatives_textures(u32 width, u32 height, u32 nchannels, 
     noise = (u8*)memory;
     noise_dx = (u8*)memory + texture_size;
     noise_dy = (u8*)memory + 2u * texture_size;
+
+    auto color_from_float = [](float value, float min_value, float max_value){
+        float normalized_value = (value - min_value) / (max_value - min_value);
+        return (u8)(normalized_value * 255.f + 0.5f);
+    };
 
     for(u32 iy = 0u; iy != height; ++iy){
         float coord_iy = origin.y + iy * span;

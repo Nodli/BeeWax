@@ -77,6 +77,14 @@
         !CONCATENATE(DECORATE_variable_at_, __LINE__);                      \
         ++CONCATENATE(DECORATE_variable_at_, __LINE__), END())
 
+    #define FILENAME                                                            \
+    [](){                                                                       \
+        const char* filestr = "/\\" __FILE__;                                   \
+        const char* ptrA = strrchr(filestr, '/');                               \
+        const char* ptrB = strrchr(filestr, '\\');                              \
+        return ptrA > ptrB ? ptrA : ptrB;                                       \
+    }()
+
     #include "defer_macro.h"
 
 // NOTE(hugo): undefine the macros on second include
@@ -119,6 +127,8 @@
     #undef GIGABYTES
 
     #undef DECORATE
+
+    #undef FILENAME
 
     #include "defer_macro.h"
 

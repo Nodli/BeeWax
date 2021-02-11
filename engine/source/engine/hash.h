@@ -13,8 +13,8 @@ u64 FNV1a_64str(const char* data);
 u32 fibonacci_hash(const u32 data);
 u64 fibonacci_hash(const u64 data);
 
-// NOTE(hugo): /deadbeef_hash/ "isn't too bad, provided you promise to use at least the 17 lowest bits"
 // REF(hugo): http://burtleburtle.net/bob/hash/integer.html
+// NOTE(hugo): deadbeef_hash "isn't too bad, provided you promise to use at least the 17 lowest bits"
 u32 wang_hash(const u32 data);
 u32 deadbeef_hash(const u32 data);
 
@@ -39,7 +39,7 @@ u32 combined_hash_32(const u32* data, const u32 size){
     const u32* begin = data;
     const u32* end = data + size;
     while(begin < end){
-        hash ^= hash_function(*begin++);
+        hash ^= hash_function(*begin++) + 0x9e3779b9 + (hash << 6u) + (hash >> 2u);
     }
     return hash;
 }
@@ -50,7 +50,7 @@ u64 combined_hash_64(const u64* data, const u32 size){
     const u64* begin = data;
     const u64* end = data + size;
     while(begin < end){
-        hash ^= hash_function(*begin++);
+        hash ^= hash_function(*begin++) + 0x9e3779b9 + (hash << 6u) + (hash >> 2u);
     }
     return hash;
 }

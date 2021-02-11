@@ -1,27 +1,53 @@
 void Scene_Manager::terminate(){
     for(u32 iscene = 0u; iscene != scene_stack.size; ++iscene){
-        Scene& scene = scene_stack[iscene];
-        scene.terminate();
-        ::free(scene.data);
+        Scene_Info& scene_info = scene_stack[iscene];
+        (*scene_info.on_remove)(scene_info.data);
+        ::free(scene_info.data);
     }
     scene_stack.free();
 }
 
-template<typename T>
-T* Scene_Manager::push_scene(const char* scene_name){
-    T* scene = new_struct<T>();
-    T::setup((void*)scene);
+template<typename T, void(T::*on_push_ptr)(), void(T::*update_ptr)(), void(T::*render_ptr)(), void(T::*on_remove_ptr)()>
+struct Scene_Static_Proxy{
+    static void on_push(void* ptr){
+        T* type = (T*)ptr;
+        (*type.*on_push_ptr)();
+    };
+    static void update(void* ptr){
+        T* type = (T*)ptr;
+        (*type.*update_ptr)();
+    };
+    static void render(void* ptr){
+        T* type = (T*)ptr;
+        (*type.*render_ptr)();
+    };
+    static void on_remove(void* ptr){
+        T* type = (T*)ptr;
+        (*type.*on_remove_ptr)();
+    };
+};
 
-    Scene to_push;
-    to_push.name = scene_name;
-    to_push.data = (void*)scene;
-    to_push.setup_func = &T::setup;
-    to_push.update_func = &T::update;
-    to_push.render_func = &T::render;
-    to_push.terminate_func = &T::terminate;
-    scene_stack.push(to_push);
+template<typename T,
+void(T::*on_push_ptr)(),
+void(T::*update_ptr)(),
+void(T::*render_ptr)(),
+void(T::*on_remove_ptr)()>
+void Scene_Manager::push_scene(const char* scene_name){
+    typedef Scene_Static_Proxy<T, on_push_ptr, update_ptr, render_ptr, on_remove_ptr> Proxy;
 
-    return scene;
+    void* ptr = malloc(sizeof(T));
+    new((void*) ptr) T{};
+
+    Proxy::on_push(ptr);
+
+    Scene_Info scene_info;
+    scene_info.name = scene_name;
+    scene_info.data = ptr;
+    scene_info.on_push = &Proxy::on_push;
+    scene_info.update = &Proxy::update;
+    scene_info.render = &Proxy::render;
+    scene_info.on_remove = &Proxy::on_remove;
+    scene_stack.push(scene_info);
 }
 
 void Scene_Manager::remove_scene(const char* scene_name){
@@ -32,30 +58,35 @@ void Scene_Manager::remove_scene(const char* scene_name){
             break;
         }
     }
+    ENGINE_CHECK(remove_index != UINT_MAX, "no scene with name %s", scene_name);
 
-    if(remove_index == UINT_MAX){
-        LOG_ERROR("no scene with name %s", scene_name);
-    }
-
-    Scene& scene = scene_stack[remove_index];
-    scene.terminate();
-    ::free(scene.data);
+    Scene_Info& scene_info = scene_stack[remove_index];
+    (*scene_info.on_remove)(scene_info.data);
+    ::free(scene_info.data);
     scene_stack.remove(remove_index);
 }
 
-Scene* Scene_Manager::search_scene(const char* scene_name){
+Scene_Info* Scene_Manager::search_scene(const char* scene_name){
+    Scene_Info* ptr = nullptr;
     for(u32 iscene = 0u; iscene != scene_stack.size; ++iscene){
         if(strcmp(scene_stack[scene_stack.size - 1u - iscene].name, scene_name) == 0u){
-            return &scene_stack[scene_stack.size - 1u - iscene];
+            ptr = &scene_stack[scene_stack.size - 1u - iscene];
+            break;
         }
     }
-    return nullptr;
+    return ptr;
 }
 
 void Scene_Manager::update(){
-    scene_stack[scene_stack.size - 1u].update();
+    assert(scene_stack.size);
+
+    Scene_Info& scene_info = scene_stack[scene_stack.size - 1u];
+    (*scene_info.update)(scene_info.data);
 }
 
 void Scene_Manager::render(){
-    scene_stack[scene_stack.size - 1u].render();
+    assert(scene_stack.size);
+
+    Scene_Info& scene_info = scene_stack[scene_stack.size - 1u];
+    (*scene_info.render)(scene_info.data);
 }

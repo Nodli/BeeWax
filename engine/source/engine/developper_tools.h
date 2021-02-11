@@ -8,15 +8,15 @@
 #define DEV_Timed_Block
 
 #define DEV_LOG_timing_entries()
-#define DEV_LOG_frame_duration
-
-// ---- rendering
-
-#define DEV_Debug_Renderer
+#define DEV_LOG_frame_duration(TIMER)
 
 // ---- tweakable
 
 #define DEV_Tweak(TYPE, DEFAULT_VALUE) DEFAULT_VALUE
+
+// ---- debug renderer
+
+#define DEV_Debug_Renderer
 
 // ---- setup / terminate
 
@@ -25,7 +25,6 @@
 #define DEV_terminate()
 
 #else
-
 
 // ---- timing
 
@@ -38,7 +37,7 @@ namespace BEEWAX_INTERNAL{
         u64 cycle_counter = 0u;
     };
     constexpr u32 DEV_timing_nentries = 256u;
-    static darray<DEV_Timing_Entry> DEV_timing_entries;
+    static array<DEV_Timing_Entry> DEV_timing_entries;
 
     // TODO(hugo): support timing events
     //struct DEV_Timing_Event{
@@ -46,7 +45,7 @@ namespace BEEWAX_INTERNAL{
     //    u32 entry_index = 0u;
     //};
     //constexpr u32 DEV_timing_nevents = 256u;
-    //static darray<DEV_Timing_Entry> DEV_timing_events;
+    //static array<DEV_Timing_Entry> DEV_timing_events;
 
     static u32 DEV_get_new_timing_entry(const char* file, const char* function, const u32 line){
         u32 entry_index = DEV_timing_entries.size;
@@ -92,19 +91,19 @@ void DEV_LOG_timing_entries(){
     }
 }
 
-#define DEV_LOG_frame_duration                                                                  \
-double CONCATENATE(DEV_frame_start_time_at_, __LINE__) = timer_seconds();                       \
-DEFER{                                                                                          \
-    double DEV_frame_time = timer_seconds() - CONCATENATE(DEV_frame_start_time_at_, __LINE__);  \
-    LOG_RAW("DEV_Frame_Time: %f ms, %f FPS", DEV_frame_time, 1. / DEV_frame_time);              \
-};
-
-// ---- debug rendering
-
-#define DEV_Debug_Renderer do{ GL::set_debug_message_callback(); }while(0)
+#define DEV_LOG_frame_duration(TIMER)                                               \
+do{                                                                                 \
+    static u64 previous_timer = 0u;                                                 \
+    u64 timer_freq = timer_frequency();                                             \
+    u64 dtimer = TIMER - previous_timer;                                            \
+    previous_timer = TIMER;                                                         \
+    double dsec = (double)dtimer / (double)timer_freq;                              \
+    LOG_RAW("DEV_Frame_Time: %u ticks, %f ms, %f FPS", dtimer, dsec, 1. / dsec);    \
+}while(false)
 
 // ---- tweakable
 
+#if 0
 // NOTE(hugo): parsing the following expression
 // DEV_Tweak(__spaces__ type __spaces__ , __spaces__ value __spaces__)
 // REF(hugo): https://blog.tuxedolabs.com/2018/03/13/hot-reloading-hardcoded-parameters.html
@@ -129,8 +128,8 @@ namespace BEEWAX_INTERNAL{
         DEV_Tweakable_Value value;
     };
     constexpr u16 DEV_tweakable_nentries = 256;
-    static darray<DEV_Tweakable_Entry> DEV_tweakable_entries;
-    static darray<char*> DEV_string_alloc;
+    static array<DEV_Tweakable_Entry> DEV_tweakable_entries;
+    static array<char*> DEV_string_alloc;
 
     static u32 DEV_get_new_tweakable_entry(){
         u32 entry_index = DEV_tweakable_entries.size;
@@ -145,7 +144,7 @@ namespace BEEWAX_INTERNAL{
         }
         DEV_string_alloc.clear();
 
-        dhashmap<File_Path, buffer<u8>> path_to_content;
+        hashmap<File_Path, buffer<u8>> path_to_content;
         for(u32 ientry = 0u; ientry != DEV_tweakable_entries.size; ++ientry){
             DEV_Tweakable_Entry& entry = DEV_tweakable_entries[ientry];
 
@@ -259,12 +258,8 @@ namespace BEEWAX_INTERNAL{
         }
 
         //NOTE(hugo): free the files from memory
-        u32 index, counter;
-        for(index = path_to_content.storage.get_first(), counter = 0u;
-            index < path_to_content.storage.capacity && counter != path_to_content.storage.size;
-            index = path_to_content.storage.get_next(index), ++counter){
-
-            ::free(path_to_content.storage[index].value.data);
+        for(auto& to_free : path_to_content){
+            ::free(to_free.value.data);
         }
         path_to_content.free();
     }
@@ -283,6 +278,11 @@ namespace BEEWAX_INTERNAL{
     }                                                                                                       \
     return CONCATENATE(DEV_tweakable_entries[DEV_tweakable_entry_index].value.as_, TYPE);                   \
 }()
+#endif
+
+// ---- debug renderer
+
+#define DEV_Debug_Renderer do{ GL::set_debug_message_callback(); }while(0)
 
 // ---- setup / terminate
 

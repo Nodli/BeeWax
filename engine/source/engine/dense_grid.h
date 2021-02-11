@@ -16,7 +16,7 @@ struct Dense_Grid{
     T* data = nullptr;
     u32 size_x = 0u;
     u32 size_y = 0u;
-    ivec2 origin;
+    ivec2 origin = {};
 };
 
 #include "dense_grid.inl"

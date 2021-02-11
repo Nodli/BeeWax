@@ -1,18 +1,6 @@
 #ifndef H_SORT_SEARCH
 #define H_SORT_SEARCH
 
-// REF(hugo):
-// https://en.wikipedia.org/wiki/Sorting_network
-
-namespace BEEWAX_INTERNAL{
-    // NOTE(hugo): general purpose using two comparisons to avoid overflow
-    template<typename T>
-    s32 comparison_increasing_order(const T& A, const T& B);
-
-    template<typename T>
-    s32 comparison_decreasing_order(const T& A, const T& B);
-}
-
 // NOTE(hugo): compare(L, R) is
 //  < 0 when L has lower  priority than R ie permutation NOT REQUIRED
 //  = 0 when L has equal  priority with R ie permutation NOT REQUIRED

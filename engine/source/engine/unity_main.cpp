@@ -1,14 +1,18 @@
-// ---- user defines
+// ---- testing / samples defines
 
-#define RENDERER_SETUP_USER "../application/default_main_renderer_setup.h"
+//#define RENDERER_GL3_USER_SETTINGS "../sample/integration_GL3_setup.h"
 
 // ---- precompiler
 // REF(hugo): https://blog.kowalczyk.info/article/j/guide-to-predefined-macros-in-c-compilers-gcc-clang-msvc-etc..html
 
 #if defined(_WIN32)
     #define PLATFORM_WINDOWS
+    #define AVAILABLE_MULTITHREADING
 #elif defined(__linux__)
     #define PLATFORM_LINUX
+    #define AVAILABLE_MULTITHREADING
+#elif defined(__EMSCRIPTEN__)
+    #define PLATFORM_EMSCRIPTEN
 #else
     static_assert(false, "no platform was specified");
 #endif
@@ -21,6 +25,12 @@
     static_assert(false, "no compiler was identified");
 #endif
 
+#if defined(NDEBUG)
+    #define RELEASE_BUILD
+#else
+    #define DEBUG_BUILD
+#endif
+
 #include "macro.h"
 
 // ---- C standard library
@@ -28,8 +38,6 @@
 #if defined(PLATFORM_WINDOWS)
     #define _CRT_SECURE_NO_WARNINGS
 #endif
-
-#include <cassert>
 
 #include <cinttypes>
 #include <cstdio>
@@ -44,7 +52,7 @@
 
 // ---- C++ standard library
 
-// NOTE(hugo): required for placement new...
+// NOTE(hugo): required for placement new ...
 #include <new>
 
 // ---- system includes
@@ -57,7 +65,7 @@
     #undef NOMINMAX
     #include <sysinfoapi.h>
 
-    // NOTE(hugo): suggests laptop drivers to use a dedicated gpu
+    // NOTE(hugo): request dedicated GPU on laptops
     // REF(hugo): https://stackoverflow.com/questions/16823372/forcing-machine-to-use-dedicated-graphics-card
     extern "C" {
         __declspec(dllexport) unsigned int NvOptimusEnablement = 1;
@@ -70,9 +78,6 @@
     #include <signal.h>     // NOTE(hugo): debug_break.h
 #endif
 
-// ---- force dedicated gpu
-
-
 // ---- compiler includes
 
 //#include <xmmintrin.h>  // SSE & previous
@@ -83,12 +88,24 @@
 //#include <nmmintrin.h>  // SSE4.2 & previous
 
 #if defined(COMPILER_MSVC)
+    #define AVAILABLE_RDTSC
+    #define AVAILABLE_CPUID
+    #define AVAILABLE_VECTORIZATION
+
     #include <intrin.h>
     #pragma intrinsic(_BitScanReverse)
     #pragma intrinsic(_BitScanForward)
+
 #elif defined(COMPILER_GCC)
-    #include <cpuid.h>
-    #include <x86intrin.h>
+    #if defined(PLATFORM_WINDOWS) || defined(PLATFORM_LINUX)
+        #define AVAILABLE_RDTSC
+        #define AVAILABLE_CPUID
+        #define AVAILABLE_VECTORIZATION
+
+        #include <cpuid.h>
+        #include <x86intrin.h>
+    #elif defined(PLATFORM_EMSCRIPTEN)
+    #endif
 #endif
 
 // ---- external libraries
@@ -97,18 +114,39 @@
     #include "stb_image.h"
     #include "stb_image_write.h"
     #include "stb_truetype.h"
+    #include "stb_rect_pack.h"
+#endif
+
+#if defined(LIB_CJSON)
+    #include "cJSON.h"
+#endif
+
+#if defined(LIB_FAST_OBJ)
+    #include "fast_obj.h"
+#endif
+
+#if defined(PLATFORM_EMSCRIPTEN)
+    #include <emscripten.h>
 #endif
 
 #if defined(PLATFORM_LAYER_SDL)
     #include "SDL.h"
+    #if defined(RENDERER_VULKAN)
+        #include "SDL_vulkan.h"
+    #endif
 #else
     static_assert(false, "no platform layer was specified");
 #endif
 
 #if defined(RENDERER_OPENGL3)
-    #include "gl3w.h"
+    #if defined(PLATFORM_WINDOWS) || defined(PLATFORM_LINUX)
+        #define OPENGL_DESKTOP
+        #include "gl3w.h"
+    #elif defined(PLATFORM_EMSCRIPTEN)
+        #define OPENGL_ES
+        #include <GLES3/gl3.h>
+    #endif
 #elif defined(RENDERER_VULKAN) && defined(PLATFORM_LAYER_SDL)
-    #include "SDL_vulkan.h"
     #include "vulkan.h"
     #include "vulkan_core.h"
 #else
@@ -120,32 +158,30 @@
 namespace bw{
     #include "typedef.h"
 
+    #include "logprint.h"
+    #include "logprint.cpp"
+
+    #include "error_handling.h"
+
+    #include "debug_tools.h"
+
     #include "type.h"
     #include "type.cpp"
 
     #include "intrinsics.h"
     #include "intrinsics.cpp"
 
-    #include "constexpr.h"
     #include "utils.h"
-
-    #include "byteoperation.h"
-    #include "byteoperation.cpp"
+    #include "utils.cpp"
 
     #include "hash.h"
     #include "hash.cpp"
 
-    #if defined(PLATFORM_LINUX)
-        #define LOG_COLORED
-    #endif
-    #include "logprint.h"
-    #include "logprint.cpp"
-    #include "logprint_typemacro.h"
-
     #include "sstring.h"
 
-    #include "sort_search.h"
     #include "data_structure.h"
+    #include "component_storage.h"
+    #include "sort_search.h"
 
     #include "filepath.h"
     #include "filepath.cpp"
@@ -155,19 +191,14 @@ namespace bw{
 
     // ---- debug
 
-    #define DEVELOPPER_MODE
-    #include "debug_break.h"
     #include "developper_tools.h"
 
-    // ---- os layer
+    // ---- os
 
     #include "os.h"
     #include "os.cpp"
 
-    // ---- core
-
-    #include "array_indexing.h"
-    #include "array_indexing.cpp"
+    // ----
 
     #include "time.h"
 
@@ -185,35 +216,27 @@ namespace bw{
 
     #include "dense_grid.h"
 
-    #include "shape_2D.h"
-    #include "shape_2D.cpp"
+    #include "collision.h"
+    #include "collision.cpp"
 
-    #include "collision_2D.h"
-    #include "collision_2D.cpp"
-
-    #include "camera_2D.h"
-    #include "camera_2D.cpp"
-
-    #include "shape_3D.h"
-    #include "shape_3D.cpp"
+    #include "geometry.h"
+    #include "geometry.cpp"
 
     #include "camera_math.h"
     #include "camera_math.cpp"
 
+    #include "camera_2D.h"
+    #include "camera_2D.cpp"
+
     #include "camera_3D.h"
     #include "camera_3D.cpp"
-
-    #include "colormap.h"
-    #include "colormap.cpp"
 
     #include "noise.h"
     #include "noise.cpp"
 
-    #include "tweening.h"
+    #include "tween.h"
 
     // ---- platform layer & rendering
-
-    #include "window_settings.h"
 
     #if defined(PLATFORM_LAYER_SDL)
         #include "time_SDL.cpp"
@@ -231,47 +254,56 @@ namespace bw{
 
             #include "window_SDL_GL.h"
             #include "window_SDL_GL.cpp"
-            typedef Window_SDL_GL3 Window;
+            typedef Window_Settings_SDL_GL Window_Settings;
+            typedef Window_SDL_GL Window;
 
-            #include "renderer_setup.h"
+            #include "renderer_GL3_settings.h"
             #include "renderer_GL3.h"
             #include "renderer_GL3.cpp"
             typedef Renderer_GL3 Renderer;
+            typedef Transient_Buffer_GL3 Transient_Buffer;
+            typedef Texture_GL3 Texture;
 
         #elif defined(RENDERER_VULKAN)
             #include "VK.h"
+            #include "VK.cpp"
 
             #include "window_SDL_VK.h"
             #include "window_SDL_VK.cpp"
+            typedef Window_Settings_SDL_VK Window_Settings;
             typedef Window_SDL_VK Window;
         #endif
     #endif
 
     // ---- additional structures
 
-    #include "font.h"
-    #include "font.cpp"
+    #include "texture.h"
+    #include "texture.cpp"
 
-    #include "texture_animation.h"
-    #include "texture_animation.cpp"
+    //#include "texture_animation.h"
+    //#include "texture_animation.cpp"
 
-    #include "particle.h"
-    #include "particle.cpp"
-
-    #include "asset_manager.h"
-    #include "asset_manager.cpp"
+    //#include "particle.h"
+    //#include "particle.cpp"
 
     #include "scene_manager.h"
     #include "scene_manager.cpp"
+
+    #include "asset_catalog.h"
+    #include "asset_catalog.cpp"
+    #include "asset_import.h"
+    #include "asset_import.cpp"
 }
 
-// ---- testing
+// ---- sample
 
-//#include "test.cpp"
-#include "../application/default_main.cpp"
+#include "../sample/unit.cpp"
+//#include "../sample/integration_easy_setup.cpp"
 
-// ---- easy setup
+// ---- application
 
-//#include "easy_setup.h"
-//#include "easy_setup.cpp"
+//#include "../application/GL4_3D.cpp"
+//#include "../application/VK.cpp"
 //#include "../application/minijam67_void.cpp"
+
+// ----

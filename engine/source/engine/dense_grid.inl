@@ -33,25 +33,21 @@ void Dense_Grid<T>::extend_to_fit(ivec2 coord){
         // NOTE(hugo): bottom
         for(u32 iy = 0u; iy != dorigin.y; ++iy){
             for(u32 ix = 0u; ix != new_size_x; ++ix){
-                LOG_TRACE("%d %d", ix, iy);
                 new((void*)&new_data[iy * new_size_x + ix]) T{};
             }
         }
         // NOTE(hugo): middle-left & middle-right
         for(u32 iy = dorigin.y; iy != size_y + dorigin.y; ++iy){
             for(u32 ix = 0u; ix != dorigin.x; ++ix){
-                LOG_TRACE("%d %d", ix, iy);
                 new((void*)&new_data[iy * new_size_x + ix]) T{};
             }
             for(u32 ix = dorigin.x + size_x; ix != new_size_x; ++ix){
-                LOG_TRACE("%d %d", ix, iy);
                 new((void*)&new_data[iy * new_size_x + ix]) T{};
             }
         }
         // NOTE(hugo): top
         for(u32 iy = dorigin.y + size_y; iy != new_size_y; ++iy){
             for(u32 ix = 0u; ix != new_size_x; ++ix){
-                LOG_TRACE("%d %d", ix, iy);
                 new((void*)&new_data[iy * new_size_x + ix]) T{};
             }
         }
@@ -76,11 +72,12 @@ void Dense_Grid<T>::extend_to_fit(ivec2 coord){
 
 template<typename T>
 T& Dense_Grid<T>::at(s32 coord_x, s32 coord_y){
-    s32 data_x = coord_x - origin.x;
-    s32 data_y = coord_y - origin.y;
+    s32 data_x = (s32)coord_x - (s32)origin.x;
+    s32 data_y = (s32)coord_y - (s32)origin.y;
 
     assert(data_x >= 0u && data_x < size_x
-            && data_y >= 0u && data_y < size_y);
+    && data_y >= 0u && data_y < size_y);
+
     return data[data_y * size_x + data_x];
 }
 

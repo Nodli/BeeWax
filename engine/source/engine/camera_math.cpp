@@ -1,3 +1,12 @@
+mat4 mat3D_from_mat2D(const mat3& mat){
+    return {
+        mat.data[0], mat.data[1], 0.f, mat.data[2],
+        mat.data[3], mat.data[4], 0.f, mat.data[5],
+        0.f,         0.f,         1.f, 0.f,
+        mat.data[6], mat.data[7], 0.f, mat.data[8]
+    };
+}
+
 mat3 mat_translation2D(vec2 vec){
     return mat3_rm(
         1.f, 0.f, vec.x,
@@ -8,9 +17,9 @@ mat3 mat_translation2D(vec2 vec){
 
 mat3 mat_orthographic2D(float screen_width, float screen_height){
     return mat3_rm(
-      - 2.f / screen_width, 0.f,                    0.f,
+        2.f / screen_width, 0.f,                    0.f,
         0.f,                2.f / screen_height,    0.f,
-        0.f,                0.f,                    0.f
+        0.f,                0.f,                    1.f
     );
 }
 
@@ -23,15 +32,15 @@ mat4 mat_translation3D(vec3 vec){
     );
 }
 
-// NOTE(hugo): using /zfar/, /znear/ instead of /depth/ because a translation is required
-// clip.origin.z != view.origin.z because objects withing [- zsize, 0] should not be visible
-mat4 mat_orthographic3D(float width, float height, float znear, float zfar){
+mat4 mat_orthographic3D(float vspan, float aspect_ratio, float znear, float zfar){
+    float half_height = vspan * 0.5f;
+    float half_width = aspect_ratio * half_height;
     float div_dz = 1.f / (zfar - znear);
     return mat4_rm(
-      - 2.f / width,    0.f,              0.f,              0.f,
-        0.f,            2.f / height,     0.f,              0.f,
-        0.f,            0.f,              2.f * div_dz,   - (zfar + znear) * div_dz,
-        0.f,            0.f,              0.f,              1.f
+        1.f / half_width,   0.f,                    0.f,              0.f,
+        0.f,                1.f / half_height,      0.f,              0.f,
+        0.f,                0.f,                  - div_dz,  - 0.5f * (zfar + znear) * div_dz + 0.5f,
+        0.f,                0.f,                    0.f,              1.f
     );
 }
 
@@ -41,10 +50,10 @@ mat4 mat_perspective3D(float vfov, float aspect_ratio, float znear, float zfar){
     float half_width = aspect_ratio * half_height;
     float div_dz = 1.f / (zfar - znear);
     return mat4_rm(
-      - 1.f / half_width,   0.f,                0.f,                        0.f,
-        0.f,                1.f / half_height,  0.f,                        0.f,
-        0.f,                0.f,                (zfar + znear) * div_dz,  - 2.f * zfar * znear * div_dz,
-        0.f,                0.f,                1.f,                        0.f
+        1.f / half_width,   0.f,                0.f,                                    0.f,
+        0.f,                1.f / half_height,  0.f,                                    0.f,
+        0.f,                0.f,              - 0.5f * (zfar + znear) * div_dz - 0.5f,- 1.f * zfar * znear * div_dz,
+        0.f,                0.f,              - 1.f,                                    0.f
     );
 }
 
@@ -60,10 +69,10 @@ DISABLE_WARNING_TYPE_PUNNING
 DISABLE_WARNING_POP
 
     return mat4_rm(
-      - 1.f / half_width,   0.f,                0.f,                        0.f,
-        0.f,                1.f / half_height,  0.f,                        0.f,
-        0.f,                0.f,                1.f - infinite_precision,   (infinite_precision - 2.f) * znear,
-        0.f,                0.f,                1.f,                        0.f
+        1.f / half_width,   0.f,                0.f,                                      0.f,
+        0.f,                1.f / half_height,  0.f,                                      0.f,
+        0.f,                0.f,                0.5f * (infinite_precision - 1.f) - 0.5f, 0.5f * (infinite_precision - 2.f) * znear,
+        0.f,                0.f,              - 1.f,                                      0.f
     );
 }
 
