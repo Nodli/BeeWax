@@ -653,6 +653,8 @@ namespace bw::utest{
             }
         }
 
+        grid.free();
+
         if(!success){
             LOG_ERROR("FAILED utest::t_Dense_Grid()");
         }else{
