@@ -36,8 +36,8 @@ struct Engine{
 };
 
 namespace g_config {
-    static const char* window_name = "easy_setup";
-    static File_Path asset_catalog_path = "./data/asset_catalog.json";
+    static const char* window_name;
+    static File_Path asset_catalog_path;
 };
 
 static Engine g_engine;
