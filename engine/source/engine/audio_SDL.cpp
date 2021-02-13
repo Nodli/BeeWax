@@ -128,23 +128,26 @@ void Audio_Player::mix_next_frame(){
     }
 
     // NOTE(hugo): mix the samples
-    for(u32 iplay = 0u; iplay != asset_playing_queue.storage.size; ++iplay){
-        Play_Info& info = asset_playing_queue.storage[iplay].data;
+    {
+        u32 iplay = 0u;
+        while(iplay != asset_playing_queue.storage.size){
+            Play_Info& info = asset_playing_queue.storage[iplay].data;
 
-        u32 mix_sample = 0u;
-        u32 play_cursor = info.cursor;
-        while(mix_sample != total_samples && play_cursor != info.asset->nsamples){
-            mix_buffer[mix_sample] += (float)info.asset->data[play_cursor];
-            ++mix_sample;
-            ++play_cursor;
-        }
+            u32 mix_sample = 0u;
+            u32 play_cursor = info.cursor;
+            while(mix_sample != total_samples && play_cursor != info.asset->nsamples){
+                mix_buffer[mix_sample] += (float)info.asset->data[play_cursor];
+                ++mix_sample;
+                ++play_cursor;
+            }
 
-        if(play_cursor != info.asset->nsamples){
-            info.cursor = play_cursor;
-            ++iplay;
+            if(play_cursor != info.asset->nsamples){
+                info.cursor = play_cursor;
+                ++iplay;
 
-        }else{
-            asset_playing_queue.remove_by_storage_index(iplay);
+            }else{
+                asset_playing_queue.remove_by_storage_index(iplay);
+            }
         }
     }
 
