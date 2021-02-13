@@ -13,9 +13,9 @@ template<typename T>
 struct Asset_Catalog{
     void terminate();
 
-    T* new_asset(const Asset_Tag& tag);
-    T* get_asset(const Asset_Tag& tag);
-    void remove_asset(const Asset_Tag& tag);
+    T* create(const Asset_Tag& tag);
+    T* search(const Asset_Tag& tag);
+    void remove(const Asset_Tag& tag);
 
     // ---- data
 

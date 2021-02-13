@@ -53,12 +53,12 @@ void import_asset_catalog_from_json(const File_Path& filename,
 
         if(strcmp(json_type->valuestring, "audio") == 0){
             ENGINE_CHECK(audio_catalog, "asset with tag %s is an audio asset but no /audio_catalog/ was provided", json_tag->valuestring);
-            Audio_Asset* asset = audio_catalog->new_asset(asset_tag);
+            Audio_Asset* asset = audio_catalog->create(asset_tag);
             import_audio_asset_from_json(asset, json_asset, audio_player);
 
         }else if(strcmp(json_type->valuestring, "texture") == 0){
             ENGINE_CHECK(texture_catalog, "asset with tag %s is a texture asset but no /texture_catalog/ was provided", json_tag->valuestring);
-            Texture_Asset* asset = texture_catalog->new_asset(asset_tag);
+            Texture_Asset* asset = texture_catalog->create(asset_tag);
             import_texture_asset_from_json(asset, json_asset, renderer);
 
         }else{

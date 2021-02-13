@@ -25,7 +25,7 @@ void Asset_Catalog<T>::terminate(){
 }
 
 template<typename T>
-T* Asset_Catalog<T>::new_asset(const Asset_Tag& tag){
+T* Asset_Catalog<T>::create(const Asset_Tag& tag){
     // NOTE(hugo): malloc
     Asset_Catalog_Bucket* bucket;
     void* asset;
@@ -47,7 +47,7 @@ T* Asset_Catalog<T>::new_asset(const Asset_Tag& tag){
 }
 
 template<typename T>
-T* Asset_Catalog<T>::get_asset(const Asset_Tag& tag){
+T* Asset_Catalog<T>::search(const Asset_Tag& tag){
     Asset_Catalog_Bucket** bucket_in_table = tag_to_bucket.search(tag);
     assert(bucket_in_table);
 
@@ -55,7 +55,7 @@ T* Asset_Catalog<T>::get_asset(const Asset_Tag& tag){
 }
 
 template<typename T>
-void Asset_Catalog<T>::remove_asset(const Asset_Tag& tag){
+void Asset_Catalog<T>::remove(const Asset_Tag& tag){
     Asset_Catalog_Bucket** bucket_in_table = tag_to_bucket.search(tag);
     assert(bucket_in_table);
 
