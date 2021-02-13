@@ -3,6 +3,7 @@ engine/externals/lib
 
 # binary folders
 engine/win_x64/bin/
+engine/win_x64/ems/
 engine/linux/bin/
 
 # session stuff
