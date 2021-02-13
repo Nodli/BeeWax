@@ -43,8 +43,8 @@ void Component_Storage<T>::remove(const Component_Reference& ref){
 
         // NOTE(hugo): free storage & repack
         u32 storage_index = indexing[ref.ID].storage_index;
-        storage.remove_swap(storage_index);
         indexing[storage[storage_index].indexing_index].storage_index = storage_index;
+        storage.remove_swap(storage_index);
     }
 }
 
@@ -58,8 +58,8 @@ void Component_Storage<T>::remove_by_storage_index(u32 storage_index){
     free_ID.push(indexing_index);
 
     // NOTE(hugo): free storage & repack
-    storage.remove_swap(storage_index);
     indexing[storage[storage_index].indexing_index].storage_index = storage_index;
+    storage.remove_swap(storage_index);
 }
 
 template<typename T>
