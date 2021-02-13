@@ -20,7 +20,8 @@ struct Scene_Manager{
     void(T::*on_remove_ptr)() = &T::on_remove>
     void push_scene(const char* scene_name);
 
-    void remove_scene(const char* scene_name);
+    void remove_scene_by_ptr(void* data_ptr);
+    void remove_scene_by_name(const char* scene_name);
     Scene_Info* search_scene(const char* scene_name);
 
     void update();
