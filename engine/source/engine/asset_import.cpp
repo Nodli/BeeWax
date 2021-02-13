@@ -33,7 +33,7 @@ void import_asset_catalog_from_json(const File_Path& filename,
 
     cJSON* json_assets = cJSON_GetObjectItemCaseSensitive(json_tree, "assets");
     ENGINE_CHECK(json_assets && cJSON_IsArray(json_assets),
-            "import_asset_catalog_from_json expects an 'assets' array as root", NULL);
+            "import_asset_catalog_from_json expects an 'assets' array as root");
 
     for(u32 iasset = 0u; iasset != cJSON_GetArraySize(json_assets); ++iasset){
         cJSON* json_asset = cJSON_GetArrayItem(json_assets, iasset);

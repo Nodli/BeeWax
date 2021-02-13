@@ -60,10 +60,10 @@ void Audio_Player::setup(){
 
     state.nsamples = audio_manager_buffer_in_samples;
     state.buffer = (s16*)malloc(sizeof(s16) * state.nsamples);
-    ENGINE_CHECK(state.buffer, "FAILED MALLOC", NULL);
+    ENGINE_CHECK(state.buffer, "FAILED MALLOC");
 
     mix_buffer = (float*)malloc(sizeof(float) * audio_manager_generator_offset_in_samples);
-    ENGINE_CHECK(mix_buffer, "FAILED MALLOC", NULL);
+    ENGINE_CHECK(mix_buffer, "FAILED MALLOC");
 
     SDL_PauseAudioDevice(device, 0);
 }

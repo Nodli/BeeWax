@@ -3,10 +3,12 @@
 
 static char CRASH_sprintf_scratch[2048];
 
+#define SELECT_NARG(MACRO_PREFIX, ARG5, ARG4, ARG3, ARG2, ARG1, MACRO_SUFFIX, ...) MACRO_PREFIX ## _ ## MACRO_SUFFIX
+
 #if defined(PLATFORM_LAYER_SDL)
     #define CRASH(MESSAGE_FORMAT, ...)                                                                          \
     do{                                                                                                         \
-        sprintf(CRASH_sprintf_scratch, "FILE:%s\nLINE:%u\n" MESSAGE_FORMAT, FILENAME, __LINE__, __VA_ARGS__);   \
+        sprintf(CRASH_sprintf_scratch, "FILE:%s\nLINE:%u\n" MESSAGE_FORMAT, FILENAME, __LINE__, ##__VA_ARGS__); \
         LOG_ERROR("%s", CRASH_sprintf_scratch);                                                                 \
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "ERROR", CRASH_sprintf_scratch, NULL);                   \
         abort();                                                                                                \
@@ -22,12 +24,12 @@ static char CRASH_sprintf_scratch[2048];
 
 // ---- ENGINE_CHECK
 
-#define ENGINE_CHECK(EXPRESSION, MESSAGE_FORMAT, ...)                                                   \
-do{                                                                                                     \
-    bool result = (bool)(EXPRESSION);                                                                   \
-    if(result != true){                                                                                 \
-        CRASH("**ENGINE ERROR**\nEXPRESSION: %s\nMESSAGE: " MESSAGE_FORMAT, #EXPRESSION, __VA_ARGS__);  \
-    }                                                                                                   \
+#define ENGINE_CHECK(EXPRESSION, MESSAGE_FORMAT, ...)                                                       \
+do{                                                                                                         \
+    bool result = (bool)(EXPRESSION);                                                                       \
+    if(result != true){                                                                                     \
+        CRASH("**ENGINE ERROR**\nEXPRESSION: %s\nMESSAGE: " MESSAGE_FORMAT, #EXPRESSION, ##__VA_ARGS__);    \
+    }                                                                                                       \
 }while(false)
 
 

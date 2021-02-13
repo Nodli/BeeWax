@@ -10,7 +10,7 @@ namespace GL{
         glShaderSource(output, 2, shader_source, shader_size);
 
         glCompileShader(output);
-        ENGINE_CHECK(check_error_shader(output, "create_shader(GLenum, char*, GLint)"), "", NULL);
+        ENGINE_CHECK(check_error_shader(output, "create_shader(GLenum, char*, GLint)"), "");
 
         return output;
     }
