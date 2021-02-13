@@ -1,50 +1,69 @@
 #!/bin/bash
-
+clear
 cd $(dirname $0)
-
-mkdir -p bin/
-cp -r -u ../data bin/
-
 P=$PWD/..
+
+./make_data.sh bin data
+
+echo -------- Compiling source
 
 ExecutableName=Application
 
 SourceApplication=${P}/source/engine/unity_main.cpp
 
-# OpenGL
-IncludeGL3W="-I ${P}/externals/gl3w/include/"
-SourceGL3W=$P/externals/gl3w/src/gl3w.c
-LinkOpenGL=-lGL
+Include_gl3w="-I ${P}/externals/gl3w/include/"
+Source_gl3w=$P/externals/gl3w/src/gl3w.c
+Library_OpenGL=-lGL
 
-# Vulkan
-IncludeVulkan="-I ${P}/externals/vulkan/"
-LinkVulkan=-lvulkan
+Include_stb="-I ${P}/externals/stb/"
+Library_stb="-L ${P}/externals/lib/ -lstb"
 
-IncludeSTB="-I ${P}/externals/stb/"
-LinkSTB="-L ${P}/externals/stb/static_library/linux -lstb"
+Library_SDL=$(sdl2-config --cflags --libs)
 
-IncludeLinkSDL=$(sdl2-config --cflags --libs)
-LinkDynamicLinking=-ldl
+Include_cJSON="-I ${P}/externals/cJSON/"
+Library_cJSON="-L ${P}/externals/lib/ -lcjson"
+
+Include_fast_obj="-I ${P}/externals/fast_obj/"
+Library_fast_obj="-L ${P}/externals/lib/ -lfast_obj"
+
+Include_klib="-I ${P}/externals/klib/"
 
 CompilerFlags="-o ${ExecutableName} -std=c++17"
-OptimizationFlags="-fno-exceptions"
-WarningFlags="-Wall -Wextra -Werror"
-WarningExtraFlags="-Wsign-compare -Wsign-conversion -Wconversion"
-DebugFlags="-g -DDEBUG_BUILD"
-SanitizeFlags="-fsanitize=address"
+LinkerFlags="-ldl"
+OptimizationFlags="-fno-rtti -fno-exceptions"
+#DebugFlags="-g"
+#AdressSanitizer="-fsanitize=address"
 
-cd bin/
+#WarningFlags="-Wall -Wextra -Werror"
+#WarningExtraFlags="-Wsign-compare -Wsign-conversion -Wconversion"
+
+Defines="-DLIB_STB -DLIB_CJSON -DLIB_FAST_OBJ -DPLATFORM_LAYER_SDL -DRENDERER_OPENGL3 -DDEVELOPPER_MODE"
+if ! [[ -v DebugFlags ]];
+then
+    echo -- release mode
+    DebugFlags=-DNDEBUG
+else
+    echo -- debug mode
+fi
+
+pushd ${P}/linux/bin > /dev/null
 
 # ---- SDL OpenGL STB
-EXIT_CODE= g++                                              \
-$CompilerFlags                                              \
-$OptimizationFlags                                          \
--DLIB_STB -DPLATFORM_LAYER_SDL -DRENDERER_OPENGL3           \
-$SourceApplication $SourceGL3W                              \
-$IncludeGL3W $IncludeSTB                                    \
-$LinkSTB $IncludeLinkSDL $LinkOpenGL $LinkDynamicLinking    \
-$DebugFlags                                                 \
-#$SanitizeFlags                                              \
-#$WarningFlags $WarningExtraFlags                            \
+ReturnValue= g++                                                            \
+$CompilerFlags                                                              \
+$OptimizationFlags                                                          \
+$DebugFlags                                                                 \
+$AdressSanitizer                                                            \
+$WarningFlags                                                               \
+$WarningExtraFlags                                                          \
+$Defines                                                                    \
+$Include_gl3w $Include_stb $Include_cJSON $Include_fast_obj $Include_klib   \
+$SourceApplication $Source_gl3w                                             \
+$LinkerFlags                                                                \
+$Library_SDL $Library_OpenGL $Library_stb $Library_cJSON $Library_fast_obj
 
-exit $EXIT_CODE
+echo -------- Finished compiling source
+
+popd > /dev/null
+
+exit $ReturnValue

@@ -1,8 +1,6 @@
 @echo off
 cls
-
 setlocal
-
 set P=%cd%\..
 
 REM call make_externals.bat
@@ -39,8 +37,9 @@ set Include_klib=/I %P%\externals\klib\
 
 set Library_win32=user32.lib gdi32.lib
 
-set CompilerFlags=/nologo /Fe%Executablename% /FC /EHsc /std:c++17 /O2 /cgthreads4 /Fo%PathCompiled%
-set DebugFlags=/Zi /Fd%PathPDB%
+set CompilerFlags=/nologo /Fe%Executablename% /FC /std:c++17 /cgthreads4 /Fo%PathCompiled%
+set OptimizationFlags=/MT /GR- /EHsc /EHa- /Oi /O2
+set DebugFlags=/Od /Zi /Fd%PathPDB%
 set AdressSanitizer=-fsanitize=address
 
 set Defines=/DLIB_STB /DLIB_CJSON /DLIB_FAST_OBJ /DPLATFORM_LAYER_SDL /DRENDERER_OPENGL3 /DDEVELOPPER_MODE
@@ -56,9 +55,10 @@ pushd %P%\win_x64\bin
 if defined AdressSanitizer (
     echo -- using clang-cl
     clang-cl  %CompilerFlags%                                                                                   ^
+        %OptimizationFlags%                                                                                     ^
         %DebugFlags%                                                                                            ^
-        %Defines%                                                                                               ^
         %AdressSanitizer%                                                                                       ^
+        %Defines%                                                                                               ^
         %Include_SDL% %Include_gl3w% %Include_stb% %Include_cJSON% %Include_fast_obj% %Include_klib%            ^
         %SourceApplication% %Source_gl3w%                                                                       ^
         /link %Library_SDL% %Library_OpenGL% %Library_stb% %Library_cJSON% %Library_fast_obj% %Library_win32%   ^
@@ -67,6 +67,7 @@ if defined AdressSanitizer (
 ) else (
     echo -- using cl
     cl  %CompilerFlags%                                                                                         ^
+        %OptimizationFlags%                                                                                     ^
         %DebugFlags%                                                                                            ^
         %Defines%                                                                                               ^
         %Include_SDL% %Include_gl3w% %Include_stb% %Include_cJSON% %Include_fast_obj% %Include_klib%            ^
@@ -76,8 +77,9 @@ if defined AdressSanitizer (
 
 )
 
+popd
+
 echo.
 echo -------- Finished compiling source
 
-popd
 endlocal
