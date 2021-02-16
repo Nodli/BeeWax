@@ -172,7 +172,7 @@ quaternion::quat<T> quat_from_vector_to_vector(const vec::vec3<T>& vA, const vec
 }
 
 template<typename T>
-[[nodiscard]] vec::vec3<T> rotate(const vec::vec3<T>& v, const quaternion::quat<T>& quat){
+[[nodiscard]] vec::vec3<T> rotated(const vec::vec3<T>& v, const quaternion::quat<T>& quat){
     // REF(hugo):
     // https://blog.molecular-matters.com/2013/05/24/a-faster-quaternion-vector-multiplication/
     vec::vec3<T> imaginary_quat = {quat.i, quat.j, quat.k};

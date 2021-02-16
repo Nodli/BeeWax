@@ -35,7 +35,7 @@ rot::rot3<T> make_rot(const vec::vec3<T> from, const vec::vec3<T> to);
 template<typename T>
 rot::rot3<T> make_rot(const T angle, const vec::vec3<T> bivector);
 template<typename T>
-[[nodiscard]] vec::vec3<T> rotate(const vec::vec3<T>& v, const rot::rot3<T>& r);
+[[nodiscard]] vec::vec3<T> rotated(const vec::vec3<T>& v, const rot::rot3<T>& r);
 
 #include "rot.inl"
 

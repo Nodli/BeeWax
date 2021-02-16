@@ -36,7 +36,7 @@ rot::rot3<T> make_rot(const T angle, const vec::vec3<T> bivector){
     return {cos(angle / 2), sin_temp * bivector.x, sin_temp * bivector.y, sin_temp * bivector.z};
 }
 template<typename T>
-vec::vec3<T> rotate(const vec::vec3<T>& v, const rot::rot3<T>& r){
+vec::vec3<T> rotated(const vec::vec3<T>& v, const rot::rot3<T>& r){
     vec::vec3<T> vector_temp = {
         r.s * v.x + r.xy * v.y - r.zx * v.z,
         r.s * v.y + r.yz * v.z - r.xy * v.x,

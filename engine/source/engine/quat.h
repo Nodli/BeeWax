@@ -62,7 +62,7 @@ template<typename T>
 quaternion::quat<T> quat_from_vector_to_vector(const vec::vec3<T>& vA, const vec::vec3<T>& vB);
 
 template<typename T>
-[[nodiscard]] vec::vec3<T> rotate(const vec::vec3<T>& v, const quaternion::quat<T>& normalized_quat);
+[[nodiscard]] vec::vec3<T> rotated(const vec::vec3<T>& v, const quaternion::quat<T>& normalized_quat);
 
 // NOTE(hugo): qA and qB must be unit quaternions
 template<typename T>
