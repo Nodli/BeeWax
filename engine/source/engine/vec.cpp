@@ -16,6 +16,16 @@ vec2 normalized(const vec2& vec){
     return vec / length(vec);
 }
 
+vec2 rotated(const vec2& v, float rad){
+    float vcos = cos(rad);
+    float vsin = sin(rad);
+
+    return {
+        vcos * v.x - vsin * v.y,
+        vsin * v.x + vcos * v.y
+    };
+}
+
 // ---- vec3
 
 float dot(const vec3& vA, const vec3& vB){

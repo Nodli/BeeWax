@@ -108,6 +108,8 @@ template<typename T>
 [[nodiscard]] float sqlength(const vec2& vec);
 [[nodiscard]] vec2 normalized(const vec2& vec);
 
+[[nodiscard]] vec2 rotated(const vec2& v, float rad);
+
 // ---- vec3 ---- //
 
 template<typename T>
