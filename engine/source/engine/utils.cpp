@@ -60,12 +60,24 @@ bool is_aligned(void* ptr, size_t align){
 
 // ---- math
 
-float fast_floor(const float x){
-    return (x < 0.f) ? x - 1.f : x;
+float floor(const float x){
+    return floorf(x);
+}
+
+float ceil(const float x){
+    return ceilf(x);
+}
+
+float pow(const float x, const float pow){
+    return powf(x, pow);
 }
 
 float mix(const float min, const float max, const float t){
     return min + t * (max - min);
+}
+
+float normalize(const float x, const float range_min, const float range_max){
+    return min_max((x - range_min) / (range_max - range_min), 0.f, 1.f);
 }
 
 float to_radians(const float degree){
@@ -76,40 +88,36 @@ float to_degree(const float radian){
     return radian / PI * 180.f;
 }
 
-float normalize(const float x, const float range_min, const float range_max){
-    return min_max((x - range_min) / (range_max - range_min), 0.f, 1.f);
-}
-
 float cos(float t){
-    return std::cos(t);
+    return cosf(t);
 }
 
 float sin(float t){
-    return std::sin(t);
+    return sinf(t);
 }
 
 float tan(float t){
-    return std::tan(t);
+    return tanf(t);
 }
 
 float sqrt(float t){
-    return std::sqrt(t);
+    return sqrtf(t);
 }
 
 float acos(float t){
-    return std::acos(t);
+    return acosf(t);
 }
 
 float asin(float t){
-    return std::asin(t);
+    return asinf(t);
 }
 
 float atan(float t){
-    return std::atan(t);
+    return atanf(t);
 }
 
 float atan2(float y, float x){
-    return std::atan2(y, x);
+    return atan2f(y, x);
 }
 
 // ---- grid indexing

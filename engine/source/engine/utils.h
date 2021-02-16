@@ -84,11 +84,15 @@ bool is_aligned(void* ptr, size_t align);
 
 // ---- math
 
-float fast_floor(const float x);
+float floor(const float x);
+float ceil(const float x);
+float pow(const float x, const float pow);
+
 float mix(const float min, const float max, const float t);
+float normalize(const float x, const float range_min, const float range_max);
+
 float to_radians(const float degree);
 float to_degree(const float radian);
-float normalize(const float x, const float range_min, const float range_max);
 
 float cos(float t);
 float sin(float t);
