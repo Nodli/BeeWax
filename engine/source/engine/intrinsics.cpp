@@ -34,10 +34,18 @@ inline T atomic_exchange(volatile T* atomic, T new_value){
         return _InterlockedExchange8(atomic, new_value);
     else if constexpr (sizeof(T) == 2u)
         return _InterlockedExchange16(atomic, new_value);
-    else if constexpr (sizeof(T) == 4u)
-        return _InterlockedExchange(atomic, new_value);
-    else if constexpr (sizeof(T) == 8u)
-        return _InterlockedExchange64((LONG64*)atomic, (LONG64)new_value);
+    else if constexpr (sizeof(T) == 4u){
+        long* reinterpret_new_value = (long*)&new_value;
+        long return_value = _InterlockedExchange((volatile long*)atomic, *reinterpret_new_value);
+        T* return_value_as_T = (T*)&return_value;
+        return *return_value_as_T;
+    }
+    else if constexpr (sizeof(T) == 8u){
+        LONG64* reinterpret_new_value = (LONG64*)&new_value;
+        LONG64 return_value = _InterlockedExchange64((volatile LONG64*)atomic, *reinterpret_new_value);
+        T* return_value_as_T = (T*)&return_value;
+        return *return_value_as_T;
+    }
 #elif defined(COMPILER_GCC)
     static_assert(__atomic_always_lock_free(sizeof(T), NULL));
     T output;
