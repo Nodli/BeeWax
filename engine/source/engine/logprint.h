@@ -28,19 +28,19 @@ namespace BEEWAX_INTERNAL{
 
 #if defined(PLATFORM_WINDOWS)
     static const char* log_levels_resetcolor = "\033[0m";
-    static const char* log_levels_nocolor = "\033[93m";
+    static const char* log_levels_pathcolor = "\033[93m";
     static const char* log_levels_colors[nlog_levels] = {
-        "\033[94;1m", "\033[32;1m", "\033[33;1m", "\033[31;1m"
+        "\033[30;1m", "\033[34;1m", "\033[35;1m", "\033[31;1m"
     };
 #elif defined(PLATFORM_LINUX)
     static const char* log_levels_resetcolor = "\x1b[0m";
-    static const char* log_levels_nocolor = "\x1b[93m";
+    static const char* log_levels_pathcolor = "\x1b[93m";
     static const char* log_levels_colors[nlog_levels] = {
-        "\x1b[94;1m", "\x1b[32;1m", "\x1b[33;1m", "\x1b[31;1m"
+        "\x1b[30;1m", "\x1b[34;1m", "\x1b[35;1m", "\x1b[31;1m"
     };
 #else
     static const char* log_levels_resetcolor = "";
-    static const char* log_levels_nocolor = "";
+    static const char* log_levels_pathcolor = "";
     static const char* log_levels_colors[nlog_levels] = {
         "", "", "", ""
     };

@@ -19,7 +19,7 @@ void BEEWAX_INTERNAL::log_function(const char* file, uint line, uint level, cons
             time_string[time_length] = '\0';
 
             fprintf(stdout, "%s%s %s%-7s %s%s:%-5d: %s",
-                    log_levels_resetcolor, time_string, log_levels_colors[level], log_levels_names[level], log_levels_nocolor, file, line, log_levels_resetcolor);
+                    log_levels_resetcolor, time_string, log_levels_colors[level], log_levels_names[level], log_levels_pathcolor, file, line, log_levels_resetcolor);
 
             va_list args;
             va_start(args, format);

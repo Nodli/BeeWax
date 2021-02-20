@@ -10,17 +10,17 @@ LOG_TRACE("\n%f %f %f %f\n%f %f %f %f\n%f %f %f %f\n%f %f %f %f",
 
 vec3 Camera_3D_FP::right(){
     vec3 eX = {1.f, 0.f, 0.f};
-    return bw::rotate(eX, inverse(view_quaternion));
+    return bw::rotated(eX, inverse(view_quaternion));
 };
 
 vec3 Camera_3D_FP::up(){
     vec3 eY = {0.f, 1.f, 0.f};
-    return bw::rotate(eY, inverse(view_quaternion));
+    return bw::rotated(eY, inverse(view_quaternion));
 };
 
 vec3 Camera_3D_FP::forward(){
     vec3 eZ = {0.f, 0.f,-1.f};
-    return bw::rotate(eZ, inverse(view_quaternion));
+    return bw::rotated(eZ, inverse(view_quaternion));
 };
 
 mat4 Camera_3D_FP::view_matrix(){
@@ -57,21 +57,21 @@ vec3 Camera_3D_Orbit::position(){
 
 vec3 Camera_3D_Orbit::right(){
     vec3 eX = {1.f, 0.f, 0.f};
-    return bw::rotate(eX, inverse(view_quaternion));
+    return bw::rotated(eX, inverse(view_quaternion));
 };
 vec3 Camera_3D_Orbit::up(){
     vec3 eY = {0.f, 1.f, 0.f};
-    return bw::rotate(eY, inverse(view_quaternion));
+    return bw::rotated(eY, inverse(view_quaternion));
 };
 vec3 Camera_3D_Orbit::forward(){
     vec3 eZ = {0.f, 0.f,-1.f};
-    return bw::rotate(eZ, inverse(view_quaternion));
+    return bw::rotated(eZ, inverse(view_quaternion));
 };
 
 mat4 Camera_3D_Orbit::view_matrix(){
     vec3 default_direction = {0., 0.,-1.};
     vec3 viewer_relative_position = - default_direction * orbit_radius;
-    viewer_relative_position = bw::rotate(viewer_relative_position, inverse(view_quaternion));
+    viewer_relative_position = bw::rotated(viewer_relative_position, inverse(view_quaternion));
     vec3 viewer_position = orbit_center + viewer_relative_position;
 
     // NOTE(hugo): world space --(translation + rotation)-> view space

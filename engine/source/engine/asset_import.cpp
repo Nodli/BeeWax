@@ -62,7 +62,7 @@ void import_asset_catalog_from_json(const File_Path& filename,
             import_texture_asset_from_json(asset, json_asset, renderer);
 
         }else{
-            LOG_ERROR("unknown asset type: %s for asset with tag: %s", json_type->valuestring, json_tag->valuestring);
+            LOG_WARNING("unknown asset type: %s for asset with tag: %s", json_type->valuestring, json_tag->valuestring);
         }
     }
 

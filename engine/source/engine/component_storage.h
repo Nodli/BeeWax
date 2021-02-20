@@ -5,7 +5,7 @@ struct Component_Reference{
     u32 ID = UINT32_MAX;
     u32 generation = UINT32_MAX;
 };
-constexpr Component_Reference unknown_reference = {UINT32_MAX, UINT32_MAX};
+constexpr Component_Reference unknown_component_reference = {UINT32_MAX, UINT32_MAX};
 
 template<typename T>
 struct Component_Storage{

@@ -127,7 +127,7 @@ namespace bw::utest{
     void t_pool(){
         bool success = true;
 
-        pool<u32, bucketized_storage_32<Pool_Bucket<u32>>> pool;
+        pool<u32, bucketized_storage<Pool_Bucket<u32>, 32u>> pool;
         success &= (pool.size == 0u && pool.storage.capacity == 0 && pool.head_bucket == freelist_no_bucket);
 
         pool.set_min_capacity(1u);
@@ -380,11 +380,11 @@ namespace bw::utest{
 
         vec3 norm = cross(pA, pB);
         quat q = quat_from_axis(PI / 2.f, norm);
-        vec3 vquat = rotate(v, q);
+        vec3 vquat = rotated(v, q);
 
         vec3 biv = wedge(pA, pB);
         rot3 r = make_rot(PI / 2.f, biv);
-        vec3 vrot = rotate(v, r);
+        vec3 vrot = rotated(v, r);
 
         if(!almost_equal(vquat.x, vrot.x, ftolerance, 1) && almost_equal(vquat.y, vrot.y, ftolerance, 1) && almost_equal(vquat.z, vrot.z, ftolerance, 1)){
             LOG_ERROR("FAILED utest::t_quat_rot()");

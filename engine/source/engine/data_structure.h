@@ -155,6 +155,11 @@ array<T, Storage_Type> deep_copy(array<T, Storage_Type> to_copy);
 // - access, insert & remove are o(1)
 // - non-iterable
 
+// NOTE(hugo): use ptr because
+// * pointers are faster than indices because there is no index-to-ptr phase (non-negligible cost for some Storage_Type)
+// * pointer translation may be required when extending BUT extensions happend when there is no free bucket
+//   ie no translation is required for the general use case
+
 constexpr u32 freelist_no_bucket = UINT32_MAX;
 
 template<typename T>
