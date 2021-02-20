@@ -14,7 +14,7 @@ void Engine::setup(){
 
     // ---- frame timing
 
-    frame_timing.initialize(timer_ticks(), timer_frequency(), 60u, 0.05f, 10u, 10u);
+    frame_timing.initialize(timer_ticks(), timer_frequency(), 60u, 0.05f, 2u, 60u);
 
     // ---- window
 
@@ -42,7 +42,20 @@ void Engine::setup(){
 
     DEV_Debug_Renderer;
 
-    glClearColor(0.f, 0.f, 0.f, 1.f);
+    glClearColor(0.5f, 0.5f, 0.5f, 1.f);
+
+    glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+
+    glEnable(GL_FRAMEBUFFER_SRGB);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LEQUAL);
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    //glCullFace(GL_BACK);
+    //glEnable(GL_CULL_FACE);
 
     renderer.setup();
 
@@ -121,7 +134,6 @@ Engine_Code Engine::update_start(){
 void Engine::update_end(){
     keyboard.next_frame();
     mouse.next_frame();
-    audio.mix_next_frame();
 }
 
 Engine_Code Engine::render_start(){

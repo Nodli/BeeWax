@@ -5,7 +5,7 @@ void make_texture_asset_from_png_file(Texture_Asset* asset, const File_Path& pat
     asset->height = height;
     ENGINE_CHECK(asset->bitmap, "failed to stbi_load with path: %s", path.data);
 
-    asset->texture = renderer->get_texture(TEXTURE_FORMAT_RGBA, width, height, TYPE_UBYTE, asset->bitmap);
+    asset->texture = renderer->get_texture(TEXTURE_FORMAT_SRGBA_BYTE, width, height, TYPE_UBYTE, asset->bitmap);
 }
 
 void free_texture_asset(Texture_Asset* asset, Renderer* renderer){

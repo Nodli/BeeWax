@@ -3,16 +3,24 @@
 
 enum Data_Type{
     TYPE_FLOAT = GL_FLOAT,
+    TYPE_USHORT = GL_UNSIGNED_SHORT,
     TYPE_UBYTE = GL_UNSIGNED_BYTE,
     TYPE_NONE
 };
 
-// NOTE(hugo): synchronized with texture_format_channels in renderer_GL3.cpp
+// NOTE(hugo):
+// * asset textures should use SRGB
+// * favor formats with 4 channels
+// * synchronized with texture_format_info in renderer_GL3.cpp
+// * stores GL's /internalformat/
 enum Texture_Format{
-    TEXTURE_FORMAT_R = GL_RED,
-    // NOTE(hugo): GPUs don't like 24-byte alignment
-    TEXTURE_FORMAT_RGB = GL_RGB,
-    TEXTURE_FORMAT_RGBA = GL_RGBA,
+    TEXTURE_FORMAT_SRGB_BYTE = GL_SRGB8,
+    TEXTURE_FORMAT_SRGBA_BYTE = GL_SRGB8_ALPHA8,
+
+    TEXTURE_FORMAT_R_BYTE = GL_RED,
+    TEXTURE_FORMAT_RGB_BYTE = GL_RGB,
+    TEXTURE_FORMAT_RGBA_BYTE = GL_RGBA,
+
     TEXTURE_FORMAT_NONE
 };
 
@@ -106,6 +114,8 @@ R"(precision mediump float;)" "\n";
     static_assert(false, "no shader_version for the specified OpenGL version");
 #endif
 
+// NOTE(hugo): polygon_2D
+// /vcolor/ is expected in linear space
 static const char* shader_header_polygon_2D = shader_version;
 static const char* vertex_shader_polygon_2D = R"(
     layout (std140) uniform u_camera_2D{
@@ -132,6 +142,8 @@ static const char* fragment_shader_polygon_2D = R"(
     }
 )";
 
+// NOTE(hugo): polygon_2D_tex
+// /tex/ is expected in linear space ie use _SRGB or _SRGBA texture formats
 static const char* shader_header_polygon_2D_tex = shader_version;
 static const char* vertex_shader_polygon_2D_tex = R"(
     layout (std140) uniform u_camera_2D{

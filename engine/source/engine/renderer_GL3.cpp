@@ -1,33 +1,32 @@
-static inline u32 texture_format_channels(Texture_Format format){
+static inline void texture_format_info(Texture_Format format,
+        u32& nchan, GLenum& format_type, size_t& bytes_per_chan){
     switch(format){
-        case TEXTURE_FORMAT_RGBA:
-            return 4u;
-        case TEXTURE_FORMAT_RGB:
-            return 3u;
-        case TEXTURE_FORMAT_R:
-            return 1u;
+        case TEXTURE_FORMAT_RGBA_BYTE:
+        case TEXTURE_FORMAT_SRGBA_BYTE:
+            nchan = 4u;
+            format_type = GL_RGB;
+            bytes_per_chan = 1u;
+            break;
+        case TEXTURE_FORMAT_RGB_BYTE:
+        case TEXTURE_FORMAT_SRGB_BYTE:
+            nchan = 3u;
+            format_type = GL_RGB;
+            bytes_per_chan = 1u;
+            break;
+        case TEXTURE_FORMAT_R_BYTE:
+            nchan = 1u;
+            format_type = GL_RED;
+            bytes_per_chan = 1u;
+            break;
         default:
-            LOG_ERROR("format with value %d missing in texture_format_channels", format);
+            LOG_ERROR("format %d missing in texture_format_info", format);
             assert(false);
-            return 0u;
     }
 };
-static inline size_t data_type_bytes(Data_Type type){
-    switch(type){
-        case TYPE_FLOAT:
-            return 4u;
-        case TYPE_UBYTE:
-            return 1u;
-        default:
-            LOG_ERROR("type with value %d missing in data_type_bytes", type);
-            assert(false);
-            return 0u;
-    }
-}
 
 // NOTE(hugo): alignment is 1, 2 or 4
-static inline GLint compute_texture_row_alignment(u32 width, u32 height, Texture_Format format, Data_Type type){
-    size_t row_bytesize = width * texture_format_channels(format) * (GLint)data_type_bytes(type);
+static inline GLint compute_texture_row_alignment(u32 width, u32 height, u32 nchan, size_t bytes_per_chan){
+    size_t row_bytesize = width * nchan * bytes_per_chan;
     return (GLint)min(4u, get_rightmost_set_bit(row_bytesize));
 }
 
@@ -286,6 +285,25 @@ Transient_Buffer_GL3 Renderer_GL3::get_transient_buffer(size_t bytesize){
     return buffer;
 }
 
+Transient_Buffer_Indexed_GL3 Renderer_GL3::get_transient_buffer_indexed(size_t vbytesize, size_t ibytesize){
+    Transient_Buffer_Indexed_GL3 buffer;
+    glGenVertexArrays(1, &buffer.vao);
+    glGenBuffers(1, &buffer.vbo);
+    glGenBuffers(1, &buffer.ibo);
+
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)vbytesize, NULL, GL_STREAM_DRAW);
+    buffer.vbytesize = vbytesize;
+    glBindBuffer(GL_ARRAY_BUFFER, 0u);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)ibytesize, NULL, GL_STREAM_DRAW);
+    buffer.ibytesize = ibytesize;
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0u);
+
+    return buffer;
+}
+
 void Renderer_GL3::free_transient_buffer(Transient_Buffer_GL3& buffer){
     if(buffer.ptr){
         glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
@@ -299,17 +317,74 @@ void Renderer_GL3::free_transient_buffer(Transient_Buffer_GL3& buffer){
     buffer = Transient_Buffer_GL3();
 }
 
-void Renderer_GL3::format_transient_buffer(const Transient_Buffer_GL3& buffer, Vertex_Format_Name format){
+void Renderer_GL3::free_transient_buffer(Transient_Buffer_Indexed_GL3& buffer){
+    if(buffer.vptr){
+        assert(buffer.iptr);
+        glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+        glUnmapBuffer(GL_ARRAY_BUFFER);
+        glBindBuffer(GL_ARRAY_BUFFER, 0u);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+        glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+        glBindBuffer(GL_ARRAY_BUFFER, 0u);
+    }
+
+    glDeleteVertexArrays(1u, &buffer.vao);
+    glDeleteBuffers(1u, &buffer.vbo);
+    glDeleteBuffers(1u, &buffer.ibo);
+
+    buffer = Transient_Buffer_Indexed_GL3();
+}
+
+void Renderer_GL3::format(const Transient_Buffer_GL3& buffer, Vertex_Format_Name format){
     glBindVertexArray(buffer.vao);
     glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
 
     use_vertex_format(this, format);
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0u);
     glBindVertexArray(0u);
+    glBindBuffer(GL_ARRAY_BUFFER, 0u);
 }
 
-void Renderer_GL3::commit_transient_buffer(Transient_Buffer_GL3& buffer){
+void Renderer_GL3::format(const Transient_Buffer_Indexed_GL3& buffer, Vertex_Format_Name format){
+    glBindVertexArray(buffer.vao);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+
+    use_vertex_format(this, format);
+
+    glBindVertexArray(0u);
+    glBindBuffer(GL_ARRAY_BUFFER, 0u);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0u);
+}
+
+void Renderer_GL3::checkout(Transient_Buffer_GL3& buffer){
+    assert(buffer.ptr == nullptr);
+
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+    buffer.ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0u, buffer.bytesize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    glBindBuffer(GL_ARRAY_BUFFER, 0u);
+
+    assert(buffer.ptr != nullptr);
+}
+
+void Renderer_GL3::checkout(Transient_Buffer_Indexed_GL3& buffer){
+    assert(buffer.vptr == nullptr && buffer.iptr == nullptr);
+
+    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+    buffer.vptr = glMapBufferRange(GL_ARRAY_BUFFER, 0u, buffer.vbytesize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    glBindBuffer(GL_ARRAY_BUFFER, 0u);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+    buffer.iptr = glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0u, buffer.ibytesize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0u);
+
+    assert(buffer.vptr != nullptr && buffer.iptr != nullptr);
+}
+
+void Renderer_GL3::commit(Transient_Buffer_GL3& buffer){
+    assert(buffer.ptr != nullptr);
+
     glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
     glUnmapBuffer(GL_ARRAY_BUFFER);
     glBindBuffer(GL_ARRAY_BUFFER, 0u);
@@ -317,10 +392,19 @@ void Renderer_GL3::commit_transient_buffer(Transient_Buffer_GL3& buffer){
     buffer.ptr = nullptr;
 }
 
-void Renderer_GL3::checkout_transient_buffer(Transient_Buffer_GL3& buffer){
+void Renderer_GL3::commit(Transient_Buffer_Indexed_GL3& buffer){
+    assert(buffer.vptr != nullptr && buffer.iptr != nullptr);
+
     glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-    buffer.ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0u, buffer.bytesize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    glUnmapBuffer(GL_ARRAY_BUFFER);
     glBindBuffer(GL_ARRAY_BUFFER, 0u);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+    glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0u);
+
+    buffer.vptr = nullptr;
+    buffer.iptr = nullptr;
 }
 
 Texture_GL3 Renderer_GL3::get_texture(Texture_Format format, u32 width, u32 height, Data_Type data_type, void* data){
@@ -332,14 +416,19 @@ Texture_GL3 Renderer_GL3::get_texture(Texture_Format format, u32 width, u32 heig
 
     glBindTexture(GL_TEXTURE_2D, texture.texture);
 
+    u32 nchan;
+    GLenum format_type;
+    size_t bytes_per_chan;
+    texture_format_info(format, nchan, format_type, bytes_per_chan);
+
     // NOTE(hugo): set the unpacking alignment for this operation when necessary
-    GLint row_alignment = compute_texture_row_alignment(width, height, format, data_type);
+    GLint row_alignment = compute_texture_row_alignment(width, height, nchan, bytes_per_chan);
     if(row_alignment != GL::default_unpack_alignment){
         glPixelStorei(GL_UNPACK_ALIGNMENT, row_alignment);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, (GLsizei)width, (GLsizei)height, 0, format, data_type, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, (GLsizei)width, (GLsizei)height, 0, format_type, data_type, data);
         glPixelStorei(GL_UNPACK_ALIGNMENT, GL::default_unpack_alignment);
     }else{
-        glTexImage2D(GL_TEXTURE_2D, 0, format, (GLsizei)width, (GLsizei)height, 0, format, data_type, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, (GLsizei)width, (GLsizei)height, 0, format_type, data_type, data);
     }
 
     // NOTE(hugo): MIP mapping setup is required
@@ -387,5 +476,11 @@ void Renderer_GL3::update_texture(Texture_GL3& texture, u32 ox, u32 oy, u32 widt
 void Renderer_GL3::draw(const Transient_Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count){
     glBindVertexArray(buffer.vao);
     glDrawArrays(primitive, index, count);
+    glBindVertexArray(0u);
+}
+
+void Renderer_GL3::draw(const Transient_Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 count, u64 offset){
+    glBindVertexArray(buffer.vao);
+    glDrawElements(primitive, count, index_type, (const void*)offset);
     glBindVertexArray(0u);
 }
