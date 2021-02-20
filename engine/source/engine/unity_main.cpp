@@ -211,6 +211,9 @@ namespace bw{
     #include "rot.h"
     #include "quat.h"
 
+    #include "color.h"
+    #include "color.cpp"
+
     #include "random_custom.h"
     #include "random_custom.cpp"
 
@@ -262,6 +265,7 @@ namespace bw{
             #include "renderer_GL3.cpp"
             typedef Renderer_GL3 Renderer;
             typedef Transient_Buffer_GL3 Transient_Buffer;
+            typedef Transient_Buffer_Indexed_GL3 Transient_Buffer_Indexed;
             typedef Texture_GL3 Texture;
 
         #elif defined(RENDERER_VULKAN)
@@ -280,6 +284,9 @@ namespace bw{
     #include "texture.h"
     #include "texture.cpp"
 
+    #include "vector_graphics.h"
+    #include "vector_graphics.cpp"
+
     //#include "texture_animation.h"
     //#include "texture_animation.cpp"
 
@@ -297,8 +304,8 @@ namespace bw{
 
 // ---- sample
 
-#include "../sample/unit.cpp"
-//#include "../sample/integration_easy_setup.cpp"
+//#include "../sample/unit.cpp"
+#include "../sample/integration_easy_setup.cpp"
 
 // ---- application
 

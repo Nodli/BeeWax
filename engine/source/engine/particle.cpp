@@ -1,17 +1,17 @@
 void Particle_Emitter::terminate(){
-    particles.free();
+    storage.free();
 }
 
 void Particle_Emitter::spawn_process(Particle& p){
-    float theta = theta_min_range[0] + random_float_normalized_positive() * theta_min_range[1];
+    float theta = theta_min_range[0] + random_float() * theta_min_range[1];
     vec2 direction = {cos(theta), sin(theta)};
-    float velocity = velocity_min_range[0] + random_float_normalized_positive() * velocity_min_range[1];
+    float velocity = velocity_min_range[0] + random_float() * velocity_min_range[1];
 
     p.velocity = velocity * direction;
     p.angle = theta;
-    p.angular_velocity = angular_velocity_min_range[0] + random_float_normalized_positive() * angular_velocity_min_range[1];
-    p.size = size_min_range[0] + random_float_normalized_positive() * size_min_range[1];
-    p.frame_counter = duration_min_range[0] + (u32)(random_float_normalized_positive() * duration_min_range[1]);
+    p.angular_velocity = angular_velocity_min_range[0] + random_float() * angular_velocity_min_range[1];
+    p.size = size_min_range[0] + random_float() * size_min_range[1];
+    p.frame_counter = duration_min_range[0] + (u32)(random_float() * duration_min_range[1]);
 
     switch(shape){
         case Disc:
@@ -22,8 +22,8 @@ void Particle_Emitter::spawn_process(Particle& p){
             }
         case Rect:
             {
-                p.position = {desc.rect.min.x + random_float_normalized_positive() * desc.rect.max.x,
-                    desc.rect.min.y + random_float_normalized_positive() * desc.rect.max.y};
+                p.position = {desc.rect.min.x + random_float() * desc.rect.max.x,
+                    desc.rect.min.y + random_float() * desc.rect.max.y};
                 break;
             }
     };
@@ -38,7 +38,7 @@ void Particle_Emitter::burst(u32 nparticles){
     for(u32 iparticle = 0u; iparticle != nparticles; ++iparticle){
         Particle p;
         spawn_process(p);
-        particles.insert(p);
+        storage.push(p);
     }
 }
 
@@ -49,27 +49,23 @@ void Particle_Emitter::update(){
         for(s32 iparticle = 0; iparticle != particles_per_frame; ++iparticle){
             Particle p;
             spawn_process(p);
-            particles.insert(p);
+            storage.push(p);
         }
     }else if(particles_per_frame < 0 && (frame_counter % (u32)(- particles_per_frame)) == 0){
         Particle p;
         spawn_process(p);
-        particles.insert(p);
+        storage.push(p);
     }
 
     // NOTE(hugo): update running particles
-    u32 index, counter;
-    for(index = particles.get_first(), counter = 0u;
-        index < particles.capacity && counter != particles.size;
-        index = particles.get_next(index), ++counter){
-
-        Particle& p = particles[index];
-
+    u32 ipart = 0u;
+    while(ipart < storage.size){
+        Particle& p = storage[ipart];
         if(p.frame_counter-- == 0u){
-            particles.remove(index);
-            --counter;
+            storage.remove_swap(ipart);
         }else{
             update_process(p);
+            ++ipart;
         }
     }
 
@@ -78,14 +74,10 @@ void Particle_Emitter::update(){
 
 Vertex_Batch_ID Particle_Emitter::batch_as_quad_xyuv(Renderer* renderer){
     Vertex_Batch_ID batch = renderer->get_vertex_batch(xyuv, PRIMITIVE_TRIANGLES);
-    vertex_xyuv* vertices = (vertex_xyuv*)renderer->get_vertices(batch, particles.size * 6u);
+    vertex_xyuv* vertices = (vertex_xyuv*)renderer->get_vertices(batch, storage.size * 6u);
 
-    u32 index, counter;
-    for(index = particles.get_first(), counter = 0u;
-        index < particles.capacity && counter != particles.size;
-        index = particles.get_next(index), ++counter){
-
-        Particle& p = particles[index];
+    for(u32 ipart = 0u; ipart != storage.size; ++ipart){
+        Particle& p = storage[ipart];
 
         vec2 p_up = {cos(p.angle), sin(p.angle)};
         vec2 p_right = {p_up.y, - p_up.x};

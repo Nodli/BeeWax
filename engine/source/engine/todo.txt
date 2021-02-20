@@ -21,7 +21,22 @@ CURRENT ---------------
 
 DONE ------------------
 
-09/020/2021
+19/02/2021
+- mix in the audio callback to reduce latency
+
+15/02/2021
+- Vector_Graphics_Renderer::circle
+- color convertion sRGB / RGB
+- fix texture format for sRGB
+
+14/02/2021
+- Vector_Graphics_Renderer
+- Vector_Graphics_Renderer::segment
+
+13/02/2021
+- rewrite git history to remove branching & commits with copyrighted material
+
+09/02/2021
 - Emscripten compilation
 
 ??/12/2020 -- 07/02/2021

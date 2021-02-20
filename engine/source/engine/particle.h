@@ -9,13 +9,13 @@ struct Particle_Emitter{
     };
     union Shape_Descriptor{
         struct{
-            vec2 center;
-            float radius;
-        } circle;
-        struct{
             vec2 min;
             vec2 max;
         } rect;
+        struct{
+            vec2 center;
+            float radius;
+        } circle;
     };
 
     void terminate();
@@ -27,12 +27,12 @@ struct Particle_Emitter{
     // ---- internal
 
     struct Particle{
-        vec2 position;
-        vec2 velocity;
-        float angle;
-        float angular_velocity;
-        float size;
-        u32 frame_counter;
+        vec2 position = {};
+        vec2 velocity = {};
+        float angle = 0.f;
+        float angular_velocity = 0.f;
+        float size = 0.f;
+        u32 frame_counter = 0u;
     };
 
     void spawn_process(Particle& p);
@@ -53,7 +53,7 @@ struct Particle_Emitter{
     u32 frame_counter = 0u;
     s32 particles_per_frame = 0u;
 
-    diterpool<Particle> particles;
+    array<Particle> storage;
 };
 
 #endif
