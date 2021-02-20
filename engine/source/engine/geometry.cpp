@@ -1,3 +1,5 @@
+// ---- coordinate conversion
+
 float radrange_2PI(float radians){
     radians = fmod(radians, 2.f * PI);
     if(radians < 0.f) radians += 2.f * PI;
@@ -120,6 +122,8 @@ vec3 cubemap_to_cartesian(float face_u, float face_v, u32 face_index){
         default : ENGINE_CHECK(false, "INVALID face_index %u", face_index); return {};
     }
 }
+
+// ---- mesh generation
 
 void Mesh::set_capacity(u32 i_nvertices, u32 i_nindices){
     nvertices = i_nvertices;
@@ -278,4 +282,27 @@ Mesh generate_cuboid(vec3 position, vec3 size, u32 ntess){
     memcpy(mesh.indices, BEEWAX_INTERNAL::cube_indices, carray_size(BEEWAX_INTERNAL::cube_indices) * sizeof(BEEWAX_INTERNAL::cube_indices[0]));
 
     return mesh;
+}
+
+// ---- geometric error
+
+float circular_cap_chord_to_arc_error(u32 ncap_vertices, float radius){
+    float rad = PI / (float)(ncap_vertices + 1u);
+    return radius * (1.f - cos(rad * 0.5f));
+}
+
+u32 circular_cap_vertices(float max_error, float radius){
+    // NOTE(hugo): PI / (2 * acos(1 - max_error / radius))
+    u32 nvertices = bw::ceil(0.5f * PI / acos(1.f - max_error / radius));
+    return max(nvertices, 1u);
+}
+
+float circle_chord_to_arc_error(u32 nperi_vertices, float radius){
+    float rad = 2.f * PI / (float)(nperi_vertices);
+    return radius * (1.f - cos(rad * 0.5f));
+}
+
+u32 circle_vertices(float max_error, float radius){
+    u32 nvertices = bw::ceil(PI / acos(1.f - max_error / radius));
+    return max(nvertices, 3u);
 }

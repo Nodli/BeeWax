@@ -1,7 +1,7 @@
 #ifndef H_GEOMETRY
 #define H_GEOMETRY
 
-// ----
+// ---- conventions
 
 // NOTE(hugo):
 // * vec2(x, y)
@@ -27,7 +27,7 @@
 // face_direction |    +X    |    -X    |    +Y    |    -Y    |    +Z    |    -Z    |
 // face_uv        | (-Z, +Y) | (+Z, +Y) | (+X, -Z) | (+X, +Z) | (+X, +Y) | (-X, +Y) |
 
-// ----
+// ---- coordinate conversion
 
 // NOTE(hugo):
 // _2PI [0, 2 * PI]
@@ -56,6 +56,8 @@ vec2 equirectangular_to_spherical(float x, float y);
 vec2 cartesian_to_cubemap(float x, float y, float z, u32& face_index);
 vec3 cubemap_to_cartesian(float face_u, float face_v, u32 face_index);
 
+// ---- mesh generation
+
 struct Mesh{
     void set_capacity(u32 nvertices, u32 nindices);
     void free();
@@ -72,5 +74,20 @@ struct Mesh{
 Mesh generate_sphere_uv(vec3 position, float radius, u32 nlon, u32 nlat);
 Mesh generate_cube(vec3 position, float size, u32 ntess = 0u);
 Mesh generate_cuboid(vec3 position, vec3 size, u32 ntess = 0u);
+
+// ---- error estimation
+
+// REF(hugo):
+// - circle chord to arc error
+// https://www.artwork.com/gerber/oasis2gbr/arc_recognition.htm
+
+// NOTE(hugo):
+// /ncap_vertices/ is the number of vertices in the spherical caps without counting the two body vertices
+// ie ncap_vertices = 1 represents a triangular cap
+float circular_cap_chord_to_arc_error(u32 ncap_vertices, float radius);
+u32 circular_cap_vertices(float max_error, float radius);
+
+float circle_chord_to_arc_error(u32 nperi_vertices, float radius);
+u32 circle_vertices(float max_error, float radius);
 
 #endif
