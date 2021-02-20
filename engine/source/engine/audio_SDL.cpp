@@ -40,9 +40,17 @@ void free_audio_asset(Audio_Asset* asset){
     ::free(asset->data);
 }
 
-// ---- audio player
+// ---- audio player 2
 
 static void audio_callback(void* user_ptr, u8* out_stream, s32 out_stream_size);
+
+static void increase_audio_mem(Audio_Player* audio_player){
+    Audio_Player::Audio_Info_Bucket* bucket = (Audio_Player::Audio_Info_Bucket*)malloc(sizeof(Audio_Player::Audio_Info_Bucket));
+    new((void*)bucket) Audio_Player::Audio_Info_Bucket{};
+
+    bucket->next = audio_player->mixer_state.audio_mem;
+    atomic_set(&audio_player->mixer_state.audio_mem, bucket);
+}
 
 void Audio_Player::setup(){
     SDL_AudioSpec required_spec;
@@ -51,19 +59,17 @@ void Audio_Player::setup(){
     required_spec.channels = 1u;
     required_spec.samples = audio_device_buffer_in_samples;
     required_spec.callback = audio_callback;
-    required_spec.userdata = (void*)&state;
+    required_spec.userdata = (void*)&mixer_state;
 
     SDL_AudioSpec returned_spec;
     device = SDL_OpenAudioDevice(nullptr, 0, &required_spec, &returned_spec, 0);
     SDL_CHECK(device != 0);
     device_spec = returned_spec;
 
-    state.nsamples = audio_manager_buffer_in_samples;
-    state.buffer = (s16*)malloc(sizeof(s16) * state.nsamples);
-    ENGINE_CHECK(state.buffer, "FAILED MALLOC");
+    mixer_state.mix_buffer = (float*)malloc(sizeof(float) * audio_device_buffer_in_samples);
+    ENGINE_CHECK(mixer_state.mix_buffer, "FAILED MALLOC");
 
-    mix_buffer = (float*)malloc(sizeof(float) * audio_manager_generator_offset_in_samples);
-    ENGINE_CHECK(mix_buffer, "FAILED MALLOC");
+    increase_audio_mem(this);
 
     SDL_PauseAudioDevice(device, 0);
 }
@@ -71,154 +77,116 @@ void Audio_Player::setup(){
 void Audio_Player::terminate(){
     SDL_PauseAudioDevice(device, 1);
 
-    ::free(state.buffer);
-    ::free(mix_buffer);
-    asset_playing_queue.free();
+    ::free(mixer_state.mix_buffer);
+    Audio_Info_Bucket* ptr = mixer_state.audio_mem;
+    while(ptr){
+        ptr = ptr->next;
+        ::free(ptr);
+    }
 
     SDL_CloseAudioDevice(device);
 }
 
-Audio_Reference Audio_Player::start_playing(const Audio_Asset* asset){
-    Component_Reference ref;
-    Play_Info* info = asset_playing_queue.create(ref);
-    info->asset = asset;
-    info->cursor = 0u;
+Audio_Reference Audio_Player::start(const Audio_Asset* asset){
+    Audio_Reference ref;
 
-    return {ref};
-}
-
-void Audio_Player::stop_playing(const Audio_Reference& ref){
-    asset_playing_queue.remove(ref);
-}
-
-bool Audio_Player::is_playing(const Audio_Reference& ref){
-    return asset_playing_queue.is_valid(ref);
-}
-
-void Audio_Player::mix_next_frame(){
-    u32 reader_cursor = atomic_get(&state.reader_cursor);
-    u32 generator_cursor = state.generator_cursor;
-
-    // NOTE(hugo): compute the number of samples to mix and the copy ranges to the staging buffer
-    u32 samples_mixed;
-    u32 samples_to_mix;
-    u32 first_start = generator_cursor;
-    u32 first_samples;
-    u32 second_start = 0u;
-    u32 second_samples;
-    if(generator_cursor >= reader_cursor){
-        samples_mixed = generator_cursor - reader_cursor;
-        samples_to_mix = audio_manager_generator_offset_in_samples - samples_mixed;
-        first_samples = min(samples_to_mix, state.nsamples - generator_cursor);
-        second_samples = samples_to_mix - first_samples;
-
-    // NOTE(hugo): generator_cursor < reader_cursor
-    }else{
-        samples_mixed = state.nsamples - reader_cursor + generator_cursor;
-        samples_to_mix = audio_manager_generator_offset_in_samples - samples_mixed;
-        first_samples = samples_to_mix;
-        second_samples = 0u;
-    }
-
-    u32 total_samples = first_samples + second_samples;
-
-    // NOTE(hugo): zero the mix buffer
-    for(u32 isample = 0u; isample != total_samples; ++isample){
-        mix_buffer[isample] = 0.f;
-    }
-
-    // NOTE(hugo): mix the samples
-    {
-        u32 iplay = 0u;
-        while(iplay != asset_playing_queue.storage.size){
-            Play_Info& info = asset_playing_queue.storage[iplay].data;
-
-            u32 mix_sample = 0u;
-            u32 play_cursor = info.cursor;
-            while(mix_sample != total_samples && play_cursor != info.asset->nsamples){
-                mix_buffer[mix_sample] += (float)info.asset->data[play_cursor];
-                ++mix_sample;
-                ++play_cursor;
-            }
-
-            if(play_cursor != info.asset->nsamples){
-                info.cursor = play_cursor;
-                ++iplay;
-
-            }else{
-                asset_playing_queue.remove_by_storage_index(iplay);
+    // NOTE(hugo): find existing voice
+    Audio_Info_Bucket* ptr = mixer_state.audio_mem;
+    while(ptr){
+        for(u32 iinfo = 0u; iinfo != audio_info_per_bucket; ++iinfo){
+            Audio_Info& info = ptr->data[iinfo];
+            if(atomic_get(&info.state) == Audio_Info::FREE){
+                info.asset = asset;
+                atomic_set(&info.state, Audio_Info::PLAY_UNIQUE);
+                return {&info, info.generation};
             }
         }
+
+        ptr = ptr->next;
     }
 
-    // NOTE(hugo): convert to s16 and copy to the ring buffer
-    for(u32 isample = 0u; isample != first_samples; ++isample){
-        s16 sample = (s16)min_max<float>(mix_buffer[isample], SHRT_MIN, SHRT_MAX);
-        state.buffer[first_start + isample] = sample;
-    }
-    for(u32 isample = 0u; isample != second_samples; ++isample){
-        s16 sample = (s16)min_max<float>(mix_buffer[first_samples + isample], SHRT_MIN, SHRT_MAX);
-        state.buffer[second_start + isample] = sample;
-    }
+    // NOTE(hugo): make space for new voices
+    increase_audio_mem(this);
 
-    // NOTE(hugo): update the generator cursor for the audio callback
-    u32 new_generator_cursor = (reader_cursor + audio_manager_generator_offset_in_samples) % state.nsamples;
-    atomic_set(&state.generator_cursor, new_generator_cursor);
+    Audio_Info& info = mixer_state.audio_mem->data[0u];
+    info.asset = asset;
+    atomic_set(&info.state, Audio_Info::PLAY_UNIQUE);
+
+    return {&info, info.generation};
+}
+
+void Audio_Player::stop(const Audio_Reference& ref){
+    if(is_valid(ref)){
+        atomic_set(&ref.info->state, Audio_Info::STOP);
+    }
+}
+
+bool Audio_Player::is_valid(const Audio_Reference& ref){
+    return ref.info && ref.generation == ref.info->generation && atomic_get(&ref.info->state) == Audio_Info::PLAY_UNIQUE;
+}
+
+void Audio_Player::pause(){
+    SDL_PauseAudioDevice(device, 0);
+}
+
+void Audio_Player::resume(){
+    SDL_PauseAudioDevice(device, 1);
 }
 
 static void audio_callback(void* user_ptr, u8* out_stream, s32 out_stream_size){
     Audio_Player::Audio_State* state = (Audio_Player::Audio_State*)user_ptr;
+    u32 out_samples = out_stream_size / sizeof(s16);
+    assert(out_samples == audio_device_buffer_in_samples);
 
-    u32 reader_cursor = state->reader_cursor;
-    u32 generator_cursor = atomic_get(&state->generator_cursor);
-    if(reader_cursor == generator_cursor){
-        memset(out_stream, 0, out_stream_size);
-        return;
+    // NOTE(hugo): reset mix
+    memset(state->mix_buffer, 0, audio_device_buffer_in_samples * sizeof(float));
+
+    // NOTE(hugo): update & mix
+    Audio_Player::Audio_Info_Bucket* bucket = state->audio_mem;
+    while(bucket){
+        for(u32 iinfo = 0u; iinfo != audio_info_per_bucket; ++iinfo){
+            Audio_Info& info = bucket->data[iinfo];
+
+            switch(atomic_get(&info.state)){
+                case Audio_Info::PLAY_UNIQUE:{
+                    u32 mix_cursor = 0u;
+                    u32 asset_cursor = info.cursor;
+
+                    while(mix_cursor != audio_device_buffer_in_samples && asset_cursor != info.asset->nsamples){
+                        state->mix_buffer[mix_cursor++] += (float)info.asset->data[asset_cursor++];
+                    }
+
+                    // NOTE(hugo): finish processing for this voice
+                    if(asset_cursor != info.asset->nsamples){
+                        info.cursor = asset_cursor;
+                        break;
+                    }
+
+                    // NOTE(hugo): end of voice's asset ie STOP
+                    [[fallthrough]];
+                }
+                case Audio_Info::STOP:{
+                    info.asset = nullptr;
+                    info.cursor = 0u;
+                    ++info.generation;
+
+                    atomic_set(&info.state, Audio_Info::FREE);
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+        bucket = bucket->next;
     }
 
-    u32 out_nsamples = (u32)out_stream_size / sizeof(s16);
-    u32 end_samples;
-    u32 start_samples;
-    if(generator_cursor > reader_cursor){
-        end_samples = generator_cursor - reader_cursor;
-        start_samples = 0u;
-    }else{
-        end_samples = state->nsamples - reader_cursor;
-        start_samples = generator_cursor;
+    s16* out = (s16*)out_stream;
+
+    // NOTE(hugo): convert and copy to stream
+    for(u32 isample = 0u; isample != audio_device_buffer_in_samples; ++isample){
+        s16 sample = (s16)min_max<float>(state->mix_buffer[isample], SHRT_MIN, SHRT_MAX);
+        out[isample] = sample;
     }
-
-    // NOTE(hugo): compute the memcpy ranges from the staging buffer
-    u32 first_start = reader_cursor;
-    u32 first_samples = min(out_nsamples, end_samples);
-
-    u32 second_start = 0u;
-    u32 second_samples = min(out_nsamples - first_samples, start_samples);
-
-    u32 copy_samples = first_samples + second_samples;
-    u32 zero_samples = out_nsamples - copy_samples;
-
-    s16* out_samples = (s16*)out_stream;
-    memcpy(out_samples, state->buffer + first_start, first_samples * sizeof(s16));
-    memcpy(out_samples + first_samples, state->buffer + second_start, second_samples * sizeof(s16));
-    memset(out_samples + copy_samples, 0, zero_samples * sizeof(s16));
-
-    if(zero_samples){
-        LOG_TRACE("audio starvation; zero: %d", zero_samples);
-    }
-
-    u32 new_reader_cursor = reader_cursor + first_samples;
-    if(new_reader_cursor == state->nsamples){
-        new_reader_cursor = second_samples;
-    }
-    atomic_set<u32>(&state->reader_cursor, new_reader_cursor);
-}
-
-void Audio_Player::pause_audio(){
-    SDL_PauseAudioDevice(device, 0);
-}
-
-void Audio_Player::resume_audio(){
-    SDL_PauseAudioDevice(device, 1);
 }
 
 // ---- hardware / software detection

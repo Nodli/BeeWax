@@ -15,49 +15,52 @@ void free_audio_asset(Audio_Asset* asset);
 
 // ---- audio player
 
-// NOTE(hugo): 735 samples per frame per channel at 60 fps with a frequency of 44100Hz
-constexpr u32 audio_device_buffer_in_samples = 512u;
-constexpr u32 audio_manager_buffer_in_samples = 4096u;
-// NOTE(hugo): generator should be at least one frame ahead of reader at all times
-constexpr u32 audio_manager_generator_offset_in_samples = audio_manager_buffer_in_samples - 1u;
+constexpr u32 audio_device_buffer_in_samples = 256u;
+constexpr u32 audio_info_per_bucket = 4u;
 
-struct Audio_Reference : Component_Reference{};
+struct Audio_Info{
+    enum Audio_State : u32{
+        FREE,
+        STOP,
+        PLAY_UNIQUE,
+    };
+
+    Audio_State state = FREE;
+    const Audio_Asset* asset = nullptr;
+    u32 cursor = 0u;
+    u32 generation = 0u;
+};
+
+struct Audio_Reference{
+    Audio_Info* info = nullptr;
+    u32 generation = 0u;
+};
+constexpr Audio_Reference unknown_audio_reference = {nullptr, 0u};
 
 struct Audio_Player{
     void setup();
     void terminate();
 
-    Audio_Reference start_playing(const Audio_Asset* asset);
-    void stop_playing(const Audio_Reference& reference);
-    bool is_playing(const Audio_Reference& reference);
+    Audio_Reference start(const Audio_Asset* asset);
+    void stop(const Audio_Reference& reference);
+    bool is_valid(const Audio_Reference& reference);
 
-    void mix_next_frame();
-
-    void pause_audio();
-    void resume_audio();
+    void pause();
+    void resume();
 
     // ---- data
 
     SDL_AudioDeviceID device;
     SDL_AudioSpec device_spec;
 
-    float* mix_buffer = nullptr;
-    struct Audio_State{
-        s16* buffer = nullptr;
-        u32 nsamples = 0u;
-
-        // NOTE(hugo): offset in samples
-        // read_cursor:         writen by the audio thread, read    by the generator thread
-        // generator_cursor:    read   by the audio thread, written by the generator thread
-        volatile u32 reader_cursor = 0u;
-        volatile u32 generator_cursor = 0u;
-    } state;
-
-    struct Play_Info{
-        const Audio_Asset* asset = nullptr;
-        u32 cursor = 0u;
+    struct Audio_Info_Bucket{
+        Audio_Info data[audio_info_per_bucket] = {};
+        Audio_Info_Bucket* next = nullptr;
     };
-    Component_Storage<Play_Info> asset_playing_queue;
+    struct Audio_State{
+        float* mix_buffer = nullptr;
+        Audio_Info_Bucket* audio_mem = nullptr;
+    } mixer_state;
 };
 
 // ---- hardware / software detection
