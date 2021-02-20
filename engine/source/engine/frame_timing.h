@@ -25,6 +25,8 @@ struct Frame_Timing{
     array<u64> smoothing_history;
     u64 previous_timer;
     u64 accumulator;
+
+    u64 frame_count;
 };
 
 #endif

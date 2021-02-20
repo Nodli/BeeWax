@@ -8,7 +8,6 @@
 #define DEV_Timed_Block
 
 #define DEV_LOG_timing_entries()
-#define DEV_LOG_frame_duration(TIMER)
 
 // ---- tweakable
 
@@ -90,16 +89,6 @@ void DEV_LOG_timing_entries(){
                 entry.cycle_counter / entry.hit_count);
     }
 }
-
-#define DEV_LOG_frame_duration(TIMER)                                               \
-do{                                                                                 \
-    static u64 previous_timer = 0u;                                                 \
-    u64 timer_freq = timer_frequency();                                             \
-    u64 dtimer = TIMER - previous_timer;                                            \
-    previous_timer = TIMER;                                                         \
-    double dsec = (double)dtimer / (double)timer_freq;                              \
-    LOG_RAW("DEV_Frame_Time: %u ticks, %f ms, %f FPS", dtimer, dsec, 1. / dsec);    \
-}while(false)
 
 // ---- tweakable
 

@@ -13,6 +13,7 @@ void Frame_Timing::initialize(u64 timer, u64 timer_frequency,
     }
     previous_timer = 0u;
     accumulator = 0u;
+    frame_count = 0u;
 }
 
 void Frame_Timing::terminate(){
@@ -48,15 +49,24 @@ u32 Frame_Timing::nupdates_before_render(u64 timer){
     for(auto& s : smoothing_history){
         smoothing_sum = smoothing_sum + s;
     }
-    dtimer = smoothing_sum / smoothing_history.size;
+    u64 dtimer_smooth = smoothing_sum / smoothing_history.size;
 
-    accumulator += dtimer;
+#if defined(DEVELOPPER_MODE)
+    if(frame_count % 60u == 0u){
+        float frame_duration_sec = dtimer / (float)timer_frequency();
+        float frame_duration_sec_smooth = dtimer_smooth / (float)timer_frequency();
+        LOG_TRACE("FPS: %f | %f", 1.f / frame_duration_sec, 1.f / frame_duration_sec_smooth);
+    }
+#endif
+
+    accumulator += dtimer_smooth;
 
     u32 nframes = accumulator / ticks_per_frame;
     accumulator -= nframes * ticks_per_frame;
 
     previous_timer = timer;
 
+    frame_count += nframes;
     return nframes;
 }
 
