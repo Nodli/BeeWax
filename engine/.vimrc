@@ -42,7 +42,6 @@ elseif has('unix')
     set clipboard=unnamedplus
 endif
 
-
 " inserts spaces instead of a tabulation when Tab is pressed
 set expandtab
 " cases <Tab> to be equivalent to 4 spaces
@@ -100,9 +99,9 @@ if has('gui_running')
 
     " override the default font
     if has('win64') || has('win32')
-        set guifont=ProggyCleanTT:h12
+        set guifont=ProggyCleaner:h12
     elseif has('unix')
-        set guifont=ProggyCleanTT\ 12
+        set guifont=ProggyCleaner\ 12
     endif
 
     " autosave all files on lost focus (ignores complaints for untitled buffers)
