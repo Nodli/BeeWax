@@ -25,6 +25,19 @@ struct Texture_GL3{
     Texture_Format format = TEXTURE_FORMAT_NONE;
     GL::Texture texture = 0u;
 };
+struct Render_Target_GL3{
+    u32 width;
+    u32 height;
+
+    GL::Framebuffer framebuffer;
+    union{
+        GL::Renderbuffer buffers[2u];
+        struct{
+            GL::Renderbuffer buffer_color;
+            GL::Renderbuffer buffer_depth;
+        };
+    };
+};
 
 struct Renderer_GL3{
     void setup();
@@ -48,16 +61,23 @@ struct Renderer_GL3{
     void free_texture(Texture_GL3& texture);
     void update_texture(Texture_GL3& texture, u32 ox, u32 oy, u32 width, u32 height, Data_Type data_type, void* data);
 
+    Render_Target_GL3 get_render_target(u32 width, u32 height);
+    void free_render_target(Render_Target_GL3& render_target);
+
     // -- state
 
     void use_shader(Shader_Name name);
     void update_uniform(Uniform_Name name, void* ptr);
     void setup_texture_unit(u32 texture_unit, const Texture_GL3& texture, Sampler_Name sampler_name);
+    void use_render_target(const Render_Target_GL3& render_target);
 
     // -- draw
 
     void draw(const Transient_Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count);
     void draw(const Transient_Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 count, u64 offset);
+
+    void clear_render_target(const Render_Target_GL3& render_target);
+    void copy_render_target(const Render_Target_GL3& source, const Render_Target_GL3& destination);
 
     // ---- data
 

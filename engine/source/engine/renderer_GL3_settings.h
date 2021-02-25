@@ -104,19 +104,19 @@ static Vertex_Format_Attribute vertex_format_attributes_xyzuv[2] = {
 };
 
 #if defined(OPENGL_DESKTOP)
-static const char* shader_version =
+static const char* GLSL_version=
 R"(#version 330)" "\n";
 #elif defined(OPENGL_ES)
-static const char* shader_version =
+static const char* GLSL_version=
 R"(#version 300 es)" "\n"
 R"(precision mediump float;)" "\n";
 #else
-    static_assert(false, "no shader_version for the specified OpenGL version");
+    static_assert(false, "no GLSL_version for the specified OpenGL version");
 #endif
 
 // NOTE(hugo): polygon_2D
 // /vcolor/ is expected in linear space
-static const char* shader_header_polygon_2D = shader_version;
+static const char* shader_header_polygon_2D = GLSL_version;
 static const char* vertex_shader_polygon_2D = R"(
     layout (std140) uniform u_camera_2D{
         mat3 camera_matrix;
@@ -144,7 +144,7 @@ static const char* fragment_shader_polygon_2D = R"(
 
 // NOTE(hugo): polygon_2D_tex
 // /tex/ is expected in linear space ie use _SRGB or _SRGBA texture formats
-static const char* shader_header_polygon_2D_tex = shader_version;
+static const char* shader_header_polygon_2D_tex = GLSL_version;
 static const char* vertex_shader_polygon_2D_tex = R"(
     layout (std140) uniform u_camera_2D{
         mat3 camera_matrix;

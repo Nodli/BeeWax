@@ -358,11 +358,17 @@ void Renderer_GL3::format(const Transient_Buffer_Indexed_GL3& buffer, Vertex_For
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0u);
 }
 
+// NOTE(hugo):
+// * orphaning the buffer with glBufferData because it does not work with GL_WRITE_ONLY or GL_MAP_WRITE_BIT & GL_MAP_INVALIDATE_RANGE_BIT & GL_MAP_INVALIDATE_BUFFER_BIT
+// * using glMapBuffer instead of glMapBufferRange because we don't need the invalidation flag anymore
+
 void Renderer_GL3::checkout(Transient_Buffer_GL3& buffer){
     assert(buffer.ptr == nullptr);
 
     glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-    buffer.ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0u, buffer.bytesize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer.bytesize, NULL, GL_STREAM_DRAW);
+    buffer.ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    //buffer.ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0u, buffer.bytesize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
     glBindBuffer(GL_ARRAY_BUFFER, 0u);
 
     assert(buffer.ptr != nullptr);
@@ -372,11 +378,15 @@ void Renderer_GL3::checkout(Transient_Buffer_Indexed_GL3& buffer){
     assert(buffer.vptr == nullptr && buffer.iptr == nullptr);
 
     glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-    buffer.vptr = glMapBufferRange(GL_ARRAY_BUFFER, 0u, buffer.vbytesize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer.vbytesize, NULL, GL_STREAM_DRAW);
+    buffer.vptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    //buffer.vptr = glMapBufferRange(GL_ARRAY_BUFFER, 0u, buffer.vbytesize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
     glBindBuffer(GL_ARRAY_BUFFER, 0u);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-    buffer.iptr = glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0u, buffer.ibytesize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)buffer.ibytesize, NULL, GL_STREAM_DRAW);
+    buffer.iptr = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+    //buffer.iptr = glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0u, buffer.ibytesize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0u);
 
     assert(buffer.vptr != nullptr && buffer.iptr != nullptr);
@@ -446,6 +456,39 @@ void Renderer_GL3::free_texture(Texture_GL3& texture){
     texture = Texture_GL3();
 }
 
+void Renderer_GL3::update_texture(Texture_GL3& texture, u32 ox, u32 oy, u32 width, u32 height, Data_Type data_type, void* data){
+    assert(!((ox + width) > texture.width) && !((oy + height) > texture.height));
+    glBindTexture(GL_TEXTURE_2D, texture.texture);
+    glTexSubImage2D(GL_TEXTURE_2D, 0u, ox, oy, width, height, texture.format, data_type, data);
+}
+
+Render_Target_GL3 Renderer_GL3::get_render_target(u32 width, u32 height){
+    Render_Target_GL3 render_target;
+
+    render_target.width = width;
+    render_target.height = height;
+
+    glGenRenderbuffers(2u, render_target.buffers);
+    glBindRenderbuffer(GL_RENDERBUFFER, render_target.buffer_color);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_SRGB8_ALPHA8, width, height);
+    glBindRenderbuffer(GL_RENDERBUFFER, render_target.buffer_depth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32F, width, height);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0u);
+
+    glGenFramebuffers(1u, &render_target.framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, render_target.framebuffer);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, render_target.buffer_color);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, render_target.buffer_depth);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0u);
+
+    return render_target;
+}
+
+void Renderer_GL3::free_render_target(Render_Target_GL3& render_target){
+    glDeleteRenderbuffers(2u, render_target.buffers);
+    glDeleteFramebuffers(1u, &render_target.framebuffer);
+}
+
 // -- state
 
 void Renderer_GL3::use_shader(Shader_Name name){
@@ -465,10 +508,9 @@ void Renderer_GL3::setup_texture_unit(u32 texture_unit, const Texture_GL3& textu
     glBindTexture(GL_TEXTURE_2D, texture.texture);
 }
 
-void Renderer_GL3::update_texture(Texture_GL3& texture, u32 ox, u32 oy, u32 width, u32 height, Data_Type data_type, void* data){
-    assert(!((ox + width) > texture.width) && !((oy + height) > texture.height));
-    glBindTexture(GL_TEXTURE_2D, texture.texture);
-    glTexSubImage2D(GL_TEXTURE_2D, 0u, ox, oy, width, height, texture.format, data_type, data);
+void Renderer_GL3::use_render_target(const Render_Target_GL3& render_target){
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_target.framebuffer);
+    glViewport(0u, 0u, render_target.width, render_target.height);
 }
 
 // -- draw
@@ -483,4 +525,15 @@ void Renderer_GL3::draw(const Transient_Buffer_Indexed_GL3& buffer, Primitive_Ty
     glBindVertexArray(buffer.vao);
     glDrawElements(primitive, count, index_type, (const void*)offset);
     glBindVertexArray(0u);
+}
+
+void Renderer_GL3::clear_render_target(const Render_Target_GL3& render_target){
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+}
+
+void Renderer_GL3::copy_render_target(const Render_Target_GL3& source, const Render_Target_GL3& destination){
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, source.framebuffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, destination.framebuffer);
+    glViewport(0u, 0u, destination.width, destination.height);
+    glBlitFramebuffer(0u, 0u, source.width, source.height, 0u, 0u, destination.width, destination.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 }
