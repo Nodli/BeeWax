@@ -666,6 +666,14 @@ namespace GL{
         return found_message;
     }
 
+    void set_wireframe(){
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+    }
+
+    void unset_wireframe(){
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    }
+
     void push_debug_group(const char* const groupname){
         glPushDebugGroup(GL_DEBUG_SOURCE_APPLICATION, 0x0, -1, groupname);
     }

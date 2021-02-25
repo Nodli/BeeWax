@@ -10,6 +10,7 @@ namespace GL{
     typedef Handle Program;
     typedef Handle Texture;
     typedef Handle Framebuffer;
+    typedef Handle Renderbuffer;
     typedef Handle Vertex_Array;
     typedef Handle Buffer;
     typedef Handle Sampler;
@@ -100,6 +101,9 @@ namespace GL{
     void set_debug_message_callback();
     void unset_debug_message_callback();
     bool check_debug_message_log();
+
+    void set_wireframe();
+    void unset_wireframe();
 
     void push_debug_group(const char* const groupname);
     void pop_debug_group();
