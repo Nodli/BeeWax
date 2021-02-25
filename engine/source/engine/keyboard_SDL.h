@@ -21,6 +21,7 @@ FUNCTION(space, SDLK_SPACE)                 \
 FUNCTION(number_1, SDLK_1)                  \
 FUNCTION(number_2, SDLK_2)                  \
 FUNCTION(number_3, SDLK_3)                  \
+FUNCTION(backquote, SDLK_BACKQUOTE)         \
 
 // ----- MANUAL -----
 

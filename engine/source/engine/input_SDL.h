@@ -14,6 +14,13 @@ struct Device_Button{
         }
         return (state == STATE_UP) ? STATE_DOWN : STATE_UP;
     }
+    bool is_down(){
+        return state == STATE_DOWN;
+    }
+    bool is_up(){
+        return state == STATE_DOWN;
+    }
+
 
     Button_State state;
     u64 state_generation;
