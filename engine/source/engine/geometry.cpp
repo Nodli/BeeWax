@@ -284,25 +284,33 @@ Mesh generate_cuboid(vec3 position, vec3 size, u32 ntess){
     return mesh;
 }
 
+// ---- triangulation
+
+void triangulation_2D(vec2* vertices, u32 nvertices, u16*& out_indices, u32& out_nindices){
+}
+
 // ---- geometric error
 
 float circular_cap_chord_to_arc_error(u32 ncap_vertices, float radius){
+    assert(ncap_vertices > 0u);
     float rad = PI / (float)(ncap_vertices + 1u);
     return radius * (1.f - cos(rad * 0.5f));
 }
 
-u32 circular_cap_vertices(float max_error, float radius){
+u32 circular_cap_vertices(float radius, float max_error){
     // NOTE(hugo): PI / (2 * acos(1 - max_error / radius))
     u32 nvertices = bw::ceil(0.5f * PI / acos(1.f - max_error / radius));
     return max(nvertices, 1u);
 }
 
-float circle_chord_to_arc_error(u32 nperi_vertices, float radius){
-    float rad = 2.f * PI / (float)(nperi_vertices);
+float circle_chord_to_arc_error(u32 nvertices, float radius){
+    assert(nvertices > 2);
+    float rad = 2.f * PI / (float)(nvertices);
     return radius * (1.f - cos(rad * 0.5f));
 }
 
-u32 circle_vertices(float max_error, float radius){
+u32 circle_vertices(float radius, float max_error){
+    // NOTE(hugo): PI / acos(1 - max_error / radius)
     u32 nvertices = bw::ceil(PI / acos(1.f - max_error / radius));
     return max(nvertices, 3u);
 }

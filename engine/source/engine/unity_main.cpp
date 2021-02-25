@@ -14,7 +14,7 @@
 #elif defined(__EMSCRIPTEN__)
     #define PLATFORM_EMSCRIPTEN
 #else
-    static_assert(false, "no platform was specified");
+    #error "no platform was specified"
 #endif
 
 #if defined(_MSC_VER)
@@ -22,7 +22,7 @@
 #elif defined(__GNUG__)
     #define COMPILER_GCC
 #else
-    static_assert(false, "no compiler was identified");
+    #error "no compiler was identified"
 #endif
 
 #if defined(NDEBUG)
@@ -153,6 +153,10 @@
     static_assert(false, "no rendering API was specified");
 #endif
 
+#include "imgui.h"
+#include "imgui_impl_sdl.h"
+#include "imgui_impl_opengl3.h"
+
 // ----
 
 namespace bw{
@@ -255,11 +259,6 @@ namespace bw{
             #include "GL.h"
             #include "GL.cpp"
 
-            #include "window_SDL_GL.h"
-            #include "window_SDL_GL.cpp"
-            typedef Window_Settings_SDL_GL Window_Settings;
-            typedef Window_SDL_GL Window;
-
             #include "renderer_GL3_settings.h"
             #include "renderer_GL3.h"
             #include "renderer_GL3.cpp"
@@ -267,6 +266,12 @@ namespace bw{
             typedef Transient_Buffer_GL3 Transient_Buffer;
             typedef Transient_Buffer_Indexed_GL3 Transient_Buffer_Indexed;
             typedef Texture_GL3 Texture;
+            typedef Render_Target_GL3 Render_Target;
+
+            #include "window_SDL_GL.h"
+            #include "window_SDL_GL.cpp"
+            typedef Window_Settings_SDL_GL Window_Settings;
+            typedef Window_SDL_GL Window;
 
         #elif defined(RENDERER_VULKAN)
             #include "VK.h"

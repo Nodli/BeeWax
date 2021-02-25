@@ -20,21 +20,22 @@ void Window_SDL_GL::initialize(const Window_Settings_SDL_GL& settings){
 
     // ---- OpenGL before creation
 
+    ENGINE_CHECK(SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, settings.OpenGL_major) == 0, "FAILED SDL_GL_CONTEXT_MAJOR_VERSION");
+    ENGINE_CHECK(SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, settings.OpenGL_minor) == 0, "FAILED SDL_GL_CONTEXT_MINOR_VERSION");
+
 #if defined(OPENGL_DESKTOP)
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, settings.OpenGL_major);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, settings.OpenGL_minor);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    ENGINE_CHECK(SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE) == 0, "FAILED SDL_GL_CONTEXT_PROFILE_MASK");
 #else
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, settings.OpenGL_major);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, settings.OpenGL_minor);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES);
+    ENGINE_CHECK(SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_ES) == 0, "FAILED SDL_GL_CONTEXT_PROFILE_MASK");
+;
 #endif
 
 #if defined(DEBUG_BUILD)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_DEBUG_FLAG);
 #endif
 
-    SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, settings.buffering);
+    ENGINE_CHECK(SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1) == 0, "FAILED SDL_GL_DOUBLEBUFFER");
+    ENGINE_CHECK(SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1) == 0, "FAILED SDL_GL_FRAMEBUFFER_SRGB_CAPABLE");
 
     // ----
 
@@ -57,6 +58,7 @@ void Window_SDL_GL::initialize(const Window_Settings_SDL_GL& settings){
     // NOTE(hugo): synchronize the buffer swap with the monitor refresh rate by
     // waiting in the main thread
     s32 sync_success = SDL_GL_SetSwapInterval(settings.synchronization);
+
     if(sync_success && settings.synchronization == Window_Settings_SDL_GL::synchronize_adaptive){
         sync_success = SDL_GL_SetSwapInterval(Window_Settings_SDL_GL::synchronize);
     }
@@ -94,12 +96,12 @@ void Window_SDL_GL::terminate(){
     }
 }
 
-void Window_SDL_GL::swap_buffers(){
-    SDL_GL_SwapWindow(handle);
-}
-
 float Window_SDL_GL::aspect_ratio(){
     return (float)width / (float)height;
+}
+
+Render_Target_GL3 Window_SDL_GL::render_target(){
+    return {(u32)width, (u32)height, 0u, 0u, 0u};
 }
 
 vec2 Window_SDL_GL::pixel_to_screen_coordinates(ivec2 pixel){
@@ -114,4 +116,8 @@ ivec2 Window_SDL_GL::screen_to_pixel_coordinates(vec2 screen){
         (int)((screen.x + 1.f) * 0.5f * (float)width),
         (int)((screen.y + 1.f) * 0.5f * (float)height)
     };
+}
+
+void Window_SDL_GL::swap_buffers(){
+    SDL_GL_SwapWindow(handle);
 }

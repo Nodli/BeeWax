@@ -1,5 +1,6 @@
 TODO(engine) ----------
 
+- render target
 - audio loop
 - renderer static buffers
 - allow object destruction through a template parameter in data structures
@@ -20,6 +21,12 @@ FUTURE(engine) --------
 CURRENT ---------------
 
 DONE ------------------
+
+25/02/2021
+- integrate Dear ImGui
+
+23/02/2021
+- render target
 
 19/02/2021
 - mix in the audio callback to reduce latency

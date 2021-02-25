@@ -19,12 +19,11 @@ void Engine::setup(){
     // ---- window
 
     Window_Settings window_settings;
-    window_settings.width = 1280;
-    window_settings.height = 720;
+    window_settings.width = g_config::window_width;
+    window_settings.height = g_config::window_height;
     window_settings.name = g_config::window_name;
     window_settings.mode = Window_Settings::mode_windowed;
     window_settings.synchronization = Window_Settings::synchronize;
-    window_settings.buffering = Window_Settings::buffering_double;
     window_settings.OpenGL_major = 3u;
 #if defined(OPENGL_DESKTOP)
     window_settings.OpenGL_minor = 3u;
@@ -42,14 +41,14 @@ void Engine::setup(){
 
     DEV_Debug_Renderer;
 
-    glClearColor(0.5f, 0.5f, 0.5f, 1.f);
-
     glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 
     glEnable(GL_FRAMEBUFFER_SRGB);
+    glClearColor(0.5f, 0.5f, 0.5f, 1.f);
 
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
+    glDepthFunc(GL_LESS);
+    glClearDepth(1.f);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -58,6 +57,19 @@ void Engine::setup(){
     //glEnable(GL_CULL_FACE);
 
     renderer.setup();
+
+    render_target = renderer.get_render_target(g_config::render_width, g_config::render_height);
+
+    // ---- imgui
+
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplSDL2_InitForOpenGL(window.handle, window.context);
+    ImGui_ImplOpenGL3_Init(GLSL_version);
 
     // ---- audio
 
@@ -102,7 +114,9 @@ void Engine::terminate(){
     audio_catalog.terminate();
 
     audio.terminate();
+    renderer.free_render_target(render_target);
     renderer.terminate();
+
     window.terminate();
 
     // ---- external
@@ -117,6 +131,8 @@ Engine_Code Engine::update_start(){
 
     SDL_Event event;
     while(SDL_PollEvent(&event)){
+        ImGui_ImplSDL2_ProcessEvent(&event);
+
         switch(event.type){
             case SDL_QUIT:
                 return Engine_Code::Window_Quit;
@@ -127,6 +143,10 @@ Engine_Code Engine::update_start(){
         keyboard.register_event(event);
         mouse.register_event(event);
     }
+
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDL2_NewFrame(window.handle);
+    ImGui::NewFrame();
 
     return Engine_Code::Nothing;
 }
@@ -139,12 +159,19 @@ void Engine::update_end(){
 Engine_Code Engine::render_start(){
     if(g_engine.scene.scene_stack.size == 0u) return Engine_Code::No_Scene;
 
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    renderer.use_render_target(render_target);
+    renderer.clear_render_target(render_target);
 
     return Engine_Code::Nothing;
 }
 
 void Engine::render_end(){
+    renderer.copy_render_target(render_target, window.render_target());
+
+    renderer.use_render_target(window.render_target());
+    ImGui::Render();
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
     window.swap_buffers();
 
     DEV_LOG_timing_entries();
@@ -156,7 +183,6 @@ Engine_Code frame(){
     Engine_Code error_code = Engine_Code::Nothing;
 
     u64 timer = timer_ticks();
-    //DEV_LOG_frame_duration(timer);
     u32 nupdates = g_engine.frame_timing.nupdates_before_render(timer);
     for(u32 iupdate = 0; iupdate != nupdates; ++iupdate){
         error_code = g_engine.update_start();
@@ -221,7 +247,7 @@ int main(int argc, char* argv[]){
 
     g_engine.terminate();
 
-    printf("-- finished");
+    printf("-- finished\n");
 
     return 0;
 }

@@ -75,7 +75,12 @@ Mesh generate_sphere_uv(vec3 position, float radius, u32 nlon, u32 nlat);
 Mesh generate_cube(vec3 position, float size, u32 ntess = 0u);
 Mesh generate_cuboid(vec3 position, vec3 size, u32 ntess = 0u);
 
-// ---- error estimation
+// ---- triangulation
+
+// NOTE(hugo): vertices are counter-clockwise
+void triangulation_2D(vec2* vertices, u32 nvertices, u16*& out_indices, u32& out_nindices);
+
+// ---- geometric error
 
 // REF(hugo):
 // - circle chord to arc error
@@ -85,9 +90,12 @@ Mesh generate_cuboid(vec3 position, vec3 size, u32 ntess = 0u);
 // /ncap_vertices/ is the number of vertices in the spherical caps without counting the two body vertices
 // ie ncap_vertices = 1 represents a triangular cap
 float circular_cap_chord_to_arc_error(u32 ncap_vertices, float radius);
-u32 circular_cap_vertices(float max_error, float radius);
+u32 circular_cap_vertices(float radius, float max_error);
 
-float circle_chord_to_arc_error(u32 nperi_vertices, float radius);
-u32 circle_vertices(float max_error, float radius);
+// NOTE(hugo):
+// /nvertices/ is the number of vertices approximating the circle
+// nvertices must be 3 or more
+float circle_chord_to_arc_error(u32 nvertices, float radius);
+u32 circle_vertices(float radius, float max_error);
 
 #endif

@@ -62,229 +62,468 @@ static u32 get_batch_index_xyzrgba(u32 nvertices, u32 nindices,
     return batch_index;
 }
 
-void Vector_Graphics_Renderer::segment_round(vec2 A, vec2 B, float radius, float depth, vec4 rgba, float dpix){
-    u32 ncap_vertices = circular_cap_vertices(dpix * 0.5f, radius);
-    u32 aa_vertices = 4u + 2u * ncap_vertices;
-    u32 nvertices = 4u + 2u + 2u * ncap_vertices + aa_vertices;
-    u32 aa_indices = 12u + 2u * 6u * (ncap_vertices + 1u);
-    u32 nindices = 6u + 2u * 3u * (ncap_vertices + 1u) + aa_indices;
+void Vector_Graphics_Renderer::rect(vec2 min, vec2 max, float depth, vec4 rgba, float dpix, bool anti_aliasing){
+    float size_aa = 0.45f * dpix;
+    float offset_aa = 0.90f * dpix;
+    vec4 rgba_aa = {rgba.r, rgba.g, rgba.b, 0.f};
+
+    // NOTE(hugo): coverage based anti-aliasing for thin rect
+    {
+        float dx = max.x - min.x;
+        float dy = max.y - min.y;
+
+        float dsize = 0.5f * dpix;
+        float coverage = 1.f;
+
+        if(dx < dpix){
+            float mid_x = 0.5f * (max.x + min.x);
+
+            min.x = mid_x - dpix;
+            max.x = mid_x + dpix;
+
+            coverage = bw::min(dx / dpix, 1.f);
+
+            anti_aliasing = false;
+        }
+
+        if(dy < dpix){
+            float mid_y = 0.5f * (max.y + min.y);
+
+            min.y = mid_y - dpix;
+            max.y = mid_y + dpix;
+
+            coverage = coverage * bw::min(dy / dpix, 1.f);
+
+            anti_aliasing = false;
+        }
+
+        rgba.a = coverage * rgba.a;
+    }
+
+    // --
+
+    u32 nvertices = 4u;
+    u32 nindices = 6u;
+
+    if(anti_aliasing){
+        min.x = min.x + size_aa;
+        min.y = min.y + size_aa;
+        max.x = max.x - size_aa;
+        max.y = max.y - size_aa;
+
+        nvertices += 8u;
+        nindices += 36u;
+    }
+
+    // --
 
     u32 batch_index = get_batch_index_xyzrgba(nvertices, nindices, batch_count, batch_storage, renderer);
     Batch_Info& batch = batch_storage[batch_index];
+
     vertex_xyzrgba* vptr = (vertex_xyzrgba*)batch.buffer.vptr + batch.vcursor;
     u16* iptr = (u16*)batch.buffer.iptr + batch.icursor;
-
-    u32 batch_offset = batch.vcursor;
+    u32 base_index = batch.vcursor;
 
     batch.vcursor += nvertices;
     batch.icursor += nindices;
 
     // --
 
-    vec2 ortho = {B.y - A.y, A.x - B.x};
-    ortho = normalized(ortho);
+    // NOTE(hugo):
+    //
+    //      9  8
+    //      |  |
+    //  10--3--2--7
+    //      |  |
+    //  11--0--1--6
+    //      |  |
+    //      4  5
+    //
 
-    vec2 ortho_radius = ortho * (radius - 0.5f * dpix);
-    vec2 ortho_radius_opp = - ortho_radius;
-    vec2 ortho_aa = ortho * dpix * 0.65f;
-    //vec2 ortho_aa = {0.f, 0.f};
-    vec2 ortho_aa_opp = - ortho_aa;
-
-
-    vec2 AL = A + ortho_radius_opp;
-    vec2 AR = A + ortho_radius;
-    vec2 BL = B + ortho_radius_opp;
-    vec2 BR = B + ortho_radius;
-
-    vec4 rgba_aa = {rgba.r, rgba.g, rgba.b, 0.f};
-
-    u32 offset = batch_offset;
-    u32 in_offset = 0u;
-
-    // NOTE(hugo): body
     {
-        *vptr++ = {{AL.x, AL.y, depth}, rgba};
-        *vptr++ = {{AR.x, AR.y, depth}, rgba};
-        *vptr++ = {{BR.x, BR.y, depth}, rgba};
-        *vptr++ = {{BL.x, BL.y, depth}, rgba};
-
-        *iptr++ = batch_offset + 0u;
-        *iptr++ = batch_offset + 1u;
-        *iptr++ = batch_offset + 3u;
-        *iptr++ = batch_offset + 1u;
-        *iptr++ = batch_offset + 2u;
-        *iptr++ = batch_offset + 3u;
-
-        offset += 4u;
+        // NOTE(hugo): body
+        *vptr++ = {{min.x, min.y, depth}, rgba};
+        *vptr++ = {{max.x, min.y, depth}, rgba};
+        *vptr++ = {{max.x, max.y, depth}, rgba};
+        *vptr++ = {{min.x, max.y, depth}, rgba};
+    }
+    {
+        // NOTE(hugo): body
+        *iptr++ = base_index + 0u;
+        *iptr++ = base_index + 1u;
+        *iptr++ = base_index + 2u;
+        *iptr++ = base_index + 0u;
+        *iptr++ = base_index + 2u;
+        *iptr++ = base_index + 3u;
     }
 
-    // NOTE(hugo): body AA
-    {
-        vec2 AL_aa = AL + ortho_aa_opp;
-        vec2 AR_aa = AR + ortho_aa;
-        vec2 BL_aa = BL + ortho_aa_opp;
-        vec2 BR_aa = BR + ortho_aa;
+    if(anti_aliasing){
+        {
+            // NOTE(hugo): aa south
+            *vptr++ = {{min.x, min.y - offset_aa, depth}, rgba_aa};
+            *vptr++ = {{max.x, min.y - offset_aa, depth}, rgba_aa};
 
-        *vptr++ = {{AL_aa.x, AL_aa.y, depth}, rgba_aa};
-        *vptr++ = {{AR_aa.x, AR_aa.y, depth}, rgba_aa};
-        *vptr++ = {{BR_aa.x, BR_aa.y, depth}, rgba_aa};
-        *vptr++ = {{BL_aa.x, BL_aa.y, depth}, rgba_aa};
+            // NOTE(hugo): aa east
+            *vptr++ = {{max.x + offset_aa, min.y, depth}, rgba_aa};
+            *vptr++ = {{max.x + offset_aa, max.y, depth}, rgba_aa};
 
-        *iptr++ = batch_offset + 4;
-        *iptr++ = batch_offset + 0;
-        *iptr++ = batch_offset + 7;
-        *iptr++ = batch_offset + 0;
-        *iptr++ = batch_offset + 3;
-        *iptr++ = batch_offset + 7;
+            // NOTE(hugo): aa north
+            *vptr++ = {{max.x, max.y + offset_aa, depth}, rgba_aa};
+            *vptr++ = {{min.x, max.y + offset_aa, depth}, rgba_aa};
 
-        *iptr++ = batch_offset + 1;
-        *iptr++ = batch_offset + 5;
-        *iptr++ = batch_offset + 2;
-        *iptr++ = batch_offset + 5;
-        *iptr++ = batch_offset + 6;
-        *iptr++ = batch_offset + 2;
-
-        offset += 4u;
-    }
-
-    in_offset = offset + 1u;
-    // NOTE(hugo): A's cap
-    {
-        u16 AL_index = batch_offset + 0u;
-        u16 AR_index = batch_offset + 1u;
-        *vptr++ = {{A.x, A.y, depth}, rgba};
-        u16 A_index = offset++;
-
-        vec2 to_rot = ortho_radius_opp;
-        for(u32 ivert = 0u; ivert != ncap_vertices; ++ivert){
-            float rad = PI * (float)(ivert + 1u) / (float)(ncap_vertices + 1u);
-            vec2 vert = A + rotated(to_rot, rad);
-            *vptr++ = {{vert.x, vert.y, depth}, rgba};
+            // NOTE(hugo): aa west
+            *vptr++ = {{min.x - offset_aa, max.y, depth}, rgba_aa};
+            *vptr++ = {{min.x - offset_aa, min.y, depth}, rgba_aa};
         }
+        {
+            // NOTE(hugo): aa south + south to east
+            *iptr++ = base_index + 4u;
+            *iptr++ = base_index + 5u;
+            *iptr++ = base_index + 1u;
+            *iptr++ = base_index + 4u;
+            *iptr++ = base_index + 1u;
+            *iptr++ = base_index + 0u;
 
-        *iptr++ = A_index;
-        *iptr++ = AL_index;
-        *iptr++ = offset;
+            *iptr++ = base_index + 5u;
+            *iptr++ = base_index + 6u;
+            *iptr++ = base_index + 1u;
 
-        for(u32 itri = 1u; itri < ncap_vertices; ++itri){
-            *iptr++ = A_index;
-            *iptr++ = offset++;
-            *iptr++ = offset;
+            // NOTE(hugo): aa east + east to north
+            *iptr++ = base_index + 6u;
+            *iptr++ = base_index + 7u;
+            *iptr++ = base_index + 2u;
+            *iptr++ = base_index + 6u;
+            *iptr++ = base_index + 2u;
+            *iptr++ = base_index + 1u;
+
+            *iptr++ = base_index + 7u;
+            *iptr++ = base_index + 8u;
+            *iptr++ = base_index + 2u;
+
+            // NOTE(hugo): aa north + north to west
+            *iptr++ = base_index + 8u;
+            *iptr++ = base_index + 9u;
+            *iptr++ = base_index + 3u;
+            *iptr++ = base_index + 8u;
+            *iptr++ = base_index + 3u;
+            *iptr++ = base_index + 2u;
+
+            *iptr++ = base_index + 9u;
+            *iptr++ = base_index + 10u;
+            *iptr++ = base_index + 3u;
+
+            // NOTE(hugo): aa west + west to south
+            *iptr++ = base_index + 10u;
+            *iptr++ = base_index + 11u;
+            *iptr++ = base_index + 0u;
+            *iptr++ = base_index + 10u;
+            *iptr++ = base_index + 0u;
+            *iptr++ = base_index + 3u;
+
+            *iptr++ = base_index + 11u;
+            *iptr++ = base_index + 4u;
+            *iptr++ = base_index + 0u;
         }
-
-        *iptr++ = A_index;
-        *iptr++ = offset++;
-        *iptr++ = AR_index;
-    }
-
-    // NOTE(hugo): A's cap AA
-    {
-        u16 AL_index = batch_offset + 0u;
-        u16 AR_index = batch_offset + 1u;
-        u16 AL_aa_index = batch_offset + 4u;
-        u16 AR_aa_index = batch_offset + 5u;
-
-        vec2 to_rot = ortho_radius_opp + ortho_aa_opp;
-        for(u32 ivert = 0u; ivert != ncap_vertices; ++ivert){
-            float rad = PI * (float)(ivert + 1u) / (float)(ncap_vertices + 1u);
-            vec2 vert = A + rotated(to_rot, rad);
-            *vptr++ = {{vert.x, vert.y, depth}, rgba_aa};
-        }
-
-        *iptr++ = AL_index;
-        *iptr++ = AL_aa_index;
-        *iptr++ = in_offset;
-        *iptr++ = AL_aa_index;
-        *iptr++ = offset;
-        *iptr++ = in_offset;
-
-        for(u32 iquad = 1u; iquad < ncap_vertices; ++iquad){
-            *iptr++ = in_offset++;
-            *iptr++ = offset;
-            *iptr++ = in_offset;
-            *iptr++ = offset++;
-            *iptr++ = offset;
-            *iptr++ = in_offset;
-        }
-
-        *iptr++ = in_offset;
-        *iptr++ = offset;
-        *iptr++ = AR_index;
-        *iptr++ = offset++;
-        *iptr++ = AR_aa_index;
-        *iptr++ = AR_index;
-    }
-
-    in_offset = offset + 1u;
-    // NOTE(hugo): B's cap
-    {
-        u16 BR_index = batch_offset + 2u;
-        u16 BL_index = batch_offset + 3u;
-        *vptr++ = {{B.x, B.y, depth}, rgba};
-        u16 B_index = offset++;
-
-        vec2 to_rot = ortho_radius;
-        for(u32 ivert = 0u; ivert != ncap_vertices; ++ivert){
-            float rad = PI * (float)(ivert + 1u) / (float)(ncap_vertices + 1u);
-            vec2 vert = B + rotated(to_rot, rad);
-            *vptr++ = {{vert.x, vert.y, depth}, rgba};
-        }
-
-        *iptr++ = B_index;
-        *iptr++ = BR_index;
-        *iptr++ = offset;
-
-        for(u32 itri = 1u; itri < ncap_vertices; ++itri){
-            *iptr++ = B_index;
-            *iptr++ = offset++;
-            *iptr++ = offset;
-        }
-
-        *iptr++ = B_index;
-        *iptr++ = offset++;
-        *iptr++ = BL_index;
-    }
-
-    // NOTE(hugo): B's cap AA
-    {
-        u16 BL_index = batch_offset + 3u;
-        u16 BR_index = batch_offset + 2u;
-        u16 BL_aa_index = batch_offset + 7u;
-        u16 BR_aa_index = batch_offset + 6u;
-
-        vec2 to_rot = ortho_radius + ortho_aa;
-        for(u32 ivert = 0u; ivert != ncap_vertices; ++ivert){
-            float rad = PI * (float)(ivert + 1u) / (float)(ncap_vertices + 1u);
-            vec2 vert = B + rotated(to_rot, rad);
-            *vptr++ = {{vert.x, vert.y, depth}, rgba_aa};
-        }
-
-        *iptr++ = BR_index;
-        *iptr++ = BR_aa_index;
-        *iptr++ = in_offset;
-        *iptr++ = BR_aa_index;
-        *iptr++ = offset;
-        *iptr++ = in_offset;
-
-        for(u32 iquad = 1u; iquad < ncap_vertices; ++iquad){
-            *iptr++ = in_offset++;
-            *iptr++ = offset;
-            *iptr++ = in_offset;
-            *iptr++ = offset++;
-            *iptr++ = offset;
-            *iptr++ = in_offset;
-        }
-
-        *iptr++ = in_offset;
-        *iptr++ = offset;
-        *iptr++ = BL_index;
-        *iptr++ = offset++;
-        *iptr++ = BL_aa_index;
-        *iptr++ = BL_index;
     }
 }
 
-void Vector_Graphics_Renderer::circle(vec2 center, float radius, float depth, vec4 rgba, float dpix){
+void Vector_Graphics_Renderer::segment(vec2 A, vec2 B, float radius, float depth, vec4 rgba, float dpix, bool anti_aliasing){
+    float size_aa = 0.45f * dpix;
+    float offset_aa = 0.90f * dpix;
+    vec4 rgba_aa = {rgba.r, rgba.g, rgba.a, 0.f};
+
+    // NOTE(hugo): coverage based anti-aliasing for thin lines
+    {
+        float diameter_to_dpix = 2.f * radius / dpix;
+        if(diameter_to_dpix < 1.f){
+            radius = dpix;
+            anti_aliasing = false;
+            rgba.a = 0.5f * diameter_to_dpix * rgba.a;
+        }
+    }
+
+    vec2 uAB = normalized(B - A);
+    vec2 ortho = {uAB.y, - uAB.x};
+
+    // --
+
+    u32 nvertices = 4u;
+    u32 nindices = 6u;
+
+    if(anti_aliasing){
+        A = A + size_aa * uAB;
+        B = B - size_aa * uAB;
+        radius = radius - size_aa;
+
+        nvertices += 8u;
+        nindices += 36u;
+    }
+
+    // --
+
+    u32 batch_index = get_batch_index_xyzrgba(nvertices, nindices, batch_count, batch_storage, renderer);
+    Batch_Info& batch = batch_storage[batch_index];
+
+    vertex_xyzrgba* vptr = (vertex_xyzrgba*)batch.buffer.vptr + batch.vcursor;
+    u16* iptr = (u16*)batch.buffer.iptr + batch.icursor;
+    u32 base_index = batch.vcursor;
+
+    batch.vcursor += nvertices;
+    batch.icursor += nindices;
+
+    // --
+
+    vec2 dwidth = ortho * radius;
+
+    vec2 v0 = A - dwidth;
+    vec2 v1 = A + dwidth;
+    vec2 v2 = B + dwidth;
+    vec2 v3 = B - dwidth;
+
+    // NOTE(hugo):
+    //
+    //      9  8
+    //      |  |
+    //  10--3--2--7
+    //      |  |
+    //  11--0--1--6
+    //      |  |
+    //      4  5
+    //
+    // AL = 0
+    // AR = 1
+    // BL = 3
+    // BR = 2
+
+    {
+        // NOTE(hugo): body
+        *vptr++ = {{v0.x, v0.y, depth}, rgba};
+        *vptr++ = {{v1.x, v1.y, depth}, rgba};
+        *vptr++ = {{v2.x, v2.y, depth}, rgba};
+        *vptr++ = {{v3.x, v3.y, depth}, rgba};
+    }
+    {
+        // NOTE(hugo): body
+        *iptr++ = base_index + 0u;
+        *iptr++ = base_index + 1u;
+        *iptr++ = base_index + 2u;
+        *iptr++ = base_index + 0u;
+        *iptr++ = base_index + 2u;
+        *iptr++ = base_index + 3u;
+    }
+
+    if(anti_aliasing){
+        vec2 dheight_aa = uAB * offset_aa;
+        vec2 dwidth_aa = ortho * offset_aa;
+
+        vec2 v4 = v0 - dheight_aa;
+        vec2 v5 = v1 - dheight_aa;
+        vec2 v6 = v1 + dwidth_aa;
+        vec2 v7 = v2 + dwidth_aa;
+        vec2 v8 = v2 + dheight_aa;
+        vec2 v9 = v3 + dheight_aa;
+        vec2 v10 = v3 - dwidth_aa;
+        vec2 v11 = v4 - dwidth_aa;
+
+        {
+            // NOTE(hugo): aa south
+            *vptr++ = {{v4.x, v4.y, depth}, rgba_aa};
+            *vptr++ = {{v5.x, v5.y, depth}, rgba_aa};
+
+            // NOTE(hugo): aa east
+            *vptr++ = {{v6.x, v6.y, depth}, rgba_aa};
+            *vptr++ = {{v7.x, v7.y, depth}, rgba_aa};
+
+            // NOTE(hugo): aa north
+            *vptr++ = {{v8.x, v8.y, depth}, rgba_aa};
+            *vptr++ = {{v9.x, v9.y, depth}, rgba_aa};
+
+            // NOTE(hugo): aa west
+            *vptr++ = {{v10.x, v10.y, depth}, rgba_aa};
+            *vptr++ = {{v11.x, v11.y, depth}, rgba_aa};
+        }
+        {
+            // NOTE(hugo): aa south + south to east
+            *iptr++ = base_index + 4u;
+            *iptr++ = base_index + 5u;
+            *iptr++ = base_index + 1u;
+            *iptr++ = base_index + 4u;
+            *iptr++ = base_index + 1u;
+            *iptr++ = base_index + 0u;
+
+            *iptr++ = base_index + 5u;
+            *iptr++ = base_index + 6u;
+            *iptr++ = base_index + 1u;
+
+            // NOTE(hugo): aa east + east to north
+            *iptr++ = base_index + 6u;
+            *iptr++ = base_index + 7u;
+            *iptr++ = base_index + 2u;
+            *iptr++ = base_index + 6u;
+            *iptr++ = base_index + 2u;
+            *iptr++ = base_index + 1u;
+
+            *iptr++ = base_index + 7u;
+            *iptr++ = base_index + 8u;
+            *iptr++ = base_index + 2u;
+
+            // NOTE(hugo): aa north + north to west
+            *iptr++ = base_index + 8u;
+            *iptr++ = base_index + 9u;
+            *iptr++ = base_index + 3u;
+            *iptr++ = base_index + 8u;
+            *iptr++ = base_index + 3u;
+            *iptr++ = base_index + 2u;
+
+            *iptr++ = base_index + 9u;
+            *iptr++ = base_index + 10u;
+            *iptr++ = base_index + 3u;
+
+            // NOTE(hugo): aa west + west to south
+            *iptr++ = base_index + 10u;
+            *iptr++ = base_index + 11u;
+            *iptr++ = base_index + 0u;
+            *iptr++ = base_index + 10u;
+            *iptr++ = base_index + 0u;
+            *iptr++ = base_index + 3u;
+
+            *iptr++ = base_index + 11u;
+            *iptr++ = base_index + 4u;
+            *iptr++ = base_index + 0u;
+        }
+    }
+}
+
+void Vector_Graphics_Renderer::disc(vec2 center, float radius, float depth, vec4 rgba, float dpix, bool anti_aliasing){
+    float size_aa = 0.45f * dpix;
+    float offset_aa = 0.90f * dpix;
+    vec4 rgba_aa = {rgba.r, rgba.g, rgba.b, 0.f};
+
+    // NOTE(hugo): coverage based anti-aliasing for small disc
+    {
+        float diameter_to_dpix = 2.f * radius / dpix;
+        if(diameter_to_dpix < 1.f){
+            anti_aliasing = false;
+            rgba.a = diameter_to_dpix * rgba.a;
+        }
+    }
+
+    // --
+
+    u32 nvertices_perimeter = circle_vertices(radius, dpix * 0.33f);
+    assert(nvertices_perimeter > 2u);
+
+    u32 nvertices = nvertices_perimeter + 1u;
+    u32 nindices = 3u * nvertices_perimeter;
+
+    if(anti_aliasing){
+        radius = radius - size_aa;
+
+        nvertices += 2u * nvertices_perimeter;
+        nindices += nvertices_perimeter * 9u;
+    }
+
+    // --
+
+    u32 batch_index = get_batch_index_xyzrgba(nvertices, nindices, batch_count, batch_storage, renderer);
+    Batch_Info& batch = batch_storage[batch_index];
+
+    vertex_xyzrgba* vptr = (vertex_xyzrgba*)batch.buffer.vptr + batch.vcursor;
+    u16* iptr = (u16*)batch.buffer.iptr + batch.icursor;
+    u32 base_index = batch.vcursor;
+
+    batch.vcursor += nvertices;
+    batch.icursor += nindices;
+
+    // --
+
+    u32 index_center = base_index;
+    u32 index_start = base_index + 1u;
+    u32 index_start_aa = base_index + nvertices_perimeter + 1u;
+
+    {
+        vertex_xyzrgba* vptr_aa = vptr + nvertices_perimeter + 1u;
+
+        // NOTE(hugo): center & starting vertex
+        *vptr++ = {{center.x, center.y, depth}, rgba};
+        *vptr++ = {{center.x + radius, center.y, depth}, rgba};
+
+        // NOTE(hugo): perimeter vertices
+        vec2 base_rot = {radius, 0.f};
+        vec2 prev_rot = base_rot;
+        for(u32 ivert = 1u; ivert != nvertices_perimeter; ++ivert){
+            float rad = 2.f * PI * (float)(ivert) / (float)(nvertices_perimeter);
+
+            vec2 new_rot = rotated(base_rot, rad);
+            *vptr++ = {{center.x + new_rot.x, center.y + new_rot.y, depth}, rgba};
+
+            if(anti_aliasing){
+                // TODO(hugo): aa perimeter vertices
+                vec2 ortho_aa = normalized(vec2({new_rot.y - prev_rot.y, prev_rot.x - new_rot.x})) * offset_aa;
+                *vptr_aa++ = {{center.x + prev_rot.x + ortho_aa.x, center.y + prev_rot.y + ortho_aa.y}, rgba_aa};
+                *vptr_aa++ = {{center.x + new_rot.x + ortho_aa.x, center.y + new_rot.y + ortho_aa.y}, rgba_aa};
+            }
+
+            prev_rot = new_rot;
+        }
+
+        if(anti_aliasing){
+            // NOTE(hugo): aa end sector vertices
+            vec2 ortho_aa = normalized(vec2({base_rot.y - prev_rot.y, prev_rot.x - base_rot.x})) * offset_aa;
+            *vptr_aa++ = {{center.x + prev_rot.x + ortho_aa.x, center.y + prev_rot.y + ortho_aa.y}, rgba_aa};
+            *vptr_aa++ = {{center.x + base_rot.x + ortho_aa.x, center.y + base_rot.y + ortho_aa.y}, rgba_aa};
+        }
+    }
+    {
+        // NOTE(hugo): sectors
+        u32 index_current = index_start;
+        for(u32 isector = 0u; isector != nvertices_perimeter - 1u; ++isector){
+            *iptr++ = index_center;
+            *iptr++ = index_current++;
+            *iptr++ = index_current;
+        }
+
+        // NOTE(hugo): end sector
+        *iptr++ = index_center;
+        *iptr++ = index_current;
+        *iptr++ = index_start;
+
+        if(anti_aliasing){
+            // NOTE(hugo): aa sectors + to next sector
+            index_current = index_start;
+            u32 index_aa = index_start_aa;
+            for(u32 isector = 0u; isector != nvertices_perimeter - 1u; ++isector){
+                *iptr++ = index_current++;
+                *iptr++ = index_aa;
+                *iptr++ = index_current;
+                *iptr++ = index_aa++;
+                *iptr++ = index_aa;
+                *iptr++ = index_current;
+
+                *iptr++ = index_current;
+                *iptr++ = index_aa++;
+                *iptr++ = index_aa;
+            }
+
+            // NOTE(hugo): aa end sector
+            *iptr++ = index_current;
+            *iptr++ = index_aa;
+            *iptr++ = index_start;
+            *iptr++ = index_aa++;
+            *iptr++ = index_aa;
+            *iptr++ = index_start;
+
+            *iptr++ = index_start;
+            *iptr++ = index_aa;
+            *iptr++ = index_start_aa;
+        }
+    }
+}
+
+void Vector_Graphics_Renderer::rect_round(vec2 min, vec2 max, float depth, vec4 rgba, float dpix, bool anti_aliasing){
+}
+
+void Vector_Graphics_Renderer::segment_round(vec2 A, vec2 B, float radius, float depth, vec4 rgba, float dpix, bool anti_aliasing){
 }
 
 void Vector_Graphics_Renderer::draw(){
@@ -299,52 +538,3 @@ void Vector_Graphics_Renderer::draw(){
 void Vector_Graphics_Renderer::next_frame(){
     batch_count = 0u;
 }
-
-#if 0
-float Vector_Graphics_Renderer::determine_max_error(float camera_height, u32 window_height){
-    return 0.5f * camera_height / (float)window_height;
-}
-
-
-void Vector_Graphics_Renderer::segment(vec2 A, vec2 B, vec4 color_linear, float radius, float depth, u32 ncap_vertices, float aa_border){
-}
-
-void Vector_Graphics_Renderer::segment(vec2 A, vec2 B, vec4 color_linear, float radius, float depth, float max_error){
-    u32 ncap_vertices = circular_cap_vertices(max_error, radius);
-    segment(A, B, color_linear, radius, depth, ncap_vertices, max_error);
-}
-
-void Vector_Graphics_Renderer::circle(vec2 center, vec4 color_linear, float radius, float depth, u32 nperi_vertices){
-    assert(nperi_vertices > 2u);
-    u32 nvertices = 3u * nperi_vertices;
-
-    u32 batch_index = get_batch_index_xyzrgba(nvertices, batch_count, batch_storage, renderer);
-    Batch_Info& batch = batch_storage[batch_index];
-    vertex_xyzrgba* ptr = (vertex_xyzrgba*)batch.buffer.ptr + batch.cursor;
-    batch.cursor += nvertices;
-
-    vec2 start = {center.x + radius, center.y};
-    vec2 end = start;
-
-    for(u32 itri = 0u; itri != nperi_vertices - 1u; ++itri){
-        ptr[0u] = {{center.x, center.y, depth}, color_linear};
-        ptr[1u] = {{start.x, start.y, depth}, color_linear};
-
-        float rad = 2.f * PI * (float)(itri + 1u) / (float)(nperi_vertices);
-        start = center + rotated({radius, 0.f}, rad);
-        ptr[2u] = {{start.x, start.y, depth}, color_linear};
-
-        ptr += 3u;
-    }
-
-    ptr[0u] = {{center.x, center.y, depth}, color_linear};
-    ptr[1u] = {{start.x, start.y, depth}, color_linear};
-    ptr[2u] = {{end.x, end.y, depth}, color_linear};
-}
-
-void Vector_Graphics_Renderer::circle(vec2 center, vec4 color_linear, float radius, float depth, float max_error){
-    u32 nperi_vertices = max(circle_vertices(max_error, radius), 3u);
-    circle(center, color_linear, radius, depth, nperi_vertices);
-}
-
-#endif

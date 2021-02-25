@@ -26,13 +26,13 @@ namespace BEEWAX_INTERNAL{
         "TRACE", "INFO", "WARNING", "ERROR"
     };
 
-#if defined(PLATFORM_WINDOWS)
+#if defined(PLATFORM_WINDOWS) && !defined(LOG_NO_COLOR)
     static const char* log_levels_resetcolor = "\033[0m";
     static const char* log_levels_pathcolor = "\033[93m";
     static const char* log_levels_colors[nlog_levels] = {
         "\033[30;1m", "\033[34;1m", "\033[35;1m", "\033[31;1m"
     };
-#elif defined(PLATFORM_LINUX)
+#elif defined(PLATFORM_LINUX) && !defined(LOG_NO_COLOR)
     static const char* log_levels_resetcolor = "\x1b[0m";
     static const char* log_levels_pathcolor = "\x1b[93m";
     static const char* log_levels_colors[nlog_levels] = {
