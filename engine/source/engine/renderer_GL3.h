@@ -73,6 +73,7 @@ struct Renderer_GL3{
 
     // -- draw
 
+    void draw(Primitive_Type primitive, u32 index, u32 count);
     void draw(const Transient_Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count);
     void draw(const Transient_Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 count, u64 offset);
 
@@ -103,6 +104,8 @@ struct Renderer_GL3{
         GL::Shader shader = 0u;
     };
     Shader_Entry shader_storage[Shader_Name::NUMBER_OF_SHADER_NAMES];
+
+    GL::Vertex_Array empty_vao;
 };
 
 #endif

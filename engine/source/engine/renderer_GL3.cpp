@@ -212,42 +212,6 @@ static void renderer_free_sampler_storage(Renderer_GL3* renderer){
 #undef FREE_SAMPLER_STORAGE
 }
 
-#if 0
-static void renderer_setup_vertex_batch_storage(Renderer_GL3* renderer){
-    glGenVertexArrays(1u, &renderer->vertex_batch_storage.shared_vao);
-    glGenBuffers(1u, &renderer->vertex_batch_storage.shared_vbo);
-}
-static void renderer_free_vertex_batch_storage(Renderer_GL3* renderer){
-    glDeleteVertexArrays(1u, &renderer->vertex_batch_storage.shared_vao);
-    glDeleteBuffers(1u, &renderer->vertex_batch_storage.shared_vbo);
-
-    for(u32 ibatch = 0u; ibatch != renderer->vertex_batch_storage.batches.size; ++ibatch){
-        Renderer_GL3::Vertex_Batch_Entry* entry = &renderer->vertex_batch_storage.batches[ibatch];
-        glDeleteVertexArrays(1u, &entry->vao);
-        glDeleteBuffers(1u, &entry->vbo);
-        entry->first.free();
-        entry->count.free();
-        entry->extension_data.free();
-        entry->extension_first.free();
-        entry->extension_count.free();
-    }
-    renderer->vertex_batch_storage.free_batches.free();
-    renderer->vertex_batch_storage.batches.free();
-}
-
-static void renderer_setup_texture_storage(Renderer_GL3* renderer){
-    UNUSED(renderer);
-}
-static void renderer_free_texture_storage(Renderer_GL3* renderer){
-    for(u32 itexture = 0u; itexture != renderer->texture_storage.textures.size; ++itexture){
-        Renderer_GL3::Texture_Entry* entry = &renderer->texture_storage.textures[itexture];
-        glDeleteTextures(1u, &entry->texture);
-    }
-    renderer->texture_storage.free_textures.free();
-    renderer->texture_storage.textures.free();
-}
-#endif
-
 void Renderer_GL3::setup(){
     renderer_setup_uniform_storage(this);
     renderer_setup_shader_storage(this);
@@ -256,6 +220,8 @@ void Renderer_GL3::setup(){
 
     renderer_setup_uniform_shader_binding(this);
     renderer_setup_texture_shader_binding(this);
+
+    glGenVertexArrays(1u, &empty_vao);
 }
 
 void Renderer_GL3::terminate(){
@@ -266,6 +232,8 @@ void Renderer_GL3::terminate(){
     renderer_free_vertex_format_storage(this);
     renderer_free_shader_storage(this);
     renderer_free_uniform_storage(this);
+
+    glDeleteVertexArrays(1u, &empty_vao);
 
     *this = Renderer_GL3();
 }
@@ -514,6 +482,12 @@ void Renderer_GL3::use_render_target(const Render_Target_GL3& render_target){
 }
 
 // -- draw
+
+void Renderer_GL3::draw(Primitive_Type primitive, u32 index, u32 count){
+    glBindVertexArray(empty_vao);
+    glDrawArrays(primitive, index, count);
+    glBindVertexArray(0u);
+}
 
 void Renderer_GL3::draw(const Transient_Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count){
     glBindVertexArray(buffer.vao);

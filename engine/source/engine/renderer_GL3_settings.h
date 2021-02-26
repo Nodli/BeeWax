@@ -85,6 +85,11 @@ struct uniform_camera_2D{
     mat3_std140 matrix;
 };
 
+struct uniform_checker_2D_info{
+    vec4 center_height_aspectratio;
+    float checker_size;
+};
+
 struct vertex_xyzrgba{
     vec3 vposition;
     vec4 vcolor;
@@ -113,6 +118,57 @@ R"(precision mediump float;)" "\n";
 #else
     static_assert(false, "no GLSL_version for the specified OpenGL version");
 #endif
+
+// NOTE(hugo): use with glDrawArrays(GL_TRIANGLES, 0u, 3u);
+static const char* emit_fullscreen_triangle = R"(
+    out vec2 screenspace_coord;
+
+    void main(){
+        vec2 screenpos = vec2(
+            -1. + float((gl_VertexID & 1) << 2),
+            -1. + float((gl_VertexID & 2) << 2)
+        );
+
+        // NOTE(hugo): furthest z below 1.
+        float z = intBitsToFloat(floatBitsToInt(1) - 1);
+
+        gl_Position = vec4(screenpos.xy, z, 1.);
+        screenspace_coord = vec2(
+            (screenpos.x + 1.) * 0.5,
+            (screenpos.y + 1.) * 0.5
+        );
+    }
+)";
+
+static const char* shader_header_checker_2D = GLSL_version;
+static const char* vertex_shader_checker_2D = emit_fullscreen_triangle;
+static const char* fragment_shader_checker_2D = R"(
+    layout(std140) uniform u_checker_2D_info{
+        vec4 center_height_aspectratio;
+        float checker_size;
+    } checker_2D_info;
+
+    in vec2 screenspace_coord;
+    out vec4 output_color;
+
+    void main(){
+        vec2 center = checker_2D_info.center_height_aspectratio.xy;
+        float height = checker_2D_info.center_height_aspectratio.z;
+        float aspect_ratio = checker_2D_info.center_height_aspectratio.w;
+
+        // NOTE(hugo): * 0.5 is here because checker_size represents the size of each square of the checker
+        vec2 coord = (screenspace_coord.xy - vec2(0.5)) * 0.5;
+        coord = coord * height;
+        coord.x = coord.x * aspect_ratio;
+        coord = coord + center;
+
+        vec2 coord_fract = fract(coord / checker_2D_info.checker_size);
+        float greyscale = 0.5 + 0.5 * float((coord_fract.x > 0.5) ^^ (coord_fract.y > 0.5));
+
+        output_color = vec4(greyscale, greyscale, greyscale, 1.);
+        //output_color = vec4(screenspace_coord.x, screenspace_coord.y, 0., 1.);
+    }
+)";
 
 // NOTE(hugo): polygon_2D
 // /vcolor/ is expected in linear space
@@ -179,6 +235,7 @@ static const char* fragment_shader_polygon_2D_tex = R"(
 
 #define FOR_EACH_UNIFORM_NAME_ENGINE(FUNCTION)          \
 FUNCTION(camera_2D)                                     \
+FUNCTION(checker_2D_info)                               \
 
 #define FOR_EACH_VERTEX_FORMAT_NAME_ENGINE(FUNCTION)    \
 FUNCTION(xyzrgba)                                       \
@@ -187,10 +244,12 @@ FUNCTION(xyzuv)                                         \
 #define FOR_EACH_SHADER_NAME_ENGINE(FUNCTION)           \
 FUNCTION(polygon_2D)                                    \
 FUNCTION(polygon_2D_tex)                                \
+FUNCTION(checker_2D)                                    \
 
 #define FOR_EACH_UNIFORM_SHADER_PAIR_ENGINE(FUNCTION)   \
 FUNCTION(camera_2D, polygon_2D)                         \
 FUNCTION(camera_2D, polygon_2D_tex)                     \
+FUNCTION(checker_2D_info, checker_2D)                      \
 
 #define FOR_EACH_TEXTURE_SHADER_PAIR_ENGINE(FUNCTION)   \
 FUNCTION(tex, 0, polygon_2D_tex)                        \

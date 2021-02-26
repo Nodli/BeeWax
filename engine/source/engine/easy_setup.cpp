@@ -48,7 +48,7 @@ void Engine::setup(){
     glClearColor(0.5f, 0.5f, 0.5f, 1.f);
 
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GL_LEQUAL);
     glClearDepth(1.f);
 
     glEnable(GL_BLEND);

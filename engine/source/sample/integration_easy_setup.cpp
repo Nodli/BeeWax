@@ -1,6 +1,17 @@
 #include "../engine/easy_setup.h"
 #include "../engine/easy_setup.cpp"
 
+struct Editor_Scene{
+    void on_push(){
+    }
+    void update(){
+    }
+    void render(){
+    }
+    void on_remove(){
+    }
+};
+
 struct Integration_Scene{
     void on_push(){
         camera = {{0.f, 0.f}, 2.f, g_engine.window.aspect_ratio()};
@@ -167,6 +178,11 @@ struct Integration_Scene{
 
     }
     void render(){
+        uniform_checker_2D_info checker_info = {{camera.center.x, camera.center.y, camera.height, camera.aspect_ratio}, 0.1f};
+        g_engine.renderer.update_uniform(checker_2D_info, (void*)&checker_info);
+        g_engine.renderer.use_shader(checker_2D);
+        g_engine.renderer.draw(PRIMITIVE_TRIANGLES, 0u, 3u);
+
         vg_renderer.next_frame();
 
         {
