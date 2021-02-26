@@ -528,6 +528,8 @@ void Renderer_GL3::draw(const Transient_Buffer_Indexed_GL3& buffer, Primitive_Ty
 }
 
 void Renderer_GL3::clear_render_target(const Render_Target_GL3& render_target){
+    // NOTE(hugo): glUseProgram(0u) otherwise the glClear triggers a vertex shader recompilation on Nvidia GPUs
+    glUseProgram(0u);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
