@@ -274,3 +274,18 @@ u32 detect_physical_cores(){
 #endif
 }
 #endif
+
+size_t detect_pagesize(){
+#if defined(PLATFORM_WINDOWS)
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    return sysinfo.dwPageSize;
+
+#elif defined(PLATFORM_LINUX)
+    return (size_t)getpagesize();
+
+#else
+    static_assert(false, "detect_pagesize() is not implemented for this platform"
+
+#endif
+}

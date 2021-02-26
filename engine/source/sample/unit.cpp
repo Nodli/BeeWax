@@ -21,6 +21,84 @@ namespace bw::utest{
         return !(diff > tolerance);
     }
 
+    void t_Virtual_Arena(){
+        bool success = true;
+
+        random_seed_with_time();
+        random_seed_type seed_copy = random_seed_copy();
+
+        setup_vmemory();
+
+        Virtual_Arena arena;
+        arena.initialize(GIGABYTES(64u));
+
+        {
+            Virtual_Arena_Memory mem = arena.malloc(16u * sizeof(int), alignof(int));
+
+            success &= mem.ptr && mem.previous_cursor == 0u && arena.commit_page_count == 1u && arena.cursor == 16u * sizeof(int);
+            memset(mem.ptr, 0u, 16u * sizeof(int));
+
+            arena.free(mem);
+            success &= arena.commit_page_count == 1u && arena.cursor == 0u;
+        }
+        arena.reset();
+        success &= arena.commit_page_count == 0u && arena.cursor == 0u;
+
+        {
+            Virtual_Arena_Memory memA = arena.malloc(KILOBYTES(7u), alignof(char));
+            success &= memA.ptr && arena.commit_page_count == 2u;
+
+            Virtual_Arena_Memory memB = arena.malloc(KILOBYTES(7u), alignof(char));
+            success &= memB.ptr && arena.commit_page_count == 4u;
+
+            arena.free(memB);
+            success &= memB.ptr && arena.commit_page_count == 4u;
+
+            arena.reset_to_cursor();
+            success &= memB.ptr && arena.commit_page_count == 2u;
+
+            // NOTE(hugo): intentionally not freeing memA to test the reset()
+        }
+        arena.reset();
+        success &= arena.commit_page_count == 0u && arena.cursor == 0u;
+
+        {
+            Virtual_Arena_Memory malloc_tracker[128u];
+            malloc_tracker[0u].previous_cursor = 0u;
+
+            for(u32 ialloc = 1u; ialloc != 128u; ++ialloc){
+                u32 nbytes = random_u32_range_uniform(KILOBYTES(16u)) * ialloc;
+
+                size_t bytesize = nbytes * sizeof(char);
+                Virtual_Arena_Memory mem = arena.malloc(bytesize, 4u);
+                malloc_tracker[ialloc] = mem;
+
+                uintptr_t arena_bytesize = (uintptr_t)mem.ptr - (uintptr_t)arena.vmemory + bytesize;
+                size_t arena_page_count = arena_bytesize / BEEWAX_INTERNAL::vmemory_pagesize
+                    + (arena_bytesize % BEEWAX_INTERNAL::vmemory_pagesize != 0u);
+
+                success &= mem.ptr
+                    && arena.commit_page_count == arena_page_count
+                    && arena.cursor == arena_bytesize;
+                memset(mem.ptr, 0u, bytesize);
+            }
+            for(u32 ialloc = 127u; ialloc != 0u; --ialloc){
+                arena.free(malloc_tracker[ialloc]);
+            }
+        }
+        arena.reset();
+        success &= arena.commit_page_count == 0u && arena.cursor == 0u;
+
+        arena.terminate();
+
+        if(!success){
+            LOG_ERROR("FAILED utest::t_Virtual_Arena() - seed: %" PRId64 " %" PRId64, seed_copy.s0, seed_copy.s1);
+            LOG_ERROR("FAILED utest::t_Virtual_Arena()");
+        }else{
+            LOG_INFO("FINISHED utest::t_Virtual_Arena()");
+        }
+    }
+
     void t_array(){
         bool success = true;
 
@@ -795,6 +873,8 @@ int main(int argc, char* argv[]){
     //bw::utest::t_detect_vector_capacilities();
 
     // ---- regression tests
+
+    bw::utest::t_Virtual_Arena();
 
     bw::utest::t_array();
     bw::utest::t_pool();

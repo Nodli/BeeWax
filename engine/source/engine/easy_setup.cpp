@@ -3,6 +3,7 @@ void Engine::setup(){
     // ---- externals
 
     SDL_CHECK(SDL_Init(SDL_INIT_TIMER | SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_EVENTS) == 0);
+    setup_vmemory();
     setup_timer();
     setup_LOG();
     stbi_set_flip_vertically_on_load(true);

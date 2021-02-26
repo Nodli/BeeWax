@@ -55,4 +55,6 @@ s32 detect_vector_capabilities();
 u32 detect_physical_cores();
 #endif
 
+size_t detect_pagesize();
+
 #endif

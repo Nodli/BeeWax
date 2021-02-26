@@ -65,6 +65,7 @@ bool is_pow2(size_t number);
 // round_up_multiple(0u, /multiple/) = 0u;
 u32 round_up_pow2(u32 number);
 u32 round_up_multiple(u32 number, u32 multiple);
+size_t round_up_multiple(size_t number, size_t multiple);
 
 u32 get_rightmost_set_bit(u32 number);
 

@@ -26,6 +26,12 @@ u32 round_up_multiple(u32 number, u32 multipler){
     return number + (multipler - remainder) * (remainder != 0u);
 }
 
+size_t round_up_multiple(size_t number, size_t multipler){
+    assert(multipler != 0u);
+    size_t remainder = number % multipler;
+    return number + (multipler - remainder) * (remainder != 0u);
+}
+
 u32 get_rightmost_set_bit(u32 number){
     return number & (~number + 1u);
 }

@@ -181,6 +181,9 @@ namespace bw{
     #include "hash.h"
     #include "hash.cpp"
 
+    #include "vmemory.h"
+    #include "vmemory.cpp"
+
     #include "sstring.h"
 
     #include "data_structure.h"
@@ -196,11 +199,6 @@ namespace bw{
     // ---- debug
 
     #include "developper_tools.h"
-
-    // ---- os
-
-    #include "os.h"
-    #include "os.cpp"
 
     // ----
 
