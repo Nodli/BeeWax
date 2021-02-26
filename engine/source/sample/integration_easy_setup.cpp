@@ -14,6 +14,15 @@ struct Integration_Scene{
         song = g_engine.audio_catalog.search("song");
 
         vg_renderer.renderer = &g_engine.renderer;
+
+        ImGui::SetColorEditOptions(
+                ImGuiColorEditFlags_None
+                | ImGuiColorEditFlags_NoLabel
+                | ImGuiColorEditFlags_AlphaBar
+                | ImGuiColorEditFlags_AlphaPreviewHalf
+                | ImGuiColorEditFlags_DisplayHSV
+                | ImGuiColorEditFlags_PickerHueWheel
+        );
     }
     void update(){
         if(g_engine.keyboard.arrow_left.is_down()) rect_w += 0.0002f;
