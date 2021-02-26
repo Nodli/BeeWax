@@ -65,9 +65,9 @@
 
     #define ADD_TO_ENUM(entry_name, ...) entry_name,
 
-    #define KILOBYTES(nKB)   ((u64) (nKB) << 10)
-    #define MEGABYTES(nMB)   ((u64) (nMB) << 20)
-    #define GIGABYTES(nGB)   ((u64) (nGB) << 20)
+    #define KILOBYTES(nKB)   ((u64) (nKB) * 1024u)
+    #define MEGABYTES(nMB)   ((u64) (nMB) * 1024u * 1024u)
+    #define GIGABYTES(nGB)   ((u64) (nGB) * 1024u * 1024u * 1024u)
 
     // NOTE(hugo): outputs the same assembly as the raw function calls when using O1 (GCC & MSVC) by using :
     // - operator,(A, B) returns the rightmost argument even if the types of A and B are different
@@ -80,8 +80,8 @@
     #define FILENAME                                                            \
     [](){                                                                       \
         const char* filestr = "/\\" __FILE__;                                   \
-        const char* ptrA = strrchr(filestr, '/');                               \
-        const char* ptrB = strrchr(filestr, '\\');                              \
+        const char* ptrA = strrchr(filestr, '/') + 1u;                          \
+        const char* ptrB = strrchr(filestr, '\\') + 1u;                         \
         return ptrA > ptrB ? ptrA : ptrB;                                       \
     }()
 

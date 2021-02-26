@@ -8,8 +8,8 @@ static char CRASH_sprintf_scratch[2048];
 #if defined(PLATFORM_LAYER_SDL)
     #define CRASH(MESSAGE_FORMAT, ...)                                                                          \
     do{                                                                                                         \
-        sprintf(CRASH_sprintf_scratch, "FILE:%s\nLINE:%u\n" MESSAGE_FORMAT, FILENAME, __LINE__, ##__VA_ARGS__); \
-        LOG_ERROR("%s", CRASH_sprintf_scratch);                                                                 \
+        sprintf(CRASH_sprintf_scratch, "FILE: %s\nLINE: %u\n" MESSAGE_FORMAT, FILENAME, __LINE__, ##__VA_ARGS__); \
+        LOG_ERROR("\n%s", CRASH_sprintf_scratch);                                                               \
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "ERROR", CRASH_sprintf_scratch, NULL);                   \
         abort();                                                                                                \
     }while(false)
