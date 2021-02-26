@@ -31,7 +31,6 @@ Include_klib="-I ${P}/externals/klib/"
 
 Include_ImGui="-I ${P}/externals/imgui/"
 Library_ImGui="-L ${P}/externals/lib/ -limgui"
-Source_ImGui=${P}/externals/imgui/*.cpp
 
 CompilerFlags="-o ${ExecutableName} -std=c++17"
 LinkerFlags="-ldl"

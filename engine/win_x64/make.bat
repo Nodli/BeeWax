@@ -19,6 +19,7 @@ set SourceApplication=%P%\source\engine\unity_main.cpp
 
 set Include_gl3w=/I %P%\externals\gl3w\include\
 set Source_gl3w=%P%\externals\gl3w\src\gl3w.c
+
 set Library_OpenGL=opengl32.lib
 
 set Include_stb=/I %P%\externals\stb
@@ -34,6 +35,9 @@ set Include_fast_obj=/I %P%\externals\fast_obj\
 set Library_fast_obj=%P%\externals\lib\fast_obj.lib
 
 set Include_klib=/I %P%\externals\klib\
+
+set Include_ImGui=/I %P%\externals\imgui
+set Library_ImGui=%P%\externals\lib\imgui.lib
 
 set Library_win32=user32.lib gdi32.lib
 
@@ -54,25 +58,25 @@ pushd %P%\win_x64\bin
 
 if defined AdressSanitizer (
     echo -- using clang-cl
-    clang-cl  %CompilerFlags%                                                                                   ^
-        %OptimizationFlags%                                                                                     ^
-        %DebugFlags%                                                                                            ^
-        %AdressSanitizer%                                                                                       ^
-        %Defines%                                                                                               ^
-        %Include_SDL% %Include_gl3w% %Include_stb% %Include_cJSON% %Include_fast_obj% %Include_klib%            ^
-        %SourceApplication% %Source_gl3w%                                                                       ^
-        /link %Library_SDL% %Library_OpenGL% %Library_stb% %Library_cJSON% %Library_fast_obj% %Library_win32%   ^
+    clang-cl  %CompilerFlags%                                                                                                   ^
+        %OptimizationFlags%                                                                                                     ^
+        %DebugFlags%                                                                                                            ^
+        %AdressSanitizer%                                                                                                       ^
+        %Defines%                                                                                                               ^
+        %Include_SDL% %Include_gl3w% %Include_stb% %Include_cJSON% %Include_fast_obj% %Include_klib% %Include_ImGui%            ^
+        %SourceApplication% %Source_gl3w%                                                                                       ^
+        /link %Library_SDL% %Library_OpenGL% %Library_stb% %Library_cJSON% %Library_fast_obj% %Library_win32% %Library_ImGui%   ^
         /SUBSYSTEM:CONSOLE
 
 ) else (
     echo -- using cl
-    cl  %CompilerFlags%                                                                                         ^
-        %OptimizationFlags%                                                                                     ^
-        %DebugFlags%                                                                                            ^
-        %Defines%                                                                                               ^
-        %Include_SDL% %Include_gl3w% %Include_stb% %Include_cJSON% %Include_fast_obj% %Include_klib%            ^
-        %SourceApplication% %Source_gl3w%                                                                       ^
-        /link %Library_SDL% %Library_OpenGL% %Library_stb% %Library_cJSON% %Library_fast_obj% %Library_win32%   ^
+    cl  %CompilerFlags%                                                                                                         ^
+        %OptimizationFlags%                                                                                                     ^
+        %DebugFlags%                                                                                                            ^
+        %Defines%                                                                                                               ^
+        %Include_SDL% %Include_gl3w% %Include_stb% %Include_cJSON% %Include_fast_obj% %Include_klib% %Include_ImGui%            ^
+        %SourceApplication% %Source_gl3w%                                                                                       ^
+        /link %Library_SDL% %Library_OpenGL% %Library_stb% %Library_cJSON% %Library_fast_obj% %Library_win32% %Library_ImGui%   ^
         /SUBSYSTEM:CONSOLE
 
 )

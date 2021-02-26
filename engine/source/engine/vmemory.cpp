@@ -33,7 +33,7 @@ void Virtual_Arena::terminate(){
 
 #if defined(PLATFORM_LINUX)
     ENGINE_CHECK(munmap(vmemory, vbytesize) == 0u, "FAILED munmap");
-#elif defined(PLATFORM_WINDOWS
+#elif defined(PLATFORM_WINDOWS)
     ENGINE_CHECK(VirtualFree(vmemory, 0u, MEM_RELEASE), "FAILED VirtualFree");
 #else
     static_assert(false, "Virtual_Arena::terminate() not implemented for this platform");
