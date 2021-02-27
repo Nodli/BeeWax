@@ -22,6 +22,11 @@ CURRENT ---------------
 
 DONE ------------------
 
+27/02/2021
+- checker shader
+- fix tweakables registration & auto-integrate them in an ImGui window
+- fix conversions between pixel coordinates & screen coordinates
+
 25/02/2021
 - integrate Dear ImGui
 

@@ -56,7 +56,7 @@ static u32 get_batch_index_xyzrgba(u32 nvertices, u32 nindices,
     renderer->checkout(buffer);
 
     u32 batch_index = storage.size;
-    storage.push({nvertices, nindices, buffer});
+    storage.push({0u, 0u, buffer});
     ++batch_count;
 
     return batch_index;
@@ -535,6 +535,6 @@ void Vector_Graphics_Renderer::draw(){
     }
 }
 
-void Vector_Graphics_Renderer::next_frame(){
+void Vector_Graphics_Renderer::new_frame(){
     batch_count = 0u;
 }

@@ -29,7 +29,7 @@ struct Engine{
     Renderer renderer;
     Audio_Player audio;
 
-    Render_Target render_target;
+    Render_Target offscreen_target;
 
     Asset_Catalog<Audio_Asset> audio_catalog;
     Asset_Catalog<Texture_Asset> texture_catalog;

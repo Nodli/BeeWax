@@ -59,7 +59,7 @@ void Engine::setup(){
 
     renderer.setup();
 
-    render_target = renderer.get_render_target(g_config::render_width, g_config::render_height);
+    offscreen_target = renderer.get_render_target(g_config::window_width, g_config::window_height);
 
     // ---- imgui
 
@@ -68,6 +68,14 @@ void Engine::setup(){
     ImGuiIO& io = ImGui::GetIO(); (void)io;
 
     ImGui::StyleColorsDark();
+    ImGui::SetColorEditOptions(
+            ImGuiColorEditFlags_None
+            | ImGuiColorEditFlags_NoLabel
+            | ImGuiColorEditFlags_AlphaBar
+            | ImGuiColorEditFlags_AlphaPreviewHalf
+            | ImGuiColorEditFlags_DisplayHSV
+            | ImGuiColorEditFlags_PickerHueWheel
+    );
 
     ImGui_ImplSDL2_InitForOpenGL(window.handle, window.context);
     ImGui_ImplOpenGL3_Init(GLSL_version);
@@ -114,8 +122,10 @@ void Engine::terminate(){
     }
     audio_catalog.terminate();
 
+    ImGui::DestroyContext();
+
     audio.terminate();
-    renderer.free_render_target(render_target);
+    renderer.free_render_target(offscreen_target);
     renderer.terminate();
 
     window.terminate();
@@ -131,9 +141,8 @@ Engine_Code Engine::update_start(){
     // ---- event handling
 
     SDL_Event event;
+    ImGuiIO& imgui_io = ImGui::GetIO();
     while(SDL_PollEvent(&event)){
-        ImGui_ImplSDL2_ProcessEvent(&event);
-
         switch(event.type){
             case SDL_QUIT:
                 return Engine_Code::Window_Quit;
@@ -141,13 +150,14 @@ Engine_Code Engine::update_start(){
                 break;
         }
 
+        // NOTE(hugo): short-circuit input to ImGui
+        ImGui_ImplSDL2_ProcessEvent(&event);
+        if(imgui_io.WantCaptureMouse) continue;
+        if(imgui_io.WantCaptureKeyboard) continue;
+
         keyboard.register_event(event);
         mouse.register_event(event);
     }
-
-    ImGui_ImplOpenGL3_NewFrame();
-    ImGui_ImplSDL2_NewFrame(window.handle);
-    ImGui::NewFrame();
 
     return Engine_Code::Nothing;
 }
@@ -160,22 +170,30 @@ void Engine::update_end(){
 Engine_Code Engine::render_start(){
     if(g_engine.scene.scene_stack.size == 0u) return Engine_Code::No_Scene;
 
-    renderer.use_render_target(render_target);
-    renderer.clear_render_target(render_target);
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplSDL2_NewFrame(g_engine.window.handle);
+    ImGui::NewFrame();
+
+#if 0
+    if(offscreen_target.height != window.height || offscreen_target.width != window.width){
+        renderer.free_render_target(offscreen_target);
+        renderer.get_render_target(window.width, window.height);
+    }
+#endif
+
+    renderer.use_render_target(offscreen_target);
+    renderer.clear_render_target(offscreen_target);
 
     return Engine_Code::Nothing;
 }
 
 void Engine::render_end(){
-    renderer.copy_render_target(render_target, window.render_target());
-
-    renderer.use_render_target(window.render_target());
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+    renderer.copy_render_target(offscreen_target, window.render_target());
     window.swap_buffers();
 
-    DEV_LOG_timing_entries();
     DEV_next_frame();
 }
 

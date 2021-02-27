@@ -155,18 +155,15 @@ static const char* fragment_shader_checker_2D = R"(
         vec2 center = checker_2D_info.center_height_aspectratio.xy;
         float height = checker_2D_info.center_height_aspectratio.z;
         float aspect_ratio = checker_2D_info.center_height_aspectratio.w;
+        float width = height * aspect_ratio;
 
-        // NOTE(hugo): * 0.5 is here because checker_size represents the size of each square of the checker
-        vec2 coord = (screenspace_coord.xy - vec2(0.5)) * 0.5;
-        coord = coord * height;
-        coord.x = coord.x * aspect_ratio;
+        vec2 coord = (screenspace_coord - vec2(0.5)) * vec2(width, height);
         coord = coord + center;
+        coord = fract(coord * vec2(0.5 / checker_2D_info.checker_size));
 
-        vec2 coord_fract = fract(coord / checker_2D_info.checker_size);
-        float greyscale = 0.5 + 0.5 * float((coord_fract.x > 0.5) ^^ (coord_fract.y > 0.5));
+        float greyscale = 0.5 + 0.5 * float((coord.x > 0.5) ^^ (coord.y > 0.5));
 
         output_color = vec4(greyscale, greyscale, greyscale, 1.);
-        //output_color = vec4(screenspace_coord.x, screenspace_coord.y, 0., 1.);
     }
 )";
 

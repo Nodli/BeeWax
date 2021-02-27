@@ -23,7 +23,7 @@ struct Vector_Graphics_Renderer{
     void segment_round(vec2 A, vec2 B, float radius, float depth, vec4 rgba, float dpix, bool anti_aliasing = true);
 
     void draw();
-    void next_frame();
+    void new_frame();
 
     // ---- data
 

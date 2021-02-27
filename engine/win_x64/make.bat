@@ -43,7 +43,7 @@ set Library_win32=user32.lib gdi32.lib
 
 set CompilerFlags=/nologo /Fe%Executablename% /FC /std:c++17 /cgthreads4 /Fo%PathCompiled%
 set OptimizationFlags=/MT /GR- /EHsc /EHa- /Oi /O2
-set DebugFlags=/Od /Zi /Fd%PathPDB% /DEBUG
+set DebugFlags=/Od /Zi /Fd%PathPDB% /DDEBUG
 set AdressSanitizer=-fsanitize=address
 
 set Defines=/DLIB_STB /DLIB_CJSON /DLIB_FAST_OBJ /DPLATFORM_LAYER_SDL /DRENDERER_OPENGL3 /DDEVELOPPER_MODE

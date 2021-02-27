@@ -165,9 +165,8 @@ namespace bw{
     #include "logprint.h"
     #include "logprint.cpp"
 
-    #include "error_handling.h"
-
     #include "debug_tools.h"
+    #include "error_handling.h"
 
     #include "type.h"
     #include "type.cpp"
