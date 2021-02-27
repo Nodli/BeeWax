@@ -91,6 +91,7 @@ struct Mouse_State{
         s32 xticks = 0u;
         s32 yticks = 0u;
     } wheel;
+    // NOTE(hugo): positions are in ([0; window_width], [0; window_height]) with the origin at the top left
     struct{
         ivec2 position = {};
         ivec2 previous_position = {};

@@ -16,6 +16,8 @@ struct Camera_2D{
     vec2 up();
 
     mat3 camera_matrix();
+    // NOTE(hugo):
+    // * screen coordinates (OpenGL) : origin at the bottom left ; ([-1.; 1.], [-1.; 1.])
     vec2 screen_to_world_coordinates(const vec2& screen_coord);
     vec2 world_to_screen_coordinates(const vec2& world_coord);
 

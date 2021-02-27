@@ -105,16 +105,17 @@ Render_Target_GL3 Window_SDL_GL::render_target(){
 }
 
 vec2 Window_SDL_GL::pixel_to_screen_coordinates(ivec2 pixel){
+    assert(width > 0u && height > 0u);
     return {
-        ((float)pixel.x / (float)width) * 2.f - 1.f,
-        ((float)pixel.y / (float)height) * 2.f - 1.f
+        ((pixel.x + 0.5f) / (float)(width)) * 2.f - 1.f,
+        ((height - (pixel.y + 0.5f)) / (float)(height)) * 2.f - 1.f
     };
 }
 
 ivec2 Window_SDL_GL::screen_to_pixel_coordinates(vec2 screen){
     return {
-        (int)((screen.x + 1.f) * 0.5f * (float)width),
-        (int)((screen.y + 1.f) * 0.5f * (float)height)
+        (int)floor((screen.x + 1.f) * 0.5f * (float)width - 0.5f),
+        (int)floor((screen.y + 1.f) * 0.5f * (float)height * - 1.f - 0.5f + height)
     };
 }
 

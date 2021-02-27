@@ -31,8 +31,8 @@ struct Window_SDL_GL{
     Render_Target_GL3 render_target();
 
     // NOTE(hugo):
-    // pixel coordinates : origin at the bottom left
-    // screen coordinates : OpenGL convention
+    // * pixel coordinates  (SDL)    : origin at the top left    ; ([0; window_width], [0; window_height])
+    // * screen coordinates (OpenGL) : origin at the bottom left ; ([-1.; 1.], [-1.; 1.])
     vec2 pixel_to_screen_coordinates(ivec2 pixel);
     ivec2 screen_to_pixel_coordinates(vec2 screen);
 
