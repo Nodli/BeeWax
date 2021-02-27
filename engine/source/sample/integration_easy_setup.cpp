@@ -3,13 +3,45 @@
 
 struct Editor_Scene{
     void on_push(){
+        camera = {{0.f, 0.f}, 2.f, g_engine.window.aspect_ratio()};
+        vg_renderer.renderer = &g_engine.renderer;
     }
     void update(){
+        if(g_engine.keyboard.arrow_right.is_down()) camera.center.x += 0.1f;
+        if(g_engine.keyboard.arrow_left.is_down())  camera.center.x -= 0.1f;
+        if(g_engine.keyboard.arrow_up.is_down())    camera.center.y += 0.1f;
+        if(g_engine.keyboard.arrow_down.is_down())  camera.center.y -= 0.1f;
     }
     void render(){
+        camera.aspect_ratio = g_engine.window.aspect_ratio();
+
+        uniform_camera_2D camera_matrix = {to_std140(camera.camera_matrix())};
+        g_engine.renderer.update_uniform(camera_2D, (void*)&camera_matrix);
+
+        uniform_checker_2D_info checker_info = {{camera.center.x, camera.center.y, camera.height, camera.aspect_ratio}, 0.5f};
+        g_engine.renderer.update_uniform(checker_2D_info, (void*)&checker_info);
+        g_engine.renderer.use_shader(checker_2D);
+        g_engine.renderer.draw(PRIMITIVE_TRIANGLES, 0u, 3u);
+
+        vg_renderer.new_frame();
+        float dpix = (float)camera.height / (float)g_engine.offscreen_target.height;
+
+        // NOTE(hugo): mouse crosshair
+        vec2 mouse_screen = g_engine.window.pixel_to_screen_coordinates(g_engine.mouse.motion.position);
+        vec2 mouse_world = camera.screen_to_world_coordinates(mouse_screen);
+
+        //vg_renderer.rect({mouse_world.x, mouse_world.y - camera.height * 0.001f}, mouse_world - dpix * 5.f, );
+
+        g_engine.renderer.use_shader(polygon_2D);
+        vg_renderer.draw();
     }
     void on_remove(){
     }
+
+    // ---- data
+
+    Camera_2D camera;
+    Vector_Graphics_Renderer vg_renderer;
 };
 
 struct Integration_Scene{
@@ -25,17 +57,15 @@ struct Integration_Scene{
         song = g_engine.audio_catalog.search("song");
 
         vg_renderer.renderer = &g_engine.renderer;
-
-        ImGui::SetColorEditOptions(
-                ImGuiColorEditFlags_None
-                | ImGuiColorEditFlags_NoLabel
-                | ImGuiColorEditFlags_AlphaBar
-                | ImGuiColorEditFlags_AlphaPreviewHalf
-                | ImGuiColorEditFlags_DisplayHSV
-                | ImGuiColorEditFlags_PickerHueWheel
-        );
     }
     void update(){
+        DEV_Tweak(bool, true, "update::bool");
+        DEV_Tweak(s32, 2u, "update::s32");
+        DEV_Tweak(float, 3.f, "update::float");
+        DEV_Tweak(string, "tweakable string", "update::string");
+
+        disc_radius = DEV_Tweak(float, 25.f, "disc radius") / 100.f;
+
         if(g_engine.keyboard.arrow_left.is_down()) rect_w += 0.0002f;
         if(g_engine.keyboard.arrow_right.is_down()) rect_w -= 0.0002f;
 
@@ -51,18 +81,60 @@ struct Integration_Scene{
         }
 
         if(g_engine.keyboard.backquote.npressed){
-            u32 current_frame = g_engine.frame_timing.frame_count;
-            if(current_frame - show_ImGui_frame > input_delay){
-                ImGui::SetNextWindowPos({0.f, 0.f});
-                ImGui::SetNextWindowSize({(float)g_engine.window.width * 0.25f, (float)g_engine.window.height});
+            show_ImGui = !show_ImGui;
+        }
+    }
+    void render(){
+        vg_renderer.new_frame();
 
-                show_ImGui = !show_ImGui;
-                show_ImGui_frame = current_frame;
-            }
+        {
+            uniform_camera_2D camera_matrix = {to_std140(camera.camera_matrix())};
+            g_engine.renderer.update_uniform(camera_2D, (void*)&camera_matrix);
         }
 
+        {
+            g_engine.renderer.checkout(buffer);
+            vertex_xyzrgba* vert = (vertex_xyzrgba*)buffer.ptr;
+            vert[0u] = {{-0.5f, -0.5f, 0.1f}, {1.f, 1.f, 0.f, 1.f}};
+            vert[1u] = {{ 0.5f, -0.5f, 0.1f}, {1.f, 0.f, 1.f, 1.f}};
+            vert[2u] = {{ 0.0f, +0.5f, 0.1f}, {0.f, 1.f, 1.f, 1.f}};
+            g_engine.renderer.commit(buffer);
+        }
+
+        {
+            g_engine.renderer.checkout(indexed_buffer);
+            vertex_xyzrgba* vert = (vertex_xyzrgba*)indexed_buffer.vptr;
+            vert[0u] = {{-1.f, -0.5f, 0.1f}, {1.f, 1.f, 0.f, 1.f}};
+            vert[1u] = {{-0.5f, -0.5f, 0.1f}, {1.f, 0.f, 1.f, 1.f}};
+            vert[2u] = {{-0.5f, +0.5f, 0.1f}, {0.f, 1.f, 1.f, 1.f}};
+            vert[3u] = {{-1.f, +0.5f, 0.1f}, {1.f, 1.f, 1.f, 1.f}};
+            u16* idx = (u16*)indexed_buffer.iptr;
+            idx[0u] = 0u;
+            idx[1u] = 1u;
+            idx[2u] = 3u;
+            idx[3u] = 3u;
+            idx[4u] = 1u;
+            idx[5u] = 2u;
+            g_engine.renderer.commit(indexed_buffer);
+        }
+
+        {
+            float dpix = (float)camera.height / (float)g_engine.offscreen_target.height;
+            vg_renderer.rect({0.75f - rect_w * 0.5f, 0.75f - rect_h * 0.5f}, {0.75f + rect_w * 0.5f, 0.75f + rect_h * 0.5f}, 0.001f, {1.f, 0.f, 0.f, 1.f}, dpix, false);
+            vg_renderer.disc({0.25f, 0.25f}, disc_radius, 0.0001f, {1.f, 1.f, 0.f, 1.f}, dpix, false);
+            vg_renderer.segment({0.90f, 0.1f}, {1.f, 0.8f}, segment_w, 0.01f, {1.f, 0.f, 1.f, 1.f}, dpix, false);
+        }
+
+        g_engine.renderer.use_shader(polygon_2D);
+        g_engine.renderer.draw(buffer, PRIMITIVE_TRIANGLES, 0u, 3u);
+        g_engine.renderer.draw(indexed_buffer, PRIMITIVE_TRIANGLES, TYPE_USHORT, 6u, 0u);
+        vg_renderer.draw();
+
         if(show_ImGui){
-            if(ImGui::Begin("ImGui easy_setup")){
+            ImGui::SetNextWindowCollapsed(false, ImGuiCond_Appearing);
+            ImGui::SetNextWindowPos({0.f, 0.f});
+            ImGui::SetNextWindowSize({(float)g_engine.window.width * 0.25f, (float)g_engine.window.height});
+            if(ImGui::Begin("ImGui easy_setup", nullptr, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize)){
 
                 ImGui::Text("Text: Default Color");
 
@@ -79,7 +151,6 @@ struct Integration_Scene{
 
                 ImGui::Separator();
 
-                if(ImGui::ArrowButton("Arrow None", ImGuiDir_None)) state_arrow_button = !state_arrow_button;
                 if(ImGui::ArrowButton("Arrow Right", ImGuiDir_Right)) state_arrow_button = !state_arrow_button;
                 if(ImGui::ArrowButton("Arrow Left", ImGuiDir_Left)) state_arrow_button = !state_arrow_button;
                 if(ImGui::ArrowButton("Arrow Up", ImGuiDir_Up)) state_arrow_button = !state_arrow_button;
@@ -174,59 +245,9 @@ struct Integration_Scene{
                 ImGui::ColorButton("Label: ColorButton", {0.f, 0.f, 1.f, 0.f});
             }
             ImGui::End();
+
+            DEV_ImGui(g_engine.window.width, g_engine.window.height);
         }
-
-    }
-    void render(){
-        uniform_checker_2D_info checker_info = {{camera.center.x, camera.center.y, camera.height, camera.aspect_ratio}, 0.1f};
-        g_engine.renderer.update_uniform(checker_2D_info, (void*)&checker_info);
-        g_engine.renderer.use_shader(checker_2D);
-        g_engine.renderer.draw(PRIMITIVE_TRIANGLES, 0u, 3u);
-
-        vg_renderer.next_frame();
-
-        {
-            uniform_camera_2D camera_matrix = {to_std140(camera.camera_matrix())};
-            g_engine.renderer.update_uniform(camera_2D, (void*)&camera_matrix);
-        }
-
-        {
-            g_engine.renderer.checkout(buffer);
-            vertex_xyzrgba* vert = (vertex_xyzrgba*)buffer.ptr;
-            vert[0u] = {{-0.5f, -0.5f, 0.1f}, {1.f, 1.f, 0.f, 1.f}};
-            vert[1u] = {{ 0.5f, -0.5f, 0.1f}, {1.f, 0.f, 1.f, 1.f}};
-            vert[2u] = {{ 0.0f, +0.5f, 0.1f}, {0.f, 1.f, 1.f, 1.f}};
-            g_engine.renderer.commit(buffer);
-        }
-
-        {
-            g_engine.renderer.checkout(indexed_buffer);
-            vertex_xyzrgba* vert = (vertex_xyzrgba*)indexed_buffer.vptr;
-            vert[0u] = {{-1.f, -0.5f, 0.1f}, {1.f, 1.f, 0.f, 1.f}};
-            vert[1u] = {{-0.5f, -0.5f, 0.1f}, {1.f, 0.f, 1.f, 1.f}};
-            vert[2u] = {{-0.5f, +0.5f, 0.1f}, {0.f, 1.f, 1.f, 1.f}};
-            vert[3u] = {{-1.f, +0.5f, 0.1f}, {1.f, 1.f, 1.f, 1.f}};
-            u16* idx = (u16*)indexed_buffer.iptr;
-            idx[0u] = 0u;
-            idx[1u] = 1u;
-            idx[2u] = 3u;
-            idx[3u] = 3u;
-            idx[4u] = 1u;
-            idx[5u] = 2u;
-            g_engine.renderer.commit(indexed_buffer);
-        }
-
-        {
-            float dpix = (float)camera.height / (float)g_engine.render_target.height;
-            vg_renderer.rect({0.75f - rect_w * 0.5f, 0.75f - rect_h * 0.5f}, {0.75f + rect_w * 0.5f, 0.75f + rect_h * 0.5f}, 0.001f, {1.f, 0.f, 0.f, 1.f}, dpix, false);
-            vg_renderer.disc({0.25f, 0.25f}, 0.25f, 0.0001f, {1.f, 1.f, 0.f, 1.f}, dpix, false);
-            vg_renderer.segment({0.90f, 0.1f}, {1.f, 0.8f}, segment_w, 0.01f, {1.f, 0.f, 1.f, 1.f}, dpix, false);
-        }
-
-        g_engine.renderer.use_shader(polygon_2D);
-        g_engine.renderer.draw(buffer, PRIMITIVE_TRIANGLES, 0u, 3u);
-        g_engine.renderer.draw(indexed_buffer, PRIMITIVE_TRIANGLES, TYPE_USHORT, 6u, 0u);
-        vg_renderer.draw();
     }
     void on_remove(){
         g_engine.renderer.free_transient_buffer(buffer);
@@ -245,19 +266,16 @@ struct Integration_Scene{
     float rect_w = 0.21f;
     float rect_h = 0.1f;
     float segment_w = 0.21f;
+    float disc_radius = 0.25f;
     Vector_Graphics_Renderer vg_renderer;
 
     // -- GUI
 
-    u32 input_delay = 10u;
-
-    u32 show_ImGui_frame = 0u;
     bool show_ImGui = false;
-
     bool state_button = false;
     bool state_arrow_button = false;
     bool state_small_button = false;
-    s32 state_radio_button = -1u;
+    s32 state_radio_button = -1;
     bool state_checkbox = false;
     u32 state_progress = 0u;
     u32 state_combo = 0u;
@@ -278,59 +296,8 @@ void easy_config(){
     g_config::asset_catalog_path = "./data/asset_catalog.json";
 }
 void* easy_setup(){
-    g_engine.scene.push_scene<Integration_Scene>("Integration_Scene");
+    //g_engine.scene.push_scene<Integration_Scene>("Integration_Scene");
+    g_engine.scene.push_scene<Editor_Scene>("Editor_Scene");
     return nullptr;
 }
 void easy_terminate(void* user_data){}
-
-#if 0
-struct Rope_Reference : Component_Reference {};
-constexpr Rope_Reference unknown_rope_reference = {unknown_component_reference};
-
-struct Rope_Header{
-    u32 nnodes;
-};
-struct Rope_Node{
-    vec2 position;
-    vec2 previous_position;
-    vec2 force;
-    float mass;
-};
-
-static Rope_Header* malloc_rope(u32 nnodes){
-    size_t header_bytes = sizeof(Rope_Header) + align_offset_next(sizeof(Rope_Header), alignof(Rope_Node));
-    size_t bytesize = header_bytes + nnodes * sizeof(Rope_Node);
-    return (Rope_Header*)malloc(bytesize);
-}
-static Rope_Node* node_from_header(Rope_Header* ptr){
-    return (Rope_Node*)((u8*)ptr + align_offset_next(sizeof(Rope_Header), alignof(Rope_Node)));
-}
-
-struct Physics{
-
-    Rope_Reference create_rope(u32 nnodes){
-        Rope_Header* header = malloc_rope(nnodes, header, rope);
-        *header.nnodes = nnodes;
-        for(u32 inode = 0u; inode != 10u;
-
-
-    }
-    void remove_rope(const Rope_Reference& ref);
-
-    void update(float dt){
-        for(u32 inode = 0u; inode != rope.size; ++inode){
-            Rope_Node& node = nodes[inode];
-            vec2 position_copy = position;
-
-            vec2 acceleration = node.mass * node.force;
-
-            node.position = 2.f * node.position - node.previous_position + acceleration * dt * dt;
-            node.previous_position = position_copy;
-        }
-    }
-
-    // ---- data
-
-    array<Rope_Node> node;
-};
-#endif
