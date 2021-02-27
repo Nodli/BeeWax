@@ -1,4 +1,6 @@
 @echo off
+cls
+setlocal
 
 echo -------- Generating external libraries
 
@@ -25,12 +27,20 @@ set Compiled_ImGui=imgui.obj
 set External_ImGui=/I %externals%\stb /I %externals%\gl3w\include /I %externals%\SDL2-2.0.10\include    ^
 /link %externals%\lib\stb.lib /LIBPATH:%externals%\SDL2-2.0.10\x64 SDL2.lib SDL2main.lib
 
+set DebugFlags=/Od /Z7 /DDEBUG
+if not defined DebugFlags (
+    echo -- release mode
+    set DebugFlags=-DNDEBUG
+) else (
+    echo -- debug mode
+)
+
 pushd %LibraryPath%
 
 echo -------- stb
 
 @echo on
-cl /nologo /c /FC /EHsc /O2 /Fo%LibraryPath%/%Compiled_stb% %Source_stb%
+cl /nologo /c /FC /EHsc /O2 %DebugFlags% /Fo%LibraryPath%/%Compiled_stb% %Source_stb%
 lib /nologo %LibraryPath%/%Compiled_stb% /out:%LibraryPath%\%Library_stb%
 @echo off
 
@@ -38,7 +48,7 @@ echo.
 echo -------- cJSON
 
 @echo on
-cl /nologo /c /FC /EHsc /O2 /Fo%LibraryPath%/%Compiled_cJSON% %Source_cJSON%
+cl /nologo /c /FC /EHsc /O2 %DebugFlags% /Fo%LibraryPath%/%Compiled_cJSON% %Source_cJSON%
 lib /nologo %LibraryPath%/%Compiled_cJSON% /out:%LibraryPath%\%Library_cJSON%
 @echo off
 
@@ -46,7 +56,7 @@ echo.
 echo -------- fast_obj
 
 @echo on
-cl /nologo /c /FC /EHsc /O2 /Fo%LibraryPath%/%Compiled_fast_obj% %Source_fast_obj%
+cl /nologo /c /FC /EHsc /O2 %DebugFlags% /Fo%LibraryPath%/%Compiled_fast_obj% %Source_fast_obj%
 lib /nologo %LibraryPath%/%Compiled_fast_obj% /out:%LibraryPath%\%Library_fast_obj%
 @echo off
 
@@ -54,11 +64,13 @@ echo.
 echo -------- ImGui
 
 @echo on
-cl /nologo /c /FC /EHsc /O2 /Fo%LibraryPath%/%Compiled_ImGui% %Source_ImGui% %External_ImGui%
+cl /nologo /c /FC /EHsc /O2 %DebugFlags% /Fo%LibraryPath%/%Compiled_ImGui% %Source_ImGui% %External_ImGui%
 lib /nologo %LibraryPath%/%Compiled_ImGui% /out:%LibraryPath%\%Library_ImGui%
 @echo off
+
+popd
 
 echo.
 echo -------- Finished generating external libraries
 
-popd
+endlocal
