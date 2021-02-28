@@ -1,10 +1,9 @@
 TODO(engine) ----------
 
-- render target
-- audio loop
-- renderer static buffers
-- allow object destruction through a template parameter in data structures
+- window resizing
 - function scope temporary allocation
+- renderer static buffers
+- audio stream, loops and synth
 
 FUTURE(engine) --------
 

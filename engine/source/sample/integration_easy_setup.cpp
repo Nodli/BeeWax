@@ -10,6 +10,8 @@ struct Editor_Scene{
         DEV_Tweak(float, 1.1f, "- Zoom Ratio -");
     }
     void update(){
+        camera.aspect_ratio = g_engine.window.aspect_ratio();
+
         {
             vec2 mouse_screen = g_engine.window.pixel_to_screen_coordinates(g_engine.mouse.motion.position);
             vec2 mouse_screen_prev = g_engine.window.pixel_to_screen_coordinates(g_engine.mouse.motion.previous_position);

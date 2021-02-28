@@ -59,7 +59,7 @@ void Engine::setup(){
 
     renderer.setup();
 
-    offscreen_target = renderer.get_render_target(g_config::window_width, g_config::window_height);
+    offscreen_target = renderer.get_render_target(window.width, window.height);
 
     // ---- imgui
 
@@ -151,11 +151,11 @@ Engine_Code Engine::process_event(){
 
         // NOTE(hugo): short-circuit input to ImGui
         ImGui_ImplSDL2_ProcessEvent(&event);
-        if(imgui_io.WantCaptureMouse) continue;
-        if(imgui_io.WantCaptureKeyboard) continue;
+        if(imgui_io.WantCaptureMouse || imgui_io.WantCaptureKeyboard) continue;
 
         keyboard.register_event(event);
         mouse.register_event(event);
+        window.register_event(event);
     }
 
     return Engine_Code::Nothing;
@@ -177,12 +177,11 @@ Engine_Code Engine::render_start(){
     ImGui_ImplSDL2_NewFrame(g_engine.window.handle);
     ImGui::NewFrame();
 
-#if 0
+    // NOTE(hugo): window resizing
     if(offscreen_target.height != window.height || offscreen_target.width != window.width){
         renderer.free_render_target(offscreen_target);
-        renderer.get_render_target(window.width, window.height);
+        offscreen_target = renderer.get_render_target(window.width, window.height);
     }
-#endif
 
     renderer.use_render_target(offscreen_target);
     renderer.clear_render_target(offscreen_target);

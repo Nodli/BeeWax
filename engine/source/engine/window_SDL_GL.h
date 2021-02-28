@@ -36,13 +36,16 @@ struct Window_SDL_GL{
     vec2 pixel_to_screen_coordinates(ivec2 pixel);
     ivec2 screen_to_pixel_coordinates(vec2 screen);
 
+    void register_event(SDL_Event& event);
+
     void swap_buffers();
 
     // ---- data
 
-    s32 width;
-    s32 height;
-    SDL_Window* handle;
+    s32 width = -1;
+    s32 height = -1;
+    SDL_Window* handle = nullptr;
+    u32 ID = 0u;
 
     SDL_GLContext context;
 };

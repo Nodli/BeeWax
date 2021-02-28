@@ -50,6 +50,8 @@ void Window_SDL_GL::initialize(const Window_Settings_SDL_GL& settings){
             SDL_WINDOW_OPENGL);
     SDL_CHECK(handle);
 
+    ID = SDL_GetWindowID(handle);
+
     // ---- OpenGL after creation
 
     context = SDL_GL_CreateContext(handle);
@@ -74,10 +76,8 @@ void Window_SDL_GL::initialize(const Window_Settings_SDL_GL& settings){
 
     // NOTE(hugo): ---- settings that do not require to recreate a window
 
-    if(settings.mode == Window_Settings_SDL_GL::mode_windowed){
-        SDL_SetWindowResizable(handle, SDL_FALSE);
-    }else if(settings.mode == Window_Settings_SDL_GL::mode_borderless){
-        SDL_SetWindowResizable(handle, SDL_FALSE);
+    SDL_SetWindowResizable(handle, SDL_TRUE);
+    if(settings.mode == Window_Settings_SDL_GL::mode_borderless){
         SDL_SetWindowBordered(handle, SDL_FALSE);
     }else if(settings.mode == Window_Settings_SDL_GL::mode_fullscreen){
         SDL_SetWindowFullscreen(handle, SDL_TRUE);
@@ -117,6 +117,23 @@ ivec2 Window_SDL_GL::screen_to_pixel_coordinates(vec2 screen){
         (int)floor((screen.x + 1.f) * 0.5f * (float)width - 0.5f),
         (int)floor((screen.y + 1.f) * 0.5f * (float)height * - 1.f - 0.5f + height)
     };
+}
+
+void Window_SDL_GL::register_event(SDL_Event& event){
+    if(event.type == SDL_WINDOWEVENT && event.window.windowID == ID){
+        switch(event.window.event){
+            case SDL_WINDOWEVENT_SIZE_CHANGED:
+                width = event.window.data1;
+                height = event.window.data2;
+                break;
+            case SDL_WINDOWEVENT_CLOSE:
+                event.type = SDL_QUIT;
+                SDL_PushEvent(&event);
+                break;
+            default:
+                break;
+        }
+    }
 }
 
 void Window_SDL_GL::swap_buffers(){
