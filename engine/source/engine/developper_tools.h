@@ -112,6 +112,13 @@ namespace BEEWAX_INTERNAL{
     static array<DEV_Tweakable_Entry> DEV_tweakable_entries;
     static array<void*> DEV_tweakables_malloc;
 
+    static u32 DEV_search_tweakable_entry(const char* label){
+        for(u32 itweak = 0u; itweak != DEV_tweakable_entries.size; ++itweak){
+            if(DEV_tweakable_entries[itweak].label == label) return itweak;
+        }
+        return UINT32_MAX;
+    }
+
     static u32 DEV_get_new_tweakable_entry(){
         u32 entry_index = DEV_tweakable_entries.size;
         DEV_tweakable_entries.push_empty();
@@ -329,6 +336,9 @@ namespace BEEWAX_INTERNAL{
 [](){                                                                                                                   \
     using namespace BEEWAX_INTERNAL;                                                                                    \
     static u32 DEV_tweakable_entry_index = UINT_MAX;                                                                    \
+    if(DEV_tweakable_entry_index == UINT_MAX){                                                                          \
+        DEV_tweakable_entry_index = DEV_search_tweakable_entry(LABEL);                                                  \
+    }                                                                                                                   \
     if(DEV_tweakable_entry_index == UINT_MAX){                                                                          \
         DEV_tweakable_entry_index = DEV_get_new_tweakable_entry();                                                      \
         DEV_tweakable_entries[DEV_tweakable_entry_index].file = __FILE__;                                               \
