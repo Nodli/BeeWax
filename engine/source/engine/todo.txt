@@ -1,16 +1,14 @@
 TODO(engine) ----------
 
-- window resizing
-- function scope temporary allocation
+- function scope temporary allocation (global Virtual_Memory_Arena) + data structures storage type for that
 - renderer static buffers
 - audio stream, loops and synth
 
 FUTURE(engine) --------
 
-- window resize / settings change
 - other noise functions: voronoise, worley, ...
 - typed quick sort with inlined comparator (sort_search.h)
-- small-buffer-optimized vector (based of sarray)
+- small-buffer-optimized vector (based off sarray)
 - data structures template of the bytesize as a base with a template of the typename as frontend
 - coroutines (https://www.chiark.greenend.org.uk/~sgtatham/coroutines.html)
 - https://blog.demofox.org/2016/05/18/who-cares-about-dynamic-array-growth-strategies/
@@ -20,6 +18,12 @@ FUTURE(engine) --------
 CURRENT ---------------
 
 DONE ------------------
+
+28/02/2021
+- editor mouse drag & zoom
+- window resizing
+- 2D polygon triangulation using ear clipping
+- DEV_Tweak search using label
 
 27/02/2021
 - checker shader
