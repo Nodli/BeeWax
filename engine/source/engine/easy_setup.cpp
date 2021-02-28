@@ -135,10 +135,9 @@ void Engine::terminate(){
     SDL_Quit();
 }
 
-Engine_Code Engine::update_start(){
-    if(g_engine.scene.scene_stack.size == 0u) return Engine_Code::No_Scene;
-
-    // ---- event handling
+Engine_Code Engine::process_event(){
+    keyboard.new_frame();
+    mouse.new_frame();
 
     SDL_Event event;
     ImGuiIO& imgui_io = ImGui::GetIO();
@@ -162,9 +161,13 @@ Engine_Code Engine::update_start(){
     return Engine_Code::Nothing;
 }
 
+Engine_Code Engine::update_start(){
+    if(g_engine.scene.scene_stack.size == 0u) return Engine_Code::No_Scene;
+
+    return Engine_Code::Nothing;
+}
+
 void Engine::update_end(){
-    keyboard.next_frame();
-    mouse.next_frame();
 }
 
 Engine_Code Engine::render_start(){
@@ -201,14 +204,19 @@ Engine_Code frame(){
     if(g_engine.scene.scene_stack.size == 0u) return Engine_Code::No_Scene;
     Engine_Code error_code = Engine_Code::Nothing;
 
+    error_code = g_engine.process_event();
+    if(error_code != Engine_Code::Nothing) return error_code;
+
     u64 timer = timer_ticks();
     u32 nupdates = g_engine.frame_timing.nupdates_before_render(timer);
+
     for(u32 iupdate = 0; iupdate != nupdates; ++iupdate){
         error_code = g_engine.update_start();
         if(error_code != Engine_Code::Nothing) return error_code;
         g_engine.scene.update();
         g_engine.update_end();
     }
+
     error_code = g_engine.render_start();
     if(error_code != Engine_Code::Nothing) return error_code;
     g_engine.scene.render();

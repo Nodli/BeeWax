@@ -13,6 +13,7 @@ struct Engine{
     void setup();
     void terminate();
 
+    Engine_Code process_event();
     Engine_Code update_start();
     void update_end();
     Engine_Code render_start();
