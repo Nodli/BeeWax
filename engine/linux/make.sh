@@ -35,7 +35,7 @@ Library_ImGui="-L ${P}/externals/lib/ -limgui"
 CompilerFlags="-o ${ExecutableName} -std=c++17"
 LinkerFlags="-ldl"
 OptimizationFlags="-fno-rtti -fno-exceptions"
-DebugFlags="-g"
+DebugFlags="-g -DDEBUG"
 #AdressSanitizer="-fsanitize=address"
 
 #WarningFlags="-Wall -Wextra -Werror"
