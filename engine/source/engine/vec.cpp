@@ -4,6 +4,10 @@ float dot(const vec2& vA, const vec2& vB){
     return vA.x * vB.x + vA.y * vB.y;
 }
 
+float cross(const vec2& vA, const vec2& vB){
+    return vA.x * vB.y - vA.y * vB.x;
+}
+
 float length(const vec2& vec){
     return sqrt(vec.x * vec.x + vec.y * vec.y);
 }

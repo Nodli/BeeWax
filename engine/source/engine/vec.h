@@ -104,6 +104,7 @@ template<typename T>
 [[nodiscard]] vec::vec2<T> abs(const vec::vec2<T>& vec);
 
 [[nodiscard]] float dot(const vec2& vA, const vec2& vB);
+[[nodiscard]] float cross(const vec2& vA, const vec2& vB);
 [[nodiscard]] float length(const vec2& vec);
 [[nodiscard]] float sqlength(const vec2& vec);
 [[nodiscard]] vec2 normalized(const vec2& vec);
