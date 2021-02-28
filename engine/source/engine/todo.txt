@@ -27,6 +27,9 @@ DONE ------------------
 - fix tweakables registration & auto-integrate them in an ImGui window
 - fix conversions between pixel coordinates & screen coordinates
 
+26/02/2021
+- Virtual_Memory_Arena
+
 25/02/2021
 - integrate Dear ImGui
 
