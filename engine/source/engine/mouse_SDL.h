@@ -11,7 +11,7 @@ struct Mouse_State{
         }
     }
 
-    void next_frame(){
+    void new_frame(){
         for(u32 ibutton = 0u; ibutton != carray_size(button.storage); ++ibutton){
             button.storage[ibutton].npressed = 0u;
             button.storage[ibutton].nreleased = 0u;

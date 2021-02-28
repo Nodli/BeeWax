@@ -53,7 +53,7 @@ struct Keyboard_State{
         }
     }
 
-    void next_frame(){
+    void new_frame(){
         for(u32 ibutton = 0; ibutton != carray_size(storage); ++ibutton){
             storage[ibutton].npressed = 0u;
             storage[ibutton].nreleased = 0u;

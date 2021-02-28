@@ -21,13 +21,13 @@ namespace bw::utest{
         return !(diff > tolerance);
     }
 
+    // ---- regression tests
+
     void t_Virtual_Arena(){
         bool success = true;
 
         random_seed_with_time();
         random_seed_type seed_copy = random_seed_copy();
-
-        setup_vmemory();
 
         Virtual_Arena arena;
         arena.initialize(GIGABYTES(64u));
@@ -525,68 +525,6 @@ namespace bw::utest{
         }
     }
 
-    void t_find_noise_magic_normalizer(){
-        random_seed_with_time();
-
-        u32 nsamples = 100000000u;
-        float scale = 10000.f;
-
-        float max_value;
-        float magic_normalizer;
-
-        // NOTE(hugo): perlin_noise(const float x)
-        max_value = 0.f;
-        for(u32 iter = 0u; iter != nsamples; ++iter){
-            float value = perlin_noise(random_float() * scale);
-            max_value = max(max_value, abs(value));
-        }
-        magic_normalizer = 1.f / max_value;
-        LOG_INFO("utest::t_find_noise_magic_normalize() perlin_noise(x) max_value: %f  MAGIC_NORMALIZER = %.10f", max_value, magic_normalizer);
-
-        // NOTE(hugo): perlin_noise(const float x, const float y)
-        max_value = 0.f;
-        for(u32 iter = 0u; iter != nsamples; ++iter){
-            float x = random_float() * scale;
-            float y = random_float() * scale;
-
-            float value = perlin_noise(x, y);
-            max_value = max(max_value, abs(value));
-        }
-        magic_normalizer = 1.f / max_value;
-        LOG_INFO("utest::t_find_noise_magic_normalize() perlin_noise(x, y)  max_value: %f  MAGIC_NORMALIZER = %.10f", max_value, magic_normalizer);
-
-        // NOTE(hugo): simplex_noise(const float x)
-        max_value = 0.f;
-        for(u32 iter = 0u; iter != nsamples; ++iter){
-            float value = simplex_noise(random_float() * scale);
-            max_value = max(max_value, abs(value));
-        }
-        magic_normalizer = 1.f / max_value;
-        LOG_INFO("utest::t_find_noise_magic_normalize() simplex_noise(x) max_value: %f  MAGIC_NORMALIZER = %.10f", max_value, magic_normalizer);
-
-        // NOTE(hugo): simplex_noise(const float x, const float y)
-        max_value = 0.f;
-        for(u32 iter = 0u; iter != nsamples; ++iter){
-            float x = random_float() * scale;
-            float y = random_float() * scale;
-
-            float value = simplex_noise(x, y);
-            max_value = max(max_value, abs(value));
-        }
-        magic_normalizer = 1.f / max_value;
-        LOG_INFO("utest::t_find_noise_magic_normalize() simplex_noise(x, y)  max_value: %f  MAGIC_NORMALIZER = %.10f", max_value, magic_normalizer);
-    }
-
-    void t_detect_vector_capacilities(){
-        s32 vector_capabilities = detect_vector_capabilities();
-        LOG_INFO("SSE       %s", vector_capabilities > 0 ? "YES" : "NO");
-        LOG_INFO("SSE2      %s", vector_capabilities > 1 ? "YES" : "NO");
-        LOG_INFO("SSE3      %s", vector_capabilities > 2 ? "YES" : "NO");
-        LOG_INFO("SSSE3     %s", vector_capabilities > 3 ? "YES" : "NO");
-        LOG_INFO("SSE4.1    %s", vector_capabilities > 4 ? "YES" : "NO");
-        LOG_INFO("SSE4.2    %s", vector_capabilities > 5 ? "YES" : "NO");
-    }
-
     void t_isort(){
         bool success = true;
 
@@ -740,7 +678,7 @@ namespace bw::utest{
         }
     }
 
-    void t_geometry(){
+    void t_coord_conversion(){
         bool success = true;
 
         // NOTE(hugo): spherical - cartesian
@@ -859,37 +797,187 @@ namespace bw::utest{
             LOG_INFO("FINISHED utest::t_geometry()");
         }
     }
+
+    void t_triangulation_2D(){
+        bool success = true;
+
+        {
+            vec2 vertices[] = {{-1.f, -1.f}, {1.f, -1.f}, {1.f, 1.f}, {-1.f, 1.f}};
+            u32 indices[3u * (carray_size(vertices) - 2u)];
+            triangulation_2D(vertices, carray_size(vertices), indices);
+
+            u32 indices_expected[] = {
+                3u, 0u, 1u,
+                2u, 3u, 1u
+            };
+            success &= memcmp(indices_expected, indices, 2u * carray_size(vertices) - 2u) == 0u;
+        }
+
+        {
+            vec2 vertices[] = {{0.f, 1.f}, {1.f, 0.f}, {0.f, 2.f}, {-1.f, 0.f}};
+            u32 indices[3u * (carray_size(vertices) - 2u)];
+            triangulation_2D(vertices, carray_size(vertices), indices);
+
+            u32 indices_expected[] = {0u, 1u, 2u, 3u, 0u, 2u};
+            success &= memcmp(indices_expected, indices, 2u * carray_size(vertices) - 2u) == 0u;
+        }
+
+        {
+            vec2 vertices[] = {{-2.5f, 2.f}, {0.f, 0.f}, {2.75f, 2.5f}, {5.5f, 1.5f}, {8.f, 5.f}, {5.5f, 4.5f}, {3.5f, 6.f}, {1.5f, 2.f}, {-1.5f, 2.5f}, {-1.f, 5.f}};
+            u32 indices[3u * (carray_size(vertices) - 2u)];
+            triangulation_2D(vertices, carray_size(vertices), indices);
+
+            u32 indices_expected_v0[] = {
+                2, 3, 4,
+                2, 4, 5,
+                2, 5, 6,
+                2, 6, 7,
+                8, 9, 0,
+                8, 0, 1,
+                1, 2, 7,
+                1, 7, 8,
+            };
+            u32 indices_expected_v1[] = {
+                2, 3, 4,
+                2, 4, 5,
+                2, 5, 6,
+                2, 6, 7,
+                1, 2, 7,
+                0, 1, 7,
+                0, 7, 8,
+                9, 0, 8
+            };
+            success &= memcmp(indices_expected_v1, indices, 2u * carray_size(vertices) - 2u) == 0u;
+        }
+
+        if(!success){
+            LOG_ERROR("FAILED utest::t_triangulation_2D()");
+        }else{
+            LOG_INFO("FINISHED utest::t_triangulation_2D()");
+        }
+    }
+
+    // ---- benchmark
+
+    void t_detect_vector_capacilities(){
+        s32 vector_capabilities = detect_vector_capabilities();
+        LOG_INFO("SSE       %s", vector_capabilities > 0 ? "YES" : "NO");
+        LOG_INFO("SSE2      %s", vector_capabilities > 1 ? "YES" : "NO");
+        LOG_INFO("SSE3      %s", vector_capabilities > 2 ? "YES" : "NO");
+        LOG_INFO("SSSE3     %s", vector_capabilities > 3 ? "YES" : "NO");
+        LOG_INFO("SSE4.1    %s", vector_capabilities > 4 ? "YES" : "NO");
+        LOG_INFO("SSE4.2    %s", vector_capabilities > 5 ? "YES" : "NO");
+    }
+
+    void t_find_noise_magic_normalizer(){
+        random_seed_with_time();
+
+        u32 nsamples = 100000000u;
+        float scale = 10000.f;
+
+        float max_value;
+        float magic_normalizer;
+
+        // NOTE(hugo): perlin_noise(const float x)
+        max_value = 0.f;
+        for(u32 iter = 0u; iter != nsamples; ++iter){
+            float value = perlin_noise(random_float() * scale);
+            max_value = max(max_value, abs(value));
+        }
+        magic_normalizer = 1.f / max_value;
+        LOG_INFO("utest::t_find_noise_magic_normalize() perlin_noise(x) max_value: %f  MAGIC_NORMALIZER = %.10f", max_value, magic_normalizer);
+
+        // NOTE(hugo): perlin_noise(const float x, const float y)
+        max_value = 0.f;
+        for(u32 iter = 0u; iter != nsamples; ++iter){
+            float x = random_float() * scale;
+            float y = random_float() * scale;
+
+            float value = perlin_noise(x, y);
+            max_value = max(max_value, abs(value));
+        }
+        magic_normalizer = 1.f / max_value;
+        LOG_INFO("utest::t_find_noise_magic_normalize() perlin_noise(x, y)  max_value: %f  MAGIC_NORMALIZER = %.10f", max_value, magic_normalizer);
+
+        // NOTE(hugo): simplex_noise(const float x)
+        max_value = 0.f;
+        for(u32 iter = 0u; iter != nsamples; ++iter){
+            float value = simplex_noise(random_float() * scale);
+            max_value = max(max_value, abs(value));
+        }
+        magic_normalizer = 1.f / max_value;
+        LOG_INFO("utest::t_find_noise_magic_normalize() simplex_noise(x) max_value: %f  MAGIC_NORMALIZER = %.10f", max_value, magic_normalizer);
+
+        // NOTE(hugo): simplex_noise(const float x, const float y)
+        max_value = 0.f;
+        for(u32 iter = 0u; iter != nsamples; ++iter){
+            float x = random_float() * scale;
+            float y = random_float() * scale;
+
+            float value = simplex_noise(x, y);
+            max_value = max(max_value, abs(value));
+        }
+        magic_normalizer = 1.f / max_value;
+        LOG_INFO("utest::t_find_noise_magic_normalize() simplex_noise(x, y)  max_value: %f  MAGIC_NORMALIZER = %.10f", max_value, magic_normalizer);
+    }
+
+    void t_compare_triangulation_2D(){
+        constexpr u32 nrun = 10000u;
+
+        vec2 vertices[] = {{-2.5f, 2.f}, {0.f, 0.f}, {2.75f, 2.5f}, {5.5f, 1.5f}, {8.f, 5.f}, {5.5f, 4.5f}, {3.5f, 6.f}, {1.5f, 2.f}, {-1.5f, 2.5f}, {-1.f, 5.f}};
+        u32 indices[3u * (carray_size(vertices) - 2u)];
+
+        u64 timer_v0 = timer_ticks();
+
+        for(u32 irun = 0u; irun != nrun; ++irun){
+            triangulation_2D_v0(vertices, carray_size(vertices), indices);
+        }
+
+        u64 timer_v1 = timer_ticks();
+
+        for(u32 irun = 0u; irun != nrun; ++irun){
+            triangulation_2D_v1(vertices, carray_size(vertices), indices);
+        }
+
+        u64 timer_end = timer_ticks();
+
+        LOG_INFO("triangulation_2D_v0: %" PRId64, timer_v1 - timer_v0);
+        LOG_INFO("triangulation_2D_v1: %" PRId64, timer_end - timer_v1);
+    }
 }
 
 int main(int argc, char* argv[]){
 
 	SDL_CHECK(SDL_Init(SDL_INIT_EVERYTHING) == 0);
+    setup_vmemory();
     setup_timer();
     setup_LOG();
 
-    // ----
-
-    //bw::utest::t_find_noise_magic_normalizer();
-    //bw::utest::t_detect_vector_capacilities();
-
     // ---- regression tests
 
-    bw::utest::t_Virtual_Arena();
+    //bw::utest::t_Virtual_Arena();
 
-    bw::utest::t_array();
-    bw::utest::t_pool();
-    bw::utest::t_dhashmap();
-    bw::utest::t_dhashmap_randomized();
+    //bw::utest::t_array();
+    //bw::utest::t_pool();
+    //bw::utest::t_dhashmap();
+    //bw::utest::t_dhashmap_randomized();
 
-    bw::utest::t_quat_rot();
-    bw::utest::t_defer();
-    bw::utest::t_align();
-    bw::utest::t_isort();
-    bw::utest::t_binsearch();
-    bw::utest::t_constexpr_sqrt();
-    bw::utest::t_Dense_Grid();
+    //bw::utest::t_quat_rot();
+    //bw::utest::t_defer();
+    //bw::utest::t_align();
+    //bw::utest::t_isort();
+    //bw::utest::t_binsearch();
+    //bw::utest::t_constexpr_sqrt();
+    //bw::utest::t_Dense_Grid();
 
-    bw::utest::t_geometry();
+    //bw::utest::t_coord_conversion();
+    //bw::utest::t_triangulation_2D();
+
+    // ---- benchmark
+
+    //bw::utest::t_detect_vector_capacilities();
+    //bw::utest::t_find_noise_magic_normalizer();
+    //bw::utest::t_compare_triangulation_2D();
 
     // ----
 

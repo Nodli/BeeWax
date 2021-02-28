@@ -161,7 +161,7 @@ static const char* fragment_shader_checker_2D = R"(
         coord = coord + center;
         coord = fract(coord * vec2(0.5 / checker_2D_info.checker_size));
 
-        float greyscale = 0.5 + 0.5 * float((coord.x > 0.5) ^^ (coord.y > 0.5));
+        float greyscale = 0.5 + 0.25 * float((coord.x > 0.5) ^^ (coord.y > 0.5));
 
         output_color = vec4(greyscale, greyscale, greyscale, 1.);
     }
