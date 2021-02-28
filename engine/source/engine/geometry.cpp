@@ -284,9 +284,229 @@ Mesh generate_cuboid(vec3 position, vec3 size, u32 ntess){
     return mesh;
 }
 
+// ---- geometric predicates
+
+float point_side_segment(const vec2& p, const vec2& vA, const vec2& vB){
+    return cross(p - vA, vB - vA);
+}
+
+bool point_inside_triangle(const vec2& p, const vec2& tA, const vec2& tB, const vec2& tC){
+    float sideAB = sign(point_side_segment(p, tA, tB));
+    return sideAB == sign(point_side_segment(p, tB, tC)) && sideAB == sign(point_side_segment(p, tC, tA));
+}
+
 // ---- triangulation
 
-void triangulation_2D(vec2* vertices, u32 nvertices, u16*& out_indices, u32& out_nindices){
+namespace BEEWAX_INTERNAL{
+    struct trig_2D_LLE{
+        u32 prev;
+        u32 next;
+    };
+}
+
+// NOTE(hugo):
+// v0: working ; but unoptimized for large, mostly convex polygons
+// v1: non-working ; unoptimized for large, mostly reflex polygons
+
+void triangulation_2D_v0(vec2* vertices, u32 nvertices, u32* nindices){
+    assert(nvertices > 2u);
+
+    BEEWAX_INTERNAL::trig_2D_LLE* connectivity_LL = (BEEWAX_INTERNAL::trig_2D_LLE*)malloc(nvertices * sizeof(BEEWAX_INTERNAL::trig_2D_LLE));
+    DEFER{
+        ::free((void*)connectivity_LL);
+    };
+
+    auto is_reflex = [&](u32 iprev, u32 ivert, u32 inext){
+        return point_side_segment(vertices[iprev], vertices[ivert], vertices[inext]) > 0.f;
+    };
+    auto is_empty = [&](u32 iprev, u32 ivert, u32 inext){
+        u32 itest = connectivity_LL[inext].next;
+        while(itest != iprev){
+            if(point_inside_triangle(vertices[itest], vertices[iprev], vertices[ivert], vertices[inext])){
+                return false;
+            }
+            itest = connectivity_LL[itest].next;
+        }
+        return true;
+    };
+
+    {
+        // NOTE(hugo): build the connectivity ; backwards so that the reflex_LL is in forward order
+        connectivity_LL[nvertices - 1u].prev = nvertices - 2u;
+        connectivity_LL[nvertices - 1u].next = 0u;
+
+        u32 iprev = nvertices - 3u;
+        u32 ivert = nvertices - 2u;
+        u32 inext = nvertices - 1u;
+        while(ivert != 0u){
+            connectivity_LL[ivert].prev = iprev;
+            connectivity_LL[ivert].next = inext;
+
+            inext = ivert;
+            ivert = iprev;
+            --iprev;
+        }
+
+        connectivity_LL[0u].prev = nvertices - 1u;
+        connectivity_LL[0u].next = 1u;
+    }
+
+    {
+        // NOTE(hugo): find and remove ears
+        u32 iprev = nvertices - 1u;
+        u32 ivert = 0u;
+        u32 inext = 1u;
+        while(iprev != inext){
+            if(!is_reflex(iprev, ivert, inext) && is_empty(iprev, ivert, inext)){
+                *nindices++ = iprev;
+                *nindices++ = ivert;
+                *nindices++ = inext;
+
+                connectivity_LL[iprev].next = inext;
+                connectivity_LL[inext].prev = iprev;
+
+            }else{
+                iprev = ivert;
+
+            }
+
+            ivert = inext;
+            inext = connectivity_LL[inext].next;
+        }
+    }
+
+}
+
+void triangulation_2D_v1(vec2* vertices, u32 nvertices, u32* nindices){
+    assert(nvertices > 2u);
+
+    constexpr u32 not_reflex = UINT32_MAX;
+    constexpr u32 end_reflex_LL = UINT32_MAX - 1u;
+
+    BEEWAX_INTERNAL::trig_2D_LLE* connectivity_LL = (BEEWAX_INTERNAL::trig_2D_LLE*)malloc(nvertices * sizeof(BEEWAX_INTERNAL::trig_2D_LLE));
+    u32* reflex_LL = (u32*)malloc(nvertices * sizeof(u32));
+    memset(reflex_LL, 0xFF, nvertices * sizeof(u32));
+    DEFER{
+        ::free((void*)reflex_LL);
+        ::free((void*)connectivity_LL);
+    };
+
+    auto is_reflex = [&](u32 iprev, u32 ivert, u32 inext){
+        return point_side_segment(vertices[iprev], vertices[ivert], vertices[inext]) > 0.f;
+    };
+    auto is_empty_reflex = [&](u32 iprev, u32 ivert, u32 inext, u32 ireflex){
+        // NOTE(hugo): previous vertices
+        {
+            u32 itest = connectivity_LL[iprev].prev;
+            u32 itest_next = iprev;
+            while(itest_next < inext){
+                if(reflex_LL[itest] != not_reflex && point_inside_triangle(vertices[itest], vertices[iprev], vertices[ivert], vertices[inext])){
+                    return false;
+                }
+                itest_next = itest;
+                itest = connectivity_LL[itest].prev;
+            }
+        }
+
+        // NOTE(hugo): reflex vertices
+        {
+            u32 itest = ireflex;
+            while(itest != end_reflex_LL){
+                if(point_inside_triangle(vertices[itest], vertices[iprev], vertices[ivert], vertices[inext])){
+                    return false;
+                }
+                itest = reflex_LL[itest];
+            }
+        }
+        return true;
+    };
+
+    u32 reflex_head = end_reflex_LL;
+
+    {
+        // NOTE(hugo): build the connectivity ; backwards so that the reflex_LL is in forward order
+        connectivity_LL[nvertices - 1u].prev = nvertices - 2u;
+        connectivity_LL[nvertices - 1u].next = 0u;
+        if(is_reflex(nvertices - 2u, nvertices - 1u, 0u)){
+            reflex_LL[nvertices - 1u] = reflex_head;
+            reflex_head = nvertices - 1u;
+        }
+
+        u32 iprev = nvertices - 3u;
+        u32 ivert = nvertices - 2u;
+        u32 inext = nvertices - 1u;
+        while(ivert != 0u){
+            connectivity_LL[ivert].prev = iprev;
+            connectivity_LL[ivert].next = inext;
+            if(is_reflex(iprev, ivert, inext)){
+                reflex_LL[ivert] = reflex_head;
+                reflex_head = ivert;
+            }
+
+            inext = ivert;
+            ivert = iprev;
+            --iprev;
+        }
+
+        connectivity_LL[0u].prev = nvertices - 1u;
+        connectivity_LL[0u].next = 1u;
+        if(is_reflex(nvertices - 1u, 0u, 1u)){
+            reflex_LL[0u] = reflex_head;
+            reflex_head = 0u;
+        }
+    }
+
+    {
+        u32 reflex_index = reflex_head;
+
+        // NOTE(hugo): find and remove ears
+        u32 iprev = nvertices - 1u;
+        u32 ivert = 0u;
+        u32 inext = 1u;
+        while(iprev != inext){
+            if(ivert == reflex_index){
+                reflex_index = reflex_LL[reflex_index];
+
+                iprev = ivert;
+                ivert = inext;
+                inext = connectivity_LL[inext].next;
+
+            }else if(is_empty_reflex(iprev, ivert, inext, reflex_index)){
+                *nindices++ = iprev;
+                *nindices++ = ivert;
+                *nindices++ = inext;
+
+                if(reflex_index == inext && !is_reflex(iprev, inext, connectivity_LL[inext].next)) reflex_index = reflex_LL[reflex_index];
+
+                connectivity_LL[iprev].next = inext;
+                connectivity_LL[inext].prev = iprev;
+
+                if(!is_reflex(connectivity_LL[iprev].prev, iprev, inext)){
+                    ivert = iprev;
+                    iprev = connectivity_LL[iprev].prev;
+
+                }else{
+                    ivert = inext;
+                    inext = connectivity_LL[inext].next;
+                }
+
+            }else{
+                iprev = ivert;
+                ivert = inext;
+                inext = connectivity_LL[inext].next;
+
+            }
+        }
+    }
+}
+
+void triangulation_2D(vec2* vertices, u32 nvertices, u32* nindices){
+    // NOTE(hugo): cf. benchmark ; bw::utest::t_compare_triangulation_2D()
+    //triangulation_2D_v0(vertices, nvertices, nindices);
+    triangulation_2D_v1(vertices, nvertices, nindices);
+
+    // TODO(hugo): make something to avoid testing non reflex vertices when testing previous vertices in is_empty_reflex ;
+    // it would most likely require a double LL before it would require removal (forward iteration from base_reflex should be fine)
 }
 
 // ---- geometric error

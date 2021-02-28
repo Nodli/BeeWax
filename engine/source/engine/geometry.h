@@ -75,10 +75,26 @@ Mesh generate_sphere_uv(vec3 position, float radius, u32 nlon, u32 nlat);
 Mesh generate_cube(vec3 position, float size, u32 ntess = 0u);
 Mesh generate_cuboid(vec3 position, vec3 size, u32 ntess = 0u);
 
+// ---- geometric predicates
+
+// NOTE(hugo):
+// * > 0.f means p is on the RIGHT of (vA, vB)
+// * = 0.f means p is on (vA, vB)
+// * < 0.f means p is on the LEFT of (vA, vB)
+float point_side_segment(const vec2& p, const vec2& vA, const vec2& vB);
+
+bool point_inside_triangle(const vec2& p, const vec2& tA, const vec2& tB, const vec2& tC);
+
 // ---- triangulation
 
-// NOTE(hugo): vertices are counter-clockwise
-void triangulation_2D(vec2* vertices, u32 nvertices, u16*& out_indices, u32& out_nindices);
+// REF(hugo):
+// https://www.geometrictools.com/Documentation/TriangulationByEarClipping.pdf
+
+// NOTE(hugo): ear clipping triangulation
+// * vertices are ordered in counter-clockwise order
+// * requires a 'simple' polygon ie no overlapping edges (twist / loop) and no hole
+// * out_indices is provided by the user with size 3 * (nvertices - 2u)
+void triangulation_2D(vec2* vertices, u32 nvertices, u32* out_indices);
 
 // ---- geometric error
 
