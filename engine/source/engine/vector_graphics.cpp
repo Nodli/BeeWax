@@ -35,19 +35,21 @@ static u32 get_batch_index_xyzrgba(u32 nvertices, u32 nindices,
             renderer->checkout(storage[ibatch].buffer);
             storage[ibatch].vcursor = 0u;
             storage[ibatch].icursor = 0u;
-            ++batch_count;
 
-            return ibatch;
+            // NOTE(hugo): make reused storage the last active batch
+            if(ibatch != batch_count) swap(storage[batch_count], storage[ibatch]);
+            return batch_count++;
         }
     }
 
     constexpr size_t default_vbytesize = vector_graphics_vertex_capacity * sizeof(vertex_xyzrgba);
-    constexpr size_t default_ibytesize = vector_graphics_index_capacity_multi * vector_graphics_vertex_capacity * sizeof(u16);
+    constexpr size_t default_ibytesize = vector_graphics_index_capacity * sizeof(u16);
 
     // NOTE(hugo): reserve new storage
     size_t round_nvertices = round_up_pow2(nvertices);
+    size_t round_nindices = round_up_pow2(nindices);
     size_t vbytesize = round_nvertices * sizeof(vertex_xyzrgba);
-    size_t ibytesize = vector_graphics_index_capacity_multi * round_nvertices * sizeof(u16);
+    size_t ibytesize = round_nindices * sizeof(u16);
     vbytesize = max(vbytesize, default_vbytesize);
     ibytesize = max(ibytesize, default_ibytesize);
 
@@ -55,11 +57,13 @@ static u32 get_batch_index_xyzrgba(u32 nvertices, u32 nindices,
     renderer->format(buffer, xyzrgba);
     renderer->checkout(buffer);
 
-    u32 batch_index = storage.size;
+    // NOTE(hugo): push new storage
+    u32 push_index = storage.size;
     storage.push({0u, 0u, buffer});
-    ++batch_count;
 
-    return batch_index;
+    // NOTE(hugo): make new storage the last active batch
+    if(push_index != batch_count) swap(storage[batch_count], storage[push_index]);
+    return batch_count++;
 }
 
 void Vector_Graphics_Renderer::rect(vec2 min, vec2 max, float depth, vec4 rgba, float dpix, bool anti_aliasing){
@@ -430,6 +434,7 @@ void Vector_Graphics_Renderer::disc(vec2 center, float radius, float depth, vec4
 
     vertex_xyzrgba* vptr = (vertex_xyzrgba*)batch.buffer.vptr + batch.vcursor;
     u16* iptr = (u16*)batch.buffer.iptr + batch.icursor;
+    assert(vptr && iptr);
     u32 base_index = batch.vcursor;
 
     batch.vcursor += nvertices;

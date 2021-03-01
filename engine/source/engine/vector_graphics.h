@@ -5,7 +5,7 @@
 // https://www.researchgate.net/publication/347987699_A_Fast_Parametric_Ellipse_Algorithm
 
 constexpr size_t vector_graphics_vertex_capacity = 128u;
-constexpr size_t vector_graphics_index_capacity_multi = 6u;
+constexpr size_t vector_graphics_index_capacity = 4u * vector_graphics_vertex_capacity;
 
 float next_depth(float depth);
 
