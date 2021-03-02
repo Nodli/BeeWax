@@ -85,9 +85,9 @@ struct uniform_camera_2D{
     mat3_std140 matrix;
 };
 
-struct uniform_checker_2D_info{
+struct uniform_pattern_info{
     vec4 center_height_aspectratio;
-    float checker_size;
+    float pattern_size;
 };
 
 struct vertex_xyzrgba{
@@ -140,30 +140,43 @@ static const char* emit_fullscreen_triangle = R"(
     }
 )";
 
-static const char* shader_header_checker_2D = GLSL_version;
-static const char* vertex_shader_checker_2D = emit_fullscreen_triangle;
-static const char* fragment_shader_checker_2D = R"(
-    layout(std140) uniform u_checker_2D_info{
+static const char* shader_header_editor_pattern = GLSL_version;;
+static const char* vertex_shader_editor_pattern = emit_fullscreen_triangle;
+static const char* fragment_shader_editor_pattern = R"(
+    layout(std140) uniform u_pattern_info{
         vec4 center_height_aspectratio;
-        float checker_size;
-    } checker_2D_info;
+        float pattern_size;
+    } pattern_info;
 
     in vec2 screenspace_coord;
     out vec4 output_color;
 
     void main(){
-        vec2 center = checker_2D_info.center_height_aspectratio.xy;
-        float height = checker_2D_info.center_height_aspectratio.z;
-        float aspect_ratio = checker_2D_info.center_height_aspectratio.w;
-        float width = height * aspect_ratio;
+        vec2 center = pattern_info.center_height_aspectratio.xy;
+        float width = pattern_info.center_height_aspectratio.z * pattern_info.center_height_aspectratio.w;
+        float height = pattern_info.center_height_aspectratio.z;
+        float pattern_size = pattern_info.pattern_size;
 
-        vec2 coord = (screenspace_coord - vec2(0.5)) * vec2(width, height);
-        coord = coord + center;
-        coord = fract(coord * vec2(0.5 / checker_2D_info.checker_size));
+        vec2 coord_world = (screenspace_coord - vec2(0.5)) * vec2(width, height) + center;
+        float dcoord_world = fwidth(coord_world.x);
 
-        float greyscale = 0.5 + 0.25 * float((coord.x > 0.5) ^^ (coord.y > 0.5));
+        vec2 dist_pattern = mod(coord_world + dcoord_world, pattern_size);
+        float pattern = float(dist_pattern.x < 2. * dcoord_world || dist_pattern.y < 2. * dcoord_world);
 
-        output_color = vec4(greyscale, greyscale, greyscale, 1.);
+        vec2 dist_major = abs(coord_world);
+        float major_axis = float(dist_major.x < dcoord_world || dist_major.y < dcoord_world);
+
+        float minor_size = 5. * pattern_size;
+        vec2 dist_minor = mod(coord_world + dcoord_world, minor_size);
+        float minor_axis = float(dist_minor.x < 2. * dcoord_world || dist_minor.y < 2. * dcoord_world);
+
+        vec3 background_color = vec3(0.12, 0.11, 0.1);
+        vec3 pattern_color = background_color * 1.1;
+        vec3 major_axis_color = background_color * 0.7;
+        vec3 minor_axis_color = background_color * 0.9;
+        vec3 color = mix(mix(mix(background_color, pattern_color, pattern), minor_axis_color, minor_axis), major_axis_color, major_axis);
+
+        output_color = vec4(color, 1.);
     }
 )";
 
@@ -232,7 +245,7 @@ static const char* fragment_shader_polygon_2D_tex = R"(
 
 #define FOR_EACH_UNIFORM_NAME_ENGINE(FUNCTION)          \
 FUNCTION(camera_2D)                                     \
-FUNCTION(checker_2D_info)                               \
+FUNCTION(pattern_info)                                  \
 
 #define FOR_EACH_VERTEX_FORMAT_NAME_ENGINE(FUNCTION)    \
 FUNCTION(xyzrgba)                                       \
@@ -241,12 +254,12 @@ FUNCTION(xyzuv)                                         \
 #define FOR_EACH_SHADER_NAME_ENGINE(FUNCTION)           \
 FUNCTION(polygon_2D)                                    \
 FUNCTION(polygon_2D_tex)                                \
-FUNCTION(checker_2D)                                    \
+FUNCTION(editor_pattern)                                \
 
 #define FOR_EACH_UNIFORM_SHADER_PAIR_ENGINE(FUNCTION)   \
 FUNCTION(camera_2D, polygon_2D)                         \
 FUNCTION(camera_2D, polygon_2D_tex)                     \
-FUNCTION(checker_2D_info, checker_2D)                      \
+FUNCTION(pattern_info, editor_pattern)                  \
 
 #define FOR_EACH_TEXTURE_SHADER_PAIR_ENGINE(FUNCTION)   \
 FUNCTION(tex, 0, polygon_2D_tex)                        \

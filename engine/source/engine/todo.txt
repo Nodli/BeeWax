@@ -19,6 +19,9 @@ CURRENT ---------------
 
 DONE ------------------
 
+02/02/2021
+- editor pattern (prev. checker)
+
 28/02/2021
 - editor mouse drag & zoom
 - window resizing

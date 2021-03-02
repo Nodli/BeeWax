@@ -42,8 +42,6 @@ namespace g_config {
     static const char* window_name;
     static s32 window_width;
     static s32 window_height;
-    static u32 render_width;
-    static u32 render_height;
     static File_Path asset_catalog_path;
 };
 

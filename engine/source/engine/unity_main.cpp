@@ -307,7 +307,8 @@ namespace bw{
 // ---- sample
 
 //#include "../sample/unit.cpp"
-#include "../sample/integration_easy_setup.cpp"
+//#include "../sample/integration_easy_setup.cpp"
+#include "../sample/editor.cpp"
 
 // ---- application
 
