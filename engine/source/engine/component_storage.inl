@@ -1,3 +1,7 @@
+bool operator==(const Component_Reference& refA, const Component_Reference& refB){
+    return refA.ID == refB.ID && refA.generation == refB.generation;
+}
+
 template<typename T>
 void Component_Storage<T>::free(){
     indexing.free();
@@ -30,7 +34,7 @@ T* Component_Storage<T>::create(Component_Reference& out_ref){
 
 template<typename T>
 T* Component_Storage<T>::search(const Component_Reference& ref){
-    if(is_valid(ref)) return &storage[indexing[ref.ID].storage_index];
+    if(is_valid(ref)) return &storage[indexing[ref.ID].storage_index].data;
     return nullptr;
 }
 

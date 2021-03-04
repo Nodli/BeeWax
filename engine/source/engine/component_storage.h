@@ -6,6 +6,7 @@ struct Component_Reference{
     u32 generation = UINT32_MAX;
 };
 constexpr Component_Reference unknown_component_reference = {UINT32_MAX, UINT32_MAX};
+bool operator==(const Component_Reference& refA, const Component_Reference& refB);
 
 template<typename T>
 struct Component_Storage{
