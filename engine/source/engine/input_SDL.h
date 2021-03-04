@@ -1,7 +1,7 @@
 #ifndef H_INPUT
 #define H_INPUT
 
-struct Device_Button{
+struct Device_Button_SDL{
     enum Button_State {
         STATE_UP = SDL_RELEASED,
         STATE_DOWN = SDL_PRESSED,
@@ -20,7 +20,6 @@ struct Device_Button{
     bool is_up(){
         return state == STATE_DOWN;
     }
-
 
     Button_State state;
     u64 state_generation;

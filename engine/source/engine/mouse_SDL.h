@@ -1,10 +1,10 @@
 #ifndef H_MOUSE_STATE
 #define H_MOUSE_STATE
 
-struct Mouse_State{
+struct Mouse_State_SDL{
     void initialize(){
         for(u32 ibutton = 0u; ibutton != carray_size(button.storage); ++ibutton){
-            button.storage[ibutton].state = Device_Button::STATE_UP;
+            button.storage[ibutton].state = Device_Button_SDL::STATE_UP;
             button.storage[ibutton].state_generation = 0u;
             button.storage[ibutton].npressed = 0u;
             button.storage[ibutton].nreleased = 0u;
@@ -26,16 +26,16 @@ struct Mouse_State{
 
     void register_event(SDL_Event& event){
         if(event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP){
-            auto register_button = [&](Device_Button& button){
+            auto register_button = [&](Device_Button_SDL& button){
                 assert(event.button.state == SDL_PRESSED || event.button.state == SDL_RELEASED);
                 if(event.button.state == SDL_PRESSED){
                     ++button.npressed;
-                    button.state = Device_Button::STATE_DOWN;
+                    button.state = Device_Button_SDL::STATE_DOWN;
                     button.state_generation = state_generation++;
                 }
                 if(event.button.state == SDL_RELEASED){
                     ++button.nreleased;
-                    button.state = Device_Button::STATE_UP;
+                    button.state = Device_Button_SDL::STATE_UP;
                     button.state_generation = state_generation++;
                 }
             };
@@ -78,13 +78,13 @@ struct Mouse_State{
 
     u64 state_generation = 0u;
     union{
-        Device_Button storage[5] = {};
+        Device_Button_SDL storage[5] = {};
         struct{
-            Device_Button left;
-            Device_Button middle;
-            Device_Button right;
-            Device_Button x1;
-            Device_Button x2;
+            Device_Button_SDL left;
+            Device_Button_SDL middle;
+            Device_Button_SDL right;
+            Device_Button_SDL x1;
+            Device_Button_SDL x2;
         };
     } button;
     struct{

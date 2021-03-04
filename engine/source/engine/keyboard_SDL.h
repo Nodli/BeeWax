@@ -36,7 +36,7 @@ FUNCTION(backquote, SDLK_BACKQUOTE)         \
 
 // ---- codegen
 
-struct Keyboard_State{
+struct Keyboard_State_SDL{
 #define ADD_TO_ENUM_KEYBOARD_BUTTON(name, keycode) CONCATENATE(BUTTON_, name),
     enum Keyboard_Buttons{
         FOR_EACH_KEYBOARD_BUTTON(ADD_TO_ENUM_KEYBOARD_BUTTON)
@@ -46,7 +46,7 @@ struct Keyboard_State{
 
     void initialize(){
         for(u32 ibutton = 0; ibutton != carray_size(storage); ++ibutton){
-            storage[ibutton].state = Device_Button::STATE_UP;
+            storage[ibutton].state = Device_Button_SDL::STATE_UP;
             storage[ibutton].state_generation = 0u;
             storage[ibutton].npressed = 0u;
             storage[ibutton].nreleased = 0u;
@@ -64,16 +64,16 @@ struct Keyboard_State{
         if((event.type == SDL_KEYDOWN || event.type == SDL_KEYUP)
         && event.key.repeat == 0u){
 
-            auto register_key = [&](Device_Button& button){
+            auto register_key = [&](Device_Button_SDL& button){
                 assert(event.key.state == SDL_PRESSED || event.key.state == SDL_RELEASED);
                 if(event.key.state == SDL_PRESSED){
                     ++button.npressed;
-                    button.state = Device_Button::STATE_DOWN;
+                    button.state = Device_Button_SDL::STATE_DOWN;
                     button.state_generation = state_generation++;
                 }
                 if(event.key.state == SDL_RELEASED){
                     ++button.nreleased;
-                    button.state = Device_Button::STATE_UP;
+                    button.state = Device_Button_SDL::STATE_UP;
                     button.state_generation = state_generation++;
                 }
             };
@@ -99,9 +99,9 @@ struct Keyboard_State{
 
     u64 state_generation = 0u;
     union{
-        Device_Button storage[NUMBER_OF_KEYBOARD_BUTTONS] = {};
+        Device_Button_SDL storage[NUMBER_OF_KEYBOARD_BUTTONS] = {};
         struct{
-#define DECLARE_KEYBOARD_BUTTON_VARIABLE(name, keycode) Device_Button name;
+#define DECLARE_KEYBOARD_BUTTON_VARIABLE(name, keycode) Device_Button_SDL name;
             FOR_EACH_KEYBOARD_BUTTON(DECLARE_KEYBOARD_BUTTON_VARIABLE)
 #undef DECLARE_KEYBOARD_BUTTON_VARIABLE
         };
