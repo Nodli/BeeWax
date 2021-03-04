@@ -1,6 +1,6 @@
 // ---- audio asset
 
-void make_audio_asset_from_wav_file(Audio_Asset* asset, const File_Path& path, const Audio_Player* player){
+void make_audio_asset_from_wav_file(Audio_Asset* asset, const File_Path& path, const Audio_Player_SDL* player){
     SDL_AudioSpec wav_spec;
     u8* wav_buffer;
     u32 wav_bytesize;
@@ -44,15 +44,15 @@ void free_audio_asset(Audio_Asset* asset){
 
 static void audio_callback(void* user_ptr, u8* out_stream, s32 out_stream_size);
 
-static void increase_audio_mem(Audio_Player* audio_player){
-    Audio_Player::Audio_Info_Bucket* bucket = (Audio_Player::Audio_Info_Bucket*)malloc(sizeof(Audio_Player::Audio_Info_Bucket));
-    new((void*)bucket) Audio_Player::Audio_Info_Bucket{};
+static void increase_audio_mem(Audio_Player_SDL* audio_player){
+    Audio_Player_SDL::Audio_Info_Bucket* bucket = (Audio_Player_SDL::Audio_Info_Bucket*)malloc(sizeof(Audio_Player_SDL::Audio_Info_Bucket));
+    new((void*)bucket) Audio_Player_SDL::Audio_Info_Bucket{};
 
     bucket->next = audio_player->mixer_state.audio_mem;
     atomic_set(&audio_player->mixer_state.audio_mem, bucket);
 }
 
-void Audio_Player::setup(){
+void Audio_Player_SDL::setup(){
     SDL_AudioSpec required_spec;
     required_spec.freq = 44100u;
     required_spec.format = AUDIO_S16;
@@ -74,7 +74,7 @@ void Audio_Player::setup(){
     SDL_PauseAudioDevice(device, 0);
 }
 
-void Audio_Player::terminate(){
+void Audio_Player_SDL::terminate(){
     SDL_PauseAudioDevice(device, 1);
 
     ::free(mixer_state.mix_buffer);
@@ -87,7 +87,7 @@ void Audio_Player::terminate(){
     SDL_CloseAudioDevice(device);
 }
 
-Audio_Reference Audio_Player::start(const Audio_Asset* asset){
+Audio_Reference Audio_Player_SDL::start(const Audio_Asset* asset){
     Audio_Reference ref;
 
     // NOTE(hugo): find existing voice
@@ -115,26 +115,26 @@ Audio_Reference Audio_Player::start(const Audio_Asset* asset){
     return {&info, info.generation};
 }
 
-void Audio_Player::stop(const Audio_Reference& ref){
+void Audio_Player_SDL::stop(const Audio_Reference& ref){
     if(is_valid(ref)){
         atomic_set(&ref.info->state, Audio_Info::STOP);
     }
 }
 
-bool Audio_Player::is_valid(const Audio_Reference& ref){
+bool Audio_Player_SDL::is_valid(const Audio_Reference& ref){
     return ref.info && ref.generation == ref.info->generation && atomic_get(&ref.info->state) == Audio_Info::PLAY_UNIQUE;
 }
 
-void Audio_Player::pause(){
+void Audio_Player_SDL::pause(){
     SDL_PauseAudioDevice(device, 0);
 }
 
-void Audio_Player::resume(){
+void Audio_Player_SDL::resume(){
     SDL_PauseAudioDevice(device, 1);
 }
 
 static void audio_callback(void* user_ptr, u8* out_stream, s32 out_stream_size){
-    Audio_Player::Audio_State* state = (Audio_Player::Audio_State*)user_ptr;
+    Audio_Player_SDL::Audio_State* state = (Audio_Player_SDL::Audio_State*)user_ptr;
     u32 out_samples = out_stream_size / sizeof(s16);
     assert(out_samples == audio_device_buffer_in_samples);
 
@@ -142,7 +142,7 @@ static void audio_callback(void* user_ptr, u8* out_stream, s32 out_stream_size){
     memset(state->mix_buffer, 0, audio_device_buffer_in_samples * sizeof(float));
 
     // NOTE(hugo): update & mix
-    Audio_Player::Audio_Info_Bucket* bucket = state->audio_mem;
+    Audio_Player_SDL::Audio_Info_Bucket* bucket = state->audio_mem;
     while(bucket){
         for(u32 iinfo = 0u; iinfo != audio_info_per_bucket; ++iinfo){
             Audio_Info& info = bucket->data[iinfo];

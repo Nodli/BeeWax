@@ -1,7 +1,7 @@
 #ifndef H_AUDIO
 #define H_AUDIO
 
-struct Audio_Player;
+struct Audio_Player_SDL;
 
 // ---- audio asset
 
@@ -10,7 +10,7 @@ struct Audio_Asset{
     u32 nsamples = 0u;
 };
 
-void make_audio_asset_from_wav_file(Audio_Asset* asset, const File_Path& path, const Audio_Player* player);
+void make_audio_asset_from_wav_file(Audio_Asset* asset, const File_Path& path, const Audio_Player_SDL* player);
 void free_audio_asset(Audio_Asset* asset);
 
 // ---- audio player
@@ -37,7 +37,7 @@ struct Audio_Reference{
 };
 constexpr Audio_Reference unknown_audio_reference = {nullptr, 0u};
 
-struct Audio_Player{
+struct Audio_Player_SDL{
     void setup();
     void terminate();
 
