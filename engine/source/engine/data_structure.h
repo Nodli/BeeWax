@@ -109,6 +109,33 @@ struct bucketized_storage{
 template<typename T>
 using bucketized_storage_32 = bucketized_storage<T, 32u>;
 
+// ---- static
+
+template<typename T, u32 static_capacity>
+struct static_storage{
+    T& operator[](u32 index);
+    const T& operator[](u32 index) const;
+
+    void increase_capacity();
+    void increase_capacity_min(u32 min_capacity);
+    void free();
+
+    void copy(u32 dest, u32 src, u32 size);
+    void move(u32 dest, u32 src, u32 size);
+    void zero(u32 start, u32 size);
+
+    // ---- iterator
+
+    contiguous_iterator<T> begin();
+    contiguous_iterator<T> end();
+    contiguous_iterator<T> iterator(u32 index);
+
+    // ---- data
+
+    constexpr static u32 capacity = static_capacity;
+    T data[static_capacity];
+};
+
 // -------- containers
 // ---- array
 

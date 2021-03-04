@@ -259,6 +259,75 @@ bucketized_iterator<T, bucket_size> bucketized_storage<T, bucket_size>::iterator
     return iter;
 }
 
+// ---- static
+
+template<typename T, u32 static_capacity>
+const T& static_storage<T, static_capacity>::operator[](u32 index) const{
+    assert(index < capacity);
+    return data[index];
+}
+
+template<typename T, u32 static_capacity>
+T& static_storage<T, static_capacity>::operator[](u32 index){
+    return const_cast<T&>(static_cast<const static_storage<T>&>(*this)[index]);
+}
+
+template<typename T, u32 static_capacity>
+void static_storage<T, static_capacity>::increase_capacity(){
+    ENGINE_CHECK(false, "static_storage::increase_capacity()");
+}
+
+template<typename T, u32 static_capacity>
+void static_storage<T, static_capacity>::increase_capacity_min(u32 min_capacity){
+    ENGINE_CHECK(false, "static_storage::increase_capacity()");
+}
+
+template<typename T, u32 static_capacity>
+void static_storage<T, static_capacity>::free(){
+    *this = static_storage<T>();
+}
+
+template<typename T, u32 static_capacity>
+void static_storage<T, static_capacity>::copy(u32 dest, u32 src, u32 size){
+    assert((dest + size) <= capacity
+        && (src + size) <= capacity
+        && (((dest + size) <= src) | ((src + size) <= dest)));
+    memcpy(data + dest, data + src, size * sizeof(T));
+}
+
+template<typename T, u32 static_capacity>
+void static_storage<T, static_capacity>::move(u32 dest, u32 src, u32 size){
+    assert((dest + size) <= capacity && (src + size) <= capacity);
+    memmove(data + dest, data + src, size * sizeof(T));
+}
+
+template<typename T, u32 static_capacity>
+void static_storage<T, static_capacity>::zero(u32 start, u32 size){
+    assert((start + size) <= capacity);
+    memset(data + start, 0u, size * sizeof(T));
+}
+
+template<typename T, u32 static_capacity>
+contiguous_iterator<T> static_storage<T, static_capacity>::begin(){
+    contiguous_iterator<T> iter;
+    iter.ptr = data;
+    return iter;
+}
+
+template<typename T, u32 static_capacity>
+contiguous_iterator<T> static_storage<T, static_capacity>::end(){
+    contiguous_iterator<T> iter;
+    iter.ptr = data + capacity;
+    return iter;
+}
+
+template<typename T, u32 static_capacity>
+contiguous_iterator<T> static_storage<T, static_capacity>::iterator(u32 index){
+    contiguous_iterator<T> iter;
+    iter.ptr = data + index;
+    return iter;
+}
+
 // -------- containers
 // ---- array
 
