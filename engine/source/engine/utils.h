@@ -126,15 +126,6 @@ u32 neigh4_index2D(u32 index, u32 major_axis_size, u32 max_index, u32* out_neigh
 //             column major neigh4_c2D(y, x, height, width, data);
 u32 neigh4_coord2D(u32 major_axis_coord, u32 minor_axis_coord, u32 major_axis_size, u32 minor_axis_size, u32* out_neighbor);
 
-// ---- colormaps
-
-// NOTE(hugo): Polynomials fitted to matplotlib colormaps with value in [0, 1]
-// https://www.shadertoy.com/view/WlfXRN
-void viridis(const float value, float& r, float& g, float& b);
-void plasma(const float value, float& r, float& g, float& b);
-void magma(const float value, float& r, float& g, float& b);
-void inferno(const float value, float& r, float& g, float& b);
-
 // ---- type pair
 
 template<typename U, typename V>
