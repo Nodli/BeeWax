@@ -38,9 +38,9 @@ struct vec::vec2{
     vec2<T> operator--(int);
 
     vec2<T>& operator+=(const vec2<T>& vec);
-    vec2<T>& operator+=(const T v);
+    //vec2<T>& operator+=(const T v);
     vec2<T>& operator-=(const vec2<T>& vec);
-    vec2<T>& operator-=(const T v);
+    //vec2<T>& operator-=(const T v);
     vec2<T>& operator*=(const vec2<T>& vec);
     vec2<T>& operator*=(const T v);
     vec2<T>& operator/=(const vec2<T>& vec);
@@ -82,10 +82,10 @@ vec::vec2<T> operator*(const vec::vec2<T>& lhs, const vec::vec2<T>& rhs);
 template<typename T>
 vec::vec2<T> operator/(const vec::vec2<T>& lhs, const vec::vec2<T>& rhs);
 
-template<typename T>
-vec::vec2<T> operator+(const vec::vec2<T>& lhs, const T rhs);
-template<typename T>
-vec::vec2<T> operator-(const vec::vec2<T>& lhs, const T rhs);
+//template<typename T>
+//vec::vec2<T> operator+(const vec::vec2<T>& lhs, const T rhs);
+//template<typename T>
+//vec::vec2<T> operator-(const vec::vec2<T>& lhs, const T rhs);
 template<typename T>
 vec::vec2<T> operator*(const vec::vec2<T>& lhs, const T rhs);
 template<typename T>
@@ -122,9 +122,9 @@ struct vec::vec3{
     vec3<T> operator--(int);
 
     vec3<T>& operator+=(const vec3<T>& vec);
-    vec3<T>& operator+=(const T v);
+    //vec3<T>& operator+=(const T v);
     vec3<T>& operator-=(const vec3<T>& vec);
-    vec3<T>& operator-=(const T v);
+    //vec3<T>& operator-=(const T v);
     vec3<T>& operator*=(const vec3<T>& vec);
     vec3<T>& operator*=(const T v);
     vec3<T>& operator/=(const vec3<T>& vec);
@@ -174,10 +174,10 @@ vec::vec3<T> operator*(const vec::vec3<T>& lhs, const vec::vec3<T>& rhs);
 template<typename T>
 vec::vec3<T> operator/(const vec::vec3<T>& lhs, const vec::vec3<T>& rhs);
 
-template<typename T>
-vec::vec3<T> operator+(const vec::vec3<T>& lhs, const T rhs);
-template<typename T>
-vec::vec3<T> operator-(const vec::vec3<T>& lhs, const T rhs);
+//template<typename T>
+//vec::vec3<T> operator+(const vec::vec3<T>& lhs, const T rhs);
+//template<typename T>
+//vec::vec3<T> operator-(const vec::vec3<T>& lhs, const T rhs);
 template<typename T>
 vec::vec3<T> operator*(const vec::vec3<T>& lhs, const T rhs);
 template<typename T>
@@ -214,9 +214,9 @@ struct vec::vec4{
     vec4<T> operator--(int);
 
     vec4<T>& operator+=(const vec4<T>& vec);
-    vec4<T>& operator+=(const T v);
+    //vec4<T>& operator+=(const T v);
     vec4<T>& operator-=(const vec4<T>& vec);
-    vec4<T>& operator-=(const T v);
+    //vec4<T>& operator-=(const T v);
     vec4<T>& operator*=(const vec4<T>& vec);
     vec4<T>& operator*=(const T v);
     vec4<T>& operator/=(const vec4<T>& vec);
@@ -247,6 +247,11 @@ struct vec::vec4{
             T a;
         };
         struct{
+            T h;
+            T s;
+            T v;
+        };
+        struct{
             T s;
             T t;
             T p;
@@ -264,10 +269,10 @@ vec::vec4<T> operator*(const vec::vec4<T>& lhs, const vec::vec4<T>& rhs);
 template<typename T>
 vec::vec4<T> operator/(const vec::vec4<T>& lhs, const vec::vec4<T>& rhs);
 
-template<typename T>
-vec::vec4<T> operator+(const vec::vec4<T>& lhs, const T rhs);
-template<typename T>
-vec::vec4<T> operator-(const vec::vec4<T>& lhs, const T rhs);
+//template<typename T>
+//vec::vec4<T> operator+(const vec::vec4<T>& lhs, const T rhs);
+//template<typename T>
+//vec::vec4<T> operator-(const vec::vec4<T>& lhs, const T rhs);
 template<typename T>
 vec::vec4<T> operator*(const vec::vec4<T>& lhs, const T rhs);
 template<typename T>

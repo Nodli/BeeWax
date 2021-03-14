@@ -29,24 +29,24 @@ vec::vec2<T>& vec::vec2<T>::operator+=(const vec::vec2<T>& vec){
     y += vec.y;
     return *this;
 }
-template<typename T>
-vec::vec2<T>& vec::vec2<T>::operator+=(const T v){
-    x += v;
-    y += v;
-    return *this;
-}
+//template<typename T>
+//vec::vec2<T>& vec::vec2<T>::operator+=(const T v){
+//    x += v;
+//    y += v;
+//    return *this;
+//}
 template<typename T>
 vec::vec2<T>& vec::vec2<T>::operator-=(const vec::vec2<T>& vec){
     x -= vec.x;
     y -= vec.y;
     return *this;
 }
-template<typename T>
-vec::vec2<T>& vec::vec2<T>::operator-=(const T v){
-    x -= v;
-    y -= v;
-    return *this;
-}
+//template<typename T>
+//vec::vec2<T>& vec::vec2<T>::operator-=(const T v){
+//    x -= v;
+//    y -= v;
+//    return *this;
+//}
 template<typename T>
 vec::vec2<T>& vec::vec2<T>::operator*=(const vec::vec2<T>& vec){
     x *= vec.x;
@@ -115,14 +115,14 @@ vec::vec2<T> operator/(const vec::vec2<T>& lhs, const vec::vec2<T>& rhs){
     return vec::vec2<T>(lhs) /= rhs;
 }
 
-template<typename T>
-vec::vec2<T> operator+(const vec::vec2<T>& lhs, const T rhs){
-    return vec::vec2<T>(lhs) += rhs;
-}
-template<typename T>
-vec::vec2<T> operator-(const vec::vec2<T>& lhs, const T rhs){
-    return vec::vec2<T>(lhs) -= rhs;
-}
+//template<typename T>
+//vec::vec2<T> operator+(const vec::vec2<T>& lhs, const T rhs){
+//    return vec::vec2<T>(lhs) += rhs;
+//}
+//template<typename T>
+//vec::vec2<T> operator-(const vec::vec2<T>& lhs, const T rhs){
+//    return vec::vec2<T>(lhs) -= rhs;
+//}
 template<typename T>
 vec::vec2<T> operator*(const vec::vec2<T>& lhs, const T rhs){
     return vec::vec2<T>(lhs) *= rhs;
@@ -188,13 +188,13 @@ vec::vec3<T>& vec::vec3<T>::operator+=(const vec::vec3<T>& vec){
     z += vec.z;
     return *this;
 }
-template<typename T>
-vec::vec3<T>& vec::vec3<T>::operator+=(const T v){
-    x += v;
-    y += v;
-    z += v;
-    return *this;
-}
+//template<typename T>
+//vec::vec3<T>& vec::vec3<T>::operator+=(const T v){
+//    x += v;
+//    y += v;
+//    z += v;
+//    return *this;
+//}
 template<typename T>
 vec::vec3<T>& vec::vec3<T>::operator-=(const vec::vec3<T>& vec){
     x -= vec.x;
@@ -202,13 +202,13 @@ vec::vec3<T>& vec::vec3<T>::operator-=(const vec::vec3<T>& vec){
     z -= vec.z;
     return *this;
 }
-template<typename T>
-vec::vec3<T>& vec::vec3<T>::operator-=(const T v){
-    x -= v;
-    y -= v;
-    z -= v;
-    return *this;
-}
+//template<typename T>
+//vec::vec3<T>& vec::vec3<T>::operator-=(const T v){
+//    x -= v;
+//    y -= v;
+//    z -= v;
+//    return *this;
+//}
 template<typename T>
 vec::vec3<T>& vec::vec3<T>::operator*=(const vec::vec3<T>& vec){
     x *= vec.x;
@@ -281,14 +281,14 @@ vec::vec3<T> operator/(const vec::vec3<T>& lhs, const vec::vec3<T>& rhs){
     return vec::vec3<T>(lhs) /= rhs;
 }
 
-template<typename T>
-vec::vec3<T> operator+(const vec::vec3<T>& lhs, const T rhs){
-    return vec::vec3<T>(lhs) += rhs;
-}
-template<typename T>
-vec::vec3<T> operator-(const vec::vec3<T>& lhs, const T rhs){
-    return vec::vec3<T>(lhs) -= rhs;
-}
+//template<typename T>
+//vec::vec3<T> operator+(const vec::vec3<T>& lhs, const T rhs){
+//    return vec::vec3<T>(lhs) += rhs;
+//}
+//template<typename T>
+//vec::vec3<T> operator-(const vec::vec3<T>& lhs, const T rhs){
+//    return vec::vec3<T>(lhs) -= rhs;
+//}
 template<typename T>
 vec::vec3<T> operator*(const vec::vec3<T>& lhs, const T rhs){
     return vec::vec3<T>(lhs) *= rhs;
@@ -357,14 +357,14 @@ vec::vec4<T>& vec::vec4<T>::operator+=(const vec::vec4<T>& vec){
     w += vec.w;
     return *this;
 }
-template<typename T>
-vec::vec4<T>& vec::vec4<T>::operator+=(const T v){
-    x += v;
-    y += v;
-    z += v;
-    w += v;
-    return *this;
-}
+//template<typename T>
+//vec::vec4<T>& vec::vec4<T>::operator+=(const T v){
+//    x += v;
+//    y += v;
+//    z += v;
+//    w += v;
+//    return *this;
+//}
 template<typename T>
 vec::vec4<T>& vec::vec4<T>::operator-=(const vec::vec4<T>& vec){
     x -= vec.x;
@@ -373,14 +373,14 @@ vec::vec4<T>& vec::vec4<T>::operator-=(const vec::vec4<T>& vec){
     w -= vec.w;
     return *this;
 }
-template<typename T>
-vec::vec4<T>& vec::vec4<T>::operator-=(const T v){
-    x -= v;
-    y -= v;
-    z -= v;
-    w -= v;
-    return *this;
-}
+//template<typename T>
+//vec::vec4<T>& vec::vec4<T>::operator-=(const T v){
+//    x -= v;
+//    y -= v;
+//    z -= v;
+//    w -= v;
+//    return *this;
+//}
 template<typename T>
 vec::vec4<T>& vec::vec4<T>::operator*=(const vec::vec4<T>& vec){
     x *= vec.x;
@@ -457,14 +457,14 @@ vec::vec4<T> operator/(const vec::vec4<T>& lhs, const vec::vec4<T>& rhs){
     return vec::vec4<T>(lhs) /= rhs;
 }
 
-template<typename T>
-vec::vec4<T> operator+(const vec::vec4<T>& lhs, const T rhs){
-    return vec::vec4<T>(lhs) += rhs;
-}
-template<typename T>
-vec::vec4<T> operator-(const vec::vec4<T>& lhs, const T rhs){
-    return vec::vec4<T>(lhs) -= rhs;
-}
+//template<typename T>
+//vec::vec4<T> operator+(const vec::vec4<T>& lhs, const T rhs){
+//    return vec::vec4<T>(lhs) += rhs;
+//}
+//template<typename T>
+//vec::vec4<T> operator-(const vec::vec4<T>& lhs, const T rhs){
+//    return vec::vec4<T>(lhs) -= rhs;
+//}
 template<typename T>
 vec::vec4<T> operator*(const vec::vec4<T>& lhs, const T rhs){
     return vec::vec4<T>(lhs) *= rhs;
