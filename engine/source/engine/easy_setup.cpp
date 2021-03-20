@@ -12,6 +12,7 @@ void Engine::setup(){
 
     keyboard.initialize();
     mouse.initialize();
+    cursor.initialize();
 
     // ---- frame timing
 
@@ -46,10 +47,10 @@ void Engine::setup(){
 
     glEnable(GL_FRAMEBUFFER_SRGB);
     glClearColor(0.5f, 0.5f, 0.5f, 1.f);
+    glClearDepth(1.f);
 
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LEQUAL);
-    glClearDepth(1.f);
+    glDepthFunc(GL_LESS);
 
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -129,6 +130,8 @@ void Engine::terminate(){
     renderer.terminate();
 
     window.terminate();
+
+    cursor.terminate();
 
     // ---- external
 

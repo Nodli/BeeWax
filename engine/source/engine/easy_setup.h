@@ -23,6 +23,7 @@ struct Engine{
 
     Keyboard_State keyboard;
     Mouse_State mouse;
+    Cursor cursor;
 
     Frame_Timing frame_timing;
 
