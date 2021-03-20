@@ -1,6 +1,16 @@
 #ifndef H_RENDERER_GL3
 #define H_RENDERER_GL3
 
+enum Depth_Test_Type{
+    DEPTH_TEST_NONE,
+    DEPTH_TEST_LESS,
+    DEPTH_TEST_LESS_EQUAL,
+    DEPTH_TEST_EQUAL,
+    DEPTH_TEST_NOT_EQUAL,
+    DEPTH_TEST_GREATER_EQUAL,
+    DEPTH_TEST_GREATER,
+};
+
 struct Transient_Buffer_GL3{
     void* ptr = nullptr;
     size_t bytesize = 0u;
@@ -70,6 +80,7 @@ struct Renderer_GL3{
     void update_uniform(Uniform_Name name, void* ptr);
     void setup_texture_unit(u32 texture_unit, const Texture_GL3& texture, Sampler_Name sampler_name);
     void use_render_target(const Render_Target_GL3& render_target);
+    void set_depth_test(const Depth_Test_Type type);
 
     // -- draw
 

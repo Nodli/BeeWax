@@ -36,7 +36,7 @@ static void use_vertex_format(Renderer_GL3* renderer, Vertex_Format_Name format_
     for(u32 iattribute = 0u; iattribute != format.number_of_attributes; ++iattribute){
         glEnableVertexAttribArray(iattribute);
         const Vertex_Format_Attribute& attribute = format.attributes[iattribute];
-        glVertexAttribPointer(iattribute, (GLint)attribute.size, attribute.type, GL_FALSE, (GLsizei)format.vertex_bytesize, (void*)attribute.offset);
+        glVertexAttribPointer(iattribute, (GLint)attribute.size, attribute.type, attribute.norm, (GLsizei)format.vertex_bytesize, (void*)attribute.offset);
     }
 }
 
@@ -440,7 +440,7 @@ Render_Target_GL3 Renderer_GL3::get_render_target(u32 width, u32 height){
     glBindRenderbuffer(GL_RENDERBUFFER, render_target.buffer_color);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_SRGB8_ALPHA8, width, height);
     glBindRenderbuffer(GL_RENDERBUFFER, render_target.buffer_depth);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT32F, width, height);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
     glBindRenderbuffer(GL_RENDERBUFFER, 0u);
 
     glGenFramebuffers(1u, &render_target.framebuffer);
@@ -479,6 +479,38 @@ void Renderer_GL3::setup_texture_unit(u32 texture_unit, const Texture_GL3& textu
 void Renderer_GL3::use_render_target(const Render_Target_GL3& render_target){
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, render_target.framebuffer);
     glViewport(0u, 0u, render_target.width, render_target.height);
+}
+
+void Renderer_GL3::set_depth_test(const Depth_Test_Type type){
+    switch(type){
+        case DEPTH_TEST_NONE:
+            glDisable(GL_DEPTH_TEST);
+            break;
+        case DEPTH_TEST_LESS:
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LESS);
+            break;
+        case DEPTH_TEST_LESS_EQUAL:
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_LEQUAL);
+            break;
+        case DEPTH_TEST_EQUAL:
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_EQUAL);
+            break;
+        case DEPTH_TEST_NOT_EQUAL:
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_NOTEQUAL);
+            break;
+        case DEPTH_TEST_GREATER_EQUAL:
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_GEQUAL);
+            break;
+        case DEPTH_TEST_GREATER:
+            glEnable(GL_DEPTH_TEST);
+            glDepthFunc(GL_GREATER);
+            break;
+    }
 }
 
 // -- draw
