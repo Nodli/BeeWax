@@ -248,9 +248,15 @@ namespace bw{
         #include "input_SDL.h"
         #include "keyboard_SDL.h"
         #include "mouse_SDL.h"
+        #include "cursor_SDL.h"
+        typedef Device_Button_SDL Device_Button;
+        typedef Keyboard_State_SDL Keyboard_State;
+        typedef Mouse_State_SDL Mouse_State;
+        typedef Cursor_SDL Cursor;
 
         #include "audio_SDL.h"
         #include "audio_SDL.cpp"
+        typedef Audio_Player_SDL Audio_Player;
 
         #if defined(RENDERER_OPENGL3)
             #include "GL.h"
@@ -308,12 +314,19 @@ namespace bw{
 
 //#include "../sample/unit.cpp"
 //#include "../sample/integration_easy_setup.cpp"
-#include "../sample/editor.cpp"
 
 // ---- application
 
 //#include "../application/GL4_3D.cpp"
+
+#include "../application/editor/editor.cpp"
+
+//#include "../application/diffusion.cpp"
+//#include "../application/reaction_diffusion.cpp"
+//#include "../application/physarum.cpp"
+
 //#include "../application/VK.cpp"
+
 //#include "../application/minijam67_void.cpp"
 
 // ----

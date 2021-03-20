@@ -1,10 +1,11 @@
 TODO(engine) ----------
 
+FUTURE(engine) --------
+
 - function scope temporary allocation (global Virtual_Memory_Arena) + data structures storage type for that
 - renderer static buffers
 - audio stream, loops and synth
-
-FUTURE(engine) --------
+- UTF8
 
 - other noise functions: voronoise, worley, ...
 - typed quick sort with inlined comparator (sort_search.h)
