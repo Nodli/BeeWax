@@ -1,28 +1,26 @@
 #ifndef H_VECTOR_GRAPHICS
 #define H_VECTOR_GRAPHICS
 
-// REF(hugo):
-// https://www.researchgate.net/publication/347987699_A_Fast_Parametric_Ellipse_Algorithm
-
 constexpr size_t vector_graphics_vertex_capacity = 128u;
 constexpr size_t vector_graphics_index_capacity = 4u * vector_graphics_vertex_capacity;
 
-float next_depth(float depth);
-
-// NOTE(hugo): anti-aliasing uses fragment blending ie depth tests should fail
+// NOTE(hugo): anti-aliasing based on alpha coverage ie draw_antialiasing must be in a transparent render pass after opaque geometry
+// * with alpha blending
+// * with LEQUAL depth test
+// * without depth buffer output
+// -- SHADER_NAME:
+// * draw() with polygon_2D
+// * draw_antialiasing() with polygon_2D_norm
 
 struct Vector_Graphics_Renderer{
     void terminate();
 
-    void rect(vec2 min, vec2 max, float depth, vec4 rgba, float dpix, bool anti_aliasing = true);
-    void segment(vec2 A, vec2 B, float radius, float depth, vec4 rgba, float dpix, bool anti_aliasing = true);
-    void disc(vec2 center, float radius, float depth, vec4 rgba, float dpix, bool anti_aliasing = true);
-    void disc_sector(vec2 center, float rad_min, float rad_max, float depth, vec4 rgba, float dpix, bool anti_aliasing = true);
-
-    void rect_round(vec2 min, vec2 max, float depth, vec4 rgba, float dpix, bool anti_aliasing = true);
-    void segment_round(vec2 A, vec2 B, float radius, float depth, vec4 rgba, float dpix, bool anti_aliasing = true);
+    void simple_polygon(u32 nvertices, vec2* vertices, u32* indices, u32 depth, u32 rgba, bool antialiasing = true);
+    void disc(float radius, u32 depth, u32 rgba, bool antialiasing = true);
 
     void draw();
+    void draw_antialiasing();
+
     void new_frame();
 
     // ---- data
@@ -32,8 +30,12 @@ struct Vector_Graphics_Renderer{
         size_t icursor = 0u;
         Transient_Buffer_Indexed buffer = {};
     };
-    u32 batch_count = 0u;
-    array<Batch_Info> batch_storage = {};
+
+    u32 active = 0u;
+    array<Batch_Info> storage = {};
+
+    u32 active_antialiasing = 0u;
+    array<Batch_Info> storage_antialiasing = {};
 
     Renderer* renderer = nullptr;
 };
