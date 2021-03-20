@@ -15,6 +15,16 @@
 #else
 
 // ---- debug break
+
+#if defined(COMPILER_MSVC)
+    #define DEV_debug_break() do{ __debugbreak(); }while(false)
+#elif defined(COMPIILER_GCC)
+    #define DEV_debug_break() do{ raise(SIGTRAP); }while(false)
+#else
+    static_assert("debug_break.h is not implemented for this compiler");
+#endif
+
+#if 0
 FORCE_INLINE void DEV_debug_break(){
 #if defined(COMPILER_MSVC)
     __debugbreak();
@@ -27,6 +37,7 @@ FORCE_INLINE void DEV_debug_break(){
 
 #endif
 }
+#endif
 
 // ---- assert
 #define assert(condition)                                               \
