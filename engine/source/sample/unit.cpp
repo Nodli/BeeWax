@@ -804,7 +804,7 @@ namespace bw::utest{
         {
             vec2 vertices[] = {{-1.f, -1.f}, {1.f, -1.f}, {1.f, 1.f}, {-1.f, 1.f}};
             u32 indices[3u * (carray_size(vertices) - 2u)];
-            triangulation_2D(vertices, carray_size(vertices), indices);
+            triangulation_2D(carray_size(vertices), vertices, indices);
 
             u32 indices_expected[] = {
                 3u, 0u, 1u,
@@ -816,7 +816,7 @@ namespace bw::utest{
         {
             vec2 vertices[] = {{0.f, 1.f}, {1.f, 0.f}, {0.f, 2.f}, {-1.f, 0.f}};
             u32 indices[3u * (carray_size(vertices) - 2u)];
-            triangulation_2D(vertices, carray_size(vertices), indices);
+            triangulation_2D(carray_size(vertices), vertices, indices);
 
             u32 indices_expected[] = {0u, 1u, 2u, 3u, 0u, 2u};
             success &= memcmp(indices_expected, indices, 2u * carray_size(vertices) - 2u) == 0u;
@@ -825,7 +825,7 @@ namespace bw::utest{
         {
             vec2 vertices[] = {{-2.5f, 2.f}, {0.f, 0.f}, {2.75f, 2.5f}, {5.5f, 1.5f}, {8.f, 5.f}, {5.5f, 4.5f}, {3.5f, 6.f}, {1.5f, 2.f}, {-1.5f, 2.5f}, {-1.f, 5.f}};
             u32 indices[3u * (carray_size(vertices) - 2u)];
-            triangulation_2D(vertices, carray_size(vertices), indices);
+            triangulation_2D(carray_size(vertices), vertices, indices);
 
             u32 indices_expected_v0[] = {
                 2, 3, 4,
@@ -854,6 +854,69 @@ namespace bw::utest{
             LOG_ERROR("FAILED utest::t_triangulation_2D()");
         }else{
             LOG_INFO("FINISHED utest::t_triangulation_2D()");
+        }
+    }
+
+    void t_hsv(){
+        bool success = true;
+
+        constexpr u32 ntest = 1000u;
+
+        random_seed_with_time();
+        random_seed_type seed_copy = random_seed_copy();
+
+        for(u32 itest = 0u; itest != ntest; ++itest){
+            vec4 rgba = {random_float(), random_float(), random_float(), 0.5f};
+            vec4 hsva = rgba_to_hsva(rgba);
+            vec4 re_rgba = hsva_to_rgba(hsva);
+            success &= equal_tolerance(rgba.r, re_rgba.r) && equal_tolerance(rgba.g, re_rgba.g) && equal_tolerance(rgba.b, re_rgba.b) && (rgba.a == re_rgba.a);
+            assert(success);
+        }
+
+        if(!success){
+            LOG_ERROR("FAILED utest::t_hsv() - seed: %" PRId64 " %" PRId64, seed_copy.s0, seed_copy.s1);
+            LOG_ERROR("FAILED utest::t_hsv()");
+        }else{
+            LOG_INFO("FINISHED utest::t_hsv()");
+        }
+    }
+
+    void t_GJK(){
+        bool success = true;
+
+        cshape::Polygon polyA;
+        polyA.nvertices = 4u;
+        polyA.vertices = (vec2*)malloc(sizeof(vec2) * 4u);
+        DEFER{ ::free(polyA.vertices); };
+        polyA.vertices[0u] = {-1.f, -1.f};
+        polyA.vertices[1u] = { 1.f, -1.f};
+        polyA.vertices[2u] = { 1.f,  1.f};
+        polyA.vertices[3u] = {-1.f,  1.f};
+
+        cshape::Polygon polyB;
+        polyB.nvertices = 4u;
+        polyB.vertices = (vec2*)malloc(sizeof(vec2) * 4u);
+        DEFER{ ::free(polyB.vertices); };
+        polyB.vertices[0u] = { 0.f, -1.f};
+        polyB.vertices[1u] = { 1.f,  0.f};
+        polyB.vertices[2u] = { 0.f,  1.f};
+        polyB.vertices[3u] = {-1.f,  0.f};
+
+        cshape::Polygon polyC;
+        polyC.nvertices = 3u;
+        polyC.vertices = (vec2*)malloc(sizeof(vec2) * 3u);
+        polyC.vertices[0u] = {2.f, -1.f};
+        polyC.vertices[1u] = {2.f, 1.f};
+        polyC.vertices[2u] = {1.5f, 0.f};
+
+
+        success &= GJK(polyA, polyB);
+        success &= !GJK(polyA, polyC);
+
+        if(!success){
+            LOG_ERROR("FAILED utest::t_GJK()");
+        }else{
+            LOG_INFO("FINISHED utest::t_GJK()");
         }
     }
 
@@ -930,13 +993,13 @@ namespace bw::utest{
         u64 timer_v0 = timer_ticks();
 
         for(u32 irun = 0u; irun != nrun; ++irun){
-            triangulation_2D_v0(vertices, carray_size(vertices), indices);
+            triangulation_2D_v0(carray_size(vertices), vertices, indices);
         }
 
         u64 timer_v1 = timer_ticks();
 
         for(u32 irun = 0u; irun != nrun; ++irun){
-            triangulation_2D_v1(vertices, carray_size(vertices), indices);
+            triangulation_2D_v1(carray_size(vertices), vertices, indices);
         }
 
         u64 timer_end = timer_ticks();
@@ -972,6 +1035,10 @@ int main(int argc, char* argv[]){
 
     //bw::utest::t_coord_conversion();
     //bw::utest::t_triangulation_2D();
+
+    //bw::utest::t_hsv();
+
+    bw::utest::t_GJK();
 
     // ---- benchmark
 

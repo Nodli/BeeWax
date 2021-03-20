@@ -52,19 +52,19 @@ struct Integration_Scene{
         {
             g_engine.renderer.checkout(buffer);
             vertex_xyzrgba* vert = (vertex_xyzrgba*)buffer.ptr;
-            vert[0u] = {{-0.5f, -0.5f, 0.1f}, {1.f, 1.f, 0.f, 1.f}};
-            vert[1u] = {{ 0.5f, -0.5f, 0.1f}, {1.f, 0.f, 1.f, 1.f}};
-            vert[2u] = {{ 0.0f, +0.5f, 0.1f}, {0.f, 1.f, 1.f, 1.f}};
+            vert[0u] = {{-0.5f, -0.5f}, 1u, rgba32({1.f, 1.f, 0.f, 1.f})};
+            vert[1u] = {{ 0.5f, -0.5f}, 1u, rgba32({1.f, 0.f, 1.f, 1.f})};
+            vert[2u] = {{ 0.0f, +0.5f}, 1u, rgba32({0.f, 1.f, 1.f, 1.f})};
             g_engine.renderer.commit(buffer);
         }
 
         {
             g_engine.renderer.checkout(indexed_buffer);
             vertex_xyzrgba* vert = (vertex_xyzrgba*)indexed_buffer.vptr;
-            vert[0u] = {{-1.f, -0.5f, 0.1f}, {1.f, 1.f, 0.f, 1.f}};
-            vert[1u] = {{-0.5f, -0.5f, 0.1f}, {1.f, 0.f, 1.f, 1.f}};
-            vert[2u] = {{-0.5f, +0.5f, 0.1f}, {0.f, 1.f, 1.f, 1.f}};
-            vert[3u] = {{-1.f, +0.5f, 0.1f}, {1.f, 1.f, 1.f, 1.f}};
+            vert[0u] = {{-1.f, -0.5f}, 2u, rgba32({1.f, 1.f, 0.f, 1.f})};
+            vert[1u] = {{-0.5f, -0.5f}, 2u, rgba32({1.f, 0.f, 1.f, 1.f})};
+            vert[2u] = {{-0.5f, +0.5f}, 2u, rgba32({0.f, 1.f, 1.f, 1.f})};
+            vert[3u] = {{-1.f, +0.5f}, 2u, rgba32({1.f, 1.f, 1.f, 1.f})};
             u16* idx = (u16*)indexed_buffer.iptr;
             idx[0u] = 0u;
             idx[1u] = 1u;
@@ -77,9 +77,9 @@ struct Integration_Scene{
 
         {
             float dpix = (float)camera.height / (float)g_engine.offscreen_target.height;
-            vg_renderer.rect({0.75f - rect_w * 0.5f, 0.75f - rect_h * 0.5f}, {0.75f + rect_w * 0.5f, 0.75f + rect_h * 0.5f}, 0.001f, {1.f, 0.f, 0.f, 1.f}, dpix, false);
-            vg_renderer.disc({0.25f, 0.25f}, disc_radius, 0.0001f, {1.f, 1.f, 0.f, 1.f}, dpix, false);
-            vg_renderer.segment({0.90f, 0.1f}, {1.f, 0.8f}, segment_w, 0.01f, {1.f, 0.f, 1.f, 1.f}, dpix, false);
+            //vg_renderer.rect({0.75f - rect_w * 0.5f, 0.75f - rect_h * 0.5f}, {0.75f + rect_w * 0.5f, 0.75f + rect_h * 0.5f}, 0.001f, {1.f, 0.f, 0.f, 1.f}, dpix, false);
+            //vg_renderer.disc({0.25f, 0.25f}, disc_radius, 0.0001f, {1.f, 1.f, 0.f, 1.f}, dpix, false);
+            //vg_renderer.segment({0.90f, 0.1f}, {1.f, 0.8f}, segment_w, 0.01f, {1.f, 0.f, 1.f, 1.f}, dpix, false);
         }
 
         g_engine.renderer.use_shader(polygon_2D);
@@ -248,8 +248,6 @@ void easy_config(){
     g_config::window_name = "integration_easy_setup";
     g_config::window_width = 1280;
     g_config::window_height = 720;
-    g_config::render_width = 256;
-    g_config::render_height = 144;
     g_config::asset_catalog_path = "./data/asset_catalog.json";
 }
 void* easy_setup(){
