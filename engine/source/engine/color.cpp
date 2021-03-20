@@ -1,13 +1,16 @@
 // ---- format conversion
 
-u32 rgba32(const float r, const float g, const float b, const float a){
-    assert(r >= 0. && g >= 0. && b >= 0. && a >= 0. && r <= 1. && g <= 1. && b <= 1. && a <= 1.);
+u32 rgba32(float r, float g, float b, float a){
+    r = min_max(r, 0.f, 1.f);
+    g = min_max(g, 0.f, 1.f);
+    b = min_max(b, 0.f, 1.f);
+    a = min_max(a, 0.f, 1.f);
 
     u32 out = 0;
-    out |= ((u32)(r * 255.f + 0.5f) & 0xFF) << 24u;
-    out |= ((u32)(g * 255.f + 0.5f) & 0xFF) << 16u;
-    out |= ((u32)(b * 255.f + 0.5f) & 0xFF) << 8u;
-    out |= ((u32)(a * 255.f + 0.5f) & 0xFF);
+    out |= ((u32)(a * 255.f + 0.5f) & 0xFF) << 24u;
+    out |= ((u32)(b * 255.f + 0.5f) & 0xFF) << 16u;
+    out |= ((u32)(g * 255.f + 0.5f) & 0xFF) << 8u;
+    out |= ((u32)(r * 255.f + 0.5f) & 0xFF);
 
     return out;
 }
@@ -16,37 +19,63 @@ u32 rgba32(const vec4& rgba){
     return rgba32(rgba.r, rgba.g, rgba.b, rgba.a);
 }
 
+vec4 rgbaf(u32 rgba){
+    vec4 out;
+    out.r = (float)(rgba & 0xFF) * 255.f;
+    out.g = (float)((rgba & 0xFF) >> 8u) * 255.f;
+    out.b = (float)((rgba & 0xFF) >> 16u) * 255.f;
+    out.a = (float)((rgba & 0xFF) >> 24u) * 255.f;
+    return out;
+}
+
+u32 rgba32_r(u32 rgba, float r){
+    r = min_max(r, 0.f, 1.f);
+    return (rgba & 0xFFFFFF00) | ((u32)(r * 255.f + 0.5f) & 0xFF);
+}
+u32 rgba32_g(u32 rgba, float g){
+    g = min_max(g, 0.f, 1.f);
+    return (rgba & 0xFFFF00FF) | (((u32)(g * 255.f + 0.5f) & 0xFF) << 8u);
+}
+u32 rgba32_b(u32 rgba, float b){
+    b = min_max(b, 0.f, 1.f);
+    return (rgba & 0xFF00FFFF) | (((u32)(b * 255.f + 0.5f) & 0xFF) << 16u);
+}
+u32 rgba32_a(u32 rgba, float a){
+    a = min_max(a, 0.f, 1.f);
+    return (rgba & 0x00FFFFFF) | (((u32)(a * 255.f + 0.5f) & 0xFF) << 24u);
+}
+
 // ---- color space conversion
 
-float srgb_to_rgb(const float c){
+float schan_to_chan(const float c){
     if(c < 0.04045f) return c / 12.92f;
     else return pow((c + 0.055f) * (1.f / 1.055f), 2.4f);
 }
 
-float rgb_to_srgb(const float c){
+float chan_to_schan(const float c){
     if(c < 0.0031308f) return c * 12.92f;
     else return 1.055f * pow(c, 1.f / 2.4f) - 0.055f;
 }
 
-vec4 srgb_to_rgb(const vec4& c){
+vec4 srgba_to_rgba(const vec4& c){
     return {
-        srgb_to_rgb(c.r),
-        srgb_to_rgb(c.g),
-        srgb_to_rgb(c.b),
+        schan_to_chan(c.r),
+        schan_to_chan(c.g),
+        schan_to_chan(c.b),
         c.a
     };
 }
 
-vec4 rgb_to_srgb(const vec4& c){
+vec4 rgba_to_srgba(const vec4& c){
     return {
-        rgb_to_srgb(c.r),
-        rgb_to_srgb(c.g),
-        rgb_to_srgb(c.b),
+        chan_to_schan(c.r),
+        chan_to_schan(c.g),
+        chan_to_schan(c.b),
         c.a
     };
 }
 
-vec4 rgb_to_hsv(const vec4& c_in){
+vec4 rgba_to_hsva(const vec4& c_in){
     float r = c_in.r;
     float g = c_in.g;
     float b = c_in.b;
@@ -66,18 +95,67 @@ vec4 rgb_to_hsv(const vec4& c_in){
     float s = chroma / (r + 1e-20f);
     float v = r;
 
-    return {h, s, v, c_in.a};
+    return {min_max(h, 0.f, 1.f), min_max(s, 0.f, 1.f), min_max(v, 0.f, 1.f), c_in.a};
 }
+
+vec4 hsva_to_rgba(const vec4& c_in){
+    float chroma = c_in.v * c_in.s;
+    float cmin = c_in.v - chroma;
+
+    float fract = c_in.h * 3.f;
+    u32 index = min((u32)fract, 2u);
+    fract = 2.f * (fract - (float)index);
+
+    float V1 = chroma * min(2.f - fract, 1.f);
+    float V2 = chroma * min(fract, 1.f);
+
+    vec4 out;
+    out.data[index] = V1 + cmin;
+    out.data[(index + 1u) % 3u] = V2 + cmin;
+    out.data[(index + 2u) % 3u] = cmin;
+    out.a = c_in.a;
+
+    return out;
+}
+
+// ---- operation
 
 vec4 mix(const vec4& cA, const vec4& cB, const float t){
     float opp_t = 1.f - t;
     return cA * opp_t + cB * t;
 }
 
+vec4 inverted(vec4 rgbaf){
+    rgbaf.r = 1.f - rgbaf.r;
+    rgbaf.g = 1.f - rgbaf.g;
+    rgbaf.b = 1.f - rgbaf.b;
+    return rgbaf;
+}
+
+u32 inverted(u32 rgba){
+    u32 out = rgba & 0xFF000000;
+    out |= (0xFF - rgba & 0xFF) & 0xFF;
+    out |= ((0xFF - (rgba >>  8u) & 0xFF) & 0xFF) <<  8u;
+    out |= ((0xFF - (rgba >> 16u) & 0xFF) & 0xFF) << 16u;
+    return out;
+}
+
+vec4 complementary_hue(vec4 hsva){
+    float chue = hsva.h + 0.5f;
+    if(chue > 1.f) chue = chue - 1.f;
+    return {chue, hsva.s, hsva.v, hsva.a};
+}
+
+vec4 fibonacci_hue(vec4 hsva){
+    float fhue = hsva.h + GOLDEN_RATIO_FRACT;
+    if(fhue > 1.f) fhue = fhue - 1.f;
+    return {fhue, hsva.s, hsva.v, hsva.a};
+}
+
 // ---- colormaps
 
-void viridis(const float value, float& r, float& g, float& b){
-    assert(value >= 0.f && value <= 1.f);
+void viridis(float value, float& r, float& g, float& b){
+    value = min_max(value, 0.f, 1.f);
 
     constexpr float c0[3] = {0.2777273272234177, 0.005407344544966578, 0.3340998053353061};
     constexpr float c1[3] = {0.1050930431085774, 1.404613529898575, 1.384590162594685};
@@ -92,8 +170,8 @@ void viridis(const float value, float& r, float& g, float& b){
     b = c0[2] + value * (c1[2] + value * ( c2[2] + value * ( c3[2] + value * ( c4[2] + value * (c5[2] + value * c6[2])))));
 }
 
-void plasma(const float value, float& r, float& g, float& b){
-    assert(value >= 0.f && value <= 1.f);
+void plasma(float value, float& r, float& g, float& b){
+    value = min_max(value, 0.f, 1.f);
 
     constexpr float c0[3] = {0.05873234392399702, 0.02333670892565664, 0.5433401826748754};
     constexpr float c1[3] = {2.176514634195958, 0.2383834171260182, 0.7539604599784036};
@@ -108,8 +186,8 @@ void plasma(const float value, float& r, float& g, float& b){
     b = c0[2] + value * (c1[2] + value * ( c2[2] + value * ( c3[2] + value * ( c4[2] + value * (c5[2] + value * c6[2])))));
 }
 
-void magma(const float value, float& r, float& g, float& b){
-    assert(value >= 0.f && value <= 1.f);
+void magma(float value, float& r, float& g, float& b){
+    value = min_max(value, 0.f, 1.f);
 
     constexpr float c0[3] = {-0.002136485053939582, -0.000749655052795221, -0.005386127855323933};
     constexpr float c1[3] = {0.2516605407371642, 0.6775232436837668, 2.494026599312351};
@@ -124,8 +202,8 @@ void magma(const float value, float& r, float& g, float& b){
     b = c0[2] + value * (c1[2] + value * ( c2[2] + value * ( c3[2] + value * ( c4[2] + value * (c5[2] + value * c6[2])))));
 }
 
-void inferno(const float value, float& r, float& g, float& b){
-    assert(value >= 0.f && value <= 1.f);
+void inferno(float value, float& r, float& g, float& b){
+    value = min_max(value, 0.f, 1.f);
 
     constexpr float c0[3] = {0.0002189403691192265, 0.001651004631001012, -0.01948089843709184};
     constexpr float c1[3] = {0.1065134194856116, 0.5639564367884091, 3.932712388889277};

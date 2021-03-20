@@ -17,30 +17,43 @@
 
 // ---- format conversion
 
-u32 rgba32(const float r, const float g, const float b, const float a);
+u32 rgba32(float r, float g, float b, float a);
 u32 rgba32(const vec4& rgba);
+
+vec4 rgbaf(u32 rgba);
+
+u32 rgba32_getr(float r);
+u32 rgba32_getg(float g);
+u32 rgba32_getb(float b);
+u32 rgba32_geta(float a);
 
 // ---- color space conversion
 
-float srgb_to_rgb(const float c);
-float rgb_to_srgb(const float c);
-vec4 srgb_to_rgb(const vec4& c);
-vec4 rgb_to_srgb(const vec4& c);
+float schan_to_chan(const float c);
+float chan_to_schan(const float c);
+vec4 srgba_to_rgba(const vec4& c);
+vec4 rgba_to_srgba(const vec4& c);
 
-vec4 rgb_to_hsv(const vec4& c);
-vec4 hsv_to_rgb(const vec4& c);
+vec4 rgba_to_hsva(const vec4& c);
+vec4 hsva_to_rgba(const vec4& c);
 
-// ---- mixing
+// ---- operation
 
 vec4 mix(const vec4& cA, const vec4& cB, const float t);
+
+vec4 inverted(vec4 rgbaf);
+u32 inverted(u32 rgba);
+
+vec4 complementary_hue(vec4 hsva);
+vec4 fibonacci_hue(vec4 hsva);
 
 // ---- colormaps
 
 // NOTE(hugo): Polynomials fitted to matplotlib colormaps with value in [0, 1]
 // https://www.shadertoy.com/view/WlfXRN
-void viridis(const float value, float& r, float& g, float& b);
-void plasma(const float value, float& r, float& g, float& b);
-void magma(const float value, float& r, float& g, float& b);
-void inferno(const float value, float& r, float& g, float& b);
+void viridis(float value, float& r, float& g, float& b);
+void plasma(float value, float& r, float& g, float& b);
+void magma(float value, float& r, float& g, float& b);
+void inferno(float value, float& r, float& g, float& b);
 
 #endif
