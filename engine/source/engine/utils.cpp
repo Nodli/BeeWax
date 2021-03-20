@@ -70,8 +70,18 @@ float floor(const float x){
     return floorf(x);
 }
 
+s32 floor_s32(const float x){
+    s32 xi = (s32)x;
+    return (x < 0.f) ? (xi - 1) : xi;
+}
+
 float ceil(const float x){
     return ceilf(x);
+}
+
+s32 ceil_s32(const float x){
+    s32 xi = (s32)x;
+    return (x > 0.f) ? (xi + 1) : xi;
 }
 
 float pow(const float x, const float pow){

@@ -25,8 +25,9 @@ constexpr T min_max(const T x, const T min_value, const T max_value);
 
 // ---- constexpr constants
 
-const float PI = 3.14159265358979323846L;
-const float GOLDEN_RATIO = 1.6180339887498948482045L;
+constexpr float PI = 3.14159265358979323846L;
+constexpr float GOLDEN_RATIO = 1.6180339887498948482045L;
+constexpr float GOLDEN_RATIO_FRACT = 0.6180339887498948482045L;
 
 // ---- constexpr template type indexing
 
@@ -87,6 +88,8 @@ bool is_aligned(void* ptr, size_t align);
 
 float floor(const float x);
 float ceil(const float x);
+s32 floor_s32(const float x);
+s32 ceil_s32(const float x);
 float pow(const float x, const float pow);
 
 float mix(const float min, const float max, const float t);
