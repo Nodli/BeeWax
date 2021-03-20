@@ -67,6 +67,14 @@ void Component_Storage<T>::remove_by_storage_index(u32 storage_index){
 }
 
 template<typename T>
+Component_Reference Component_Storage<T>::reference_from_storage_index(u32 storage_index){
+    assert(storage_index < storage.size);
+
+    u32 indexing_index = storage[storage_index].indexing_index;
+    return {indexing_index, indexing[indexing_index].generation};
+}
+
+template<typename T>
 bool Component_Storage<T>::is_valid(const Component_Reference& ref){
     return (ref.ID < indexing.size) && (ref.generation == indexing[ref.ID].generation);
 }

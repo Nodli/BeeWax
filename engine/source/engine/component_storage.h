@@ -19,6 +19,7 @@ struct Component_Storage{
 
     // NOTE(hugo): use this to remove a component while iterating on storage
     void remove_by_storage_index(u32 storage_index);
+    Component_Reference reference_from_storage_index(u32 storage_index);
 
     // ---- data
 
