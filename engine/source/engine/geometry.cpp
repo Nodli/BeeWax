@@ -125,7 +125,7 @@ vec3 cubemap_to_cartesian(float face_u, float face_v, u32 face_index){
 
 // ---- mesh generation
 
-void Mesh::set_capacity(u32 i_nvertices, u32 i_nindices){
+void Mesh_3D::set_capacity(u32 i_nvertices, u32 i_nindices){
     nvertices = i_nvertices;
     nindices = i_nindices;
 
@@ -137,17 +137,17 @@ void Mesh::set_capacity(u32 i_nvertices, u32 i_nindices){
     indices = (u16*)(normals + nvertices);
 }
 
-void Mesh::free(){
+void Mesh_3D::free(){
     ::free(positions);
-    *this = Mesh();
+    *this = Mesh_3D();
 }
 
-Mesh generate_sphere_uv(vec3 position, float radius, u32 nlong, u32 nlat){
+Mesh_3D generate_sphere_uv(vec3 position, float radius, u32 nlong, u32 nlat){
     assert(nlat > 0u && nlong > 2u);
     u32 nvertices = 2u + nlat * nlong;
     u32 nindices = 3u * (nlong + nlong + (nlat - 1u) * 2u * nlong);
 
-    Mesh mesh;
+    Mesh_3D mesh;
     mesh.set_capacity(nvertices, nindices);
 
     // NOTE(hugo): north & south singularities
@@ -264,15 +264,15 @@ namespace BEEWAX_INTERNAL{
     };
 }
 
-Mesh generate_cube(vec3 position, float size, u32 ntess){
+Mesh_3D generate_cube(vec3 position, float size, u32 ntess){
     return generate_cuboid(position, {size, size, size}, ntess);
 }
 
-Mesh generate_cuboid(vec3 position, vec3 size, u32 ntess){
+Mesh_3D generate_cuboid(vec3 position, vec3 size, u32 ntess){
     u32 nvertices = carray_size(BEEWAX_INTERNAL::cube_vertices_order);
     u32 nindices = carray_size(BEEWAX_INTERNAL::cube_indices);
 
-    Mesh mesh;
+    Mesh_3D mesh;
     mesh.set_capacity(nvertices, nindices);
     for(u32 ivert = 0u; ivert != nvertices; ++ivert){
         const vec3& vert = BEEWAX_INTERNAL::cube_vertices[BEEWAX_INTERNAL::cube_vertices_order[ivert]];
@@ -308,7 +308,7 @@ namespace BEEWAX_INTERNAL{
 // v0: working ; but unoptimized for large, mostly convex polygons
 // v1: non-working ; unoptimized for large, mostly reflex polygons
 
-void triangulation_2D_v0(vec2* vertices, u32 nvertices, u32* nindices){
+void triangulation_2D_v0(u32 nvertices, vec2* vertices, u32* nindices){
     assert(nvertices > 2u);
 
     BEEWAX_INTERNAL::trig_2D_LLE* connectivity_LL = (BEEWAX_INTERNAL::trig_2D_LLE*)malloc(nvertices * sizeof(BEEWAX_INTERNAL::trig_2D_LLE));
@@ -377,7 +377,7 @@ void triangulation_2D_v0(vec2* vertices, u32 nvertices, u32* nindices){
 
 }
 
-void triangulation_2D_v1(vec2* vertices, u32 nvertices, u32* nindices){
+void triangulation_2D_v1(u32 nvertices, vec2* vertices, u32* nindices){
     assert(nvertices > 2u);
 
     constexpr u32 not_reflex = UINT32_MAX;
@@ -500,10 +500,10 @@ void triangulation_2D_v1(vec2* vertices, u32 nvertices, u32* nindices){
     }
 }
 
-void triangulation_2D(vec2* vertices, u32 nvertices, u32* nindices){
+void triangulation_2D(u32 nvertices, vec2* vertices, u32* nindices){
     // NOTE(hugo): cf. benchmark ; bw::utest::t_compare_triangulation_2D()
-    //triangulation_2D_v0(vertices, nvertices, nindices);
-    triangulation_2D_v1(vertices, nvertices, nindices);
+    //triangulation_2D_v0(nvertices, vertices, nindices);
+    triangulation_2D_v1(nvertices, vertices, nindices);
 
     // TODO(hugo): make something to avoid testing non reflex vertices when testing previous vertices in is_empty_reflex ;
     // it would most likely require a double LL before it would require removal (forward iteration from base_reflex should be fine)

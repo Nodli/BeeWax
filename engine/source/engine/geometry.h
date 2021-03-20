@@ -58,7 +58,7 @@ vec3 cubemap_to_cartesian(float face_u, float face_v, u32 face_index);
 
 // ---- mesh generation
 
-struct Mesh{
+struct Mesh_3D{
     void set_capacity(u32 nvertices, u32 nindices);
     void free();
 
@@ -71,9 +71,9 @@ struct Mesh{
 };
 
 // NOTE(hugo): explicit free required
-Mesh generate_sphere_uv(vec3 position, float radius, u32 nlon, u32 nlat);
-Mesh generate_cube(vec3 position, float size, u32 ntess = 0u);
-Mesh generate_cuboid(vec3 position, vec3 size, u32 ntess = 0u);
+Mesh_3D generate_sphere_uv(vec3 position, float radius, u32 nlon, u32 nlat);
+Mesh_3D generate_cube(vec3 position, float size, u32 ntess = 0u);
+Mesh_3D generate_cuboid(vec3 position, vec3 size, u32 ntess = 0u);
 
 // ---- geometric predicates
 
@@ -94,7 +94,7 @@ bool point_inside_triangle(const vec2& p, const vec2& tA, const vec2& tB, const 
 // * vertices are ordered in counter-clockwise order
 // * requires a 'simple' polygon ie no overlapping edges (twist / loop) and no hole
 // * out_indices is provided by the user with size 3 * (nvertices - 2u)
-void triangulation_2D(vec2* vertices, u32 nvertices, u32* out_indices);
+void triangulation_2D(u32 nvertices, vec2* vertices, u32* out_indices);
 
 // ---- geometric error
 
