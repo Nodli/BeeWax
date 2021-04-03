@@ -175,7 +175,6 @@ static void renderer_setup_sampler_storage(Renderer_GL3* renderer){
         if constexpr (MAG_FILTER != FILTER_DEFAULT)                                         \
             glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, MAG_FILTER);                \
                                                                                             \
-                                                                                            \
         static_assert(WRAP_S == WRAP_DEFAULT                                                \
                     || WRAP_S == WRAP_CLAMP                                                 \
                     || WRAP_S == WRAP_MIRRORED_REPEAT                                       \
@@ -441,6 +440,28 @@ Render_Target_GL3 Renderer_GL3::get_render_target(u32 width, u32 height){
     glRenderbufferStorage(GL_RENDERBUFFER, GL_SRGB8_ALPHA8, width, height);
     glBindRenderbuffer(GL_RENDERBUFFER, render_target.buffer_depth);
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height);
+    glBindRenderbuffer(GL_RENDERBUFFER, 0u);
+
+    glGenFramebuffers(1u, &render_target.framebuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, render_target.framebuffer);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, render_target.buffer_color);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, render_target.buffer_depth);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0u);
+
+    return render_target;
+}
+
+Render_Target_GL3 Renderer_GL3::get_render_target_multisample(u32 width, u32 height, u32 samples){
+    Render_Target_GL3 render_target;
+
+    render_target.width = width;
+    render_target.height = height;
+
+    glGenRenderbuffers(2u, render_target.buffers);
+    glBindRenderbuffer(GL_RENDERBUFFER, render_target.buffer_color);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_SRGB8_ALPHA8, width, height);
+    glBindRenderbuffer(GL_RENDERBUFFER, render_target.buffer_depth);
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, GL_DEPTH_COMPONENT24, width, height);
     glBindRenderbuffer(GL_RENDERBUFFER, 0u);
 
     glGenFramebuffers(1u, &render_target.framebuffer);

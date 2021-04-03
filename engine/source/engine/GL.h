@@ -78,6 +78,8 @@ namespace GL{
     };
     UBO_Capabilities detect_ubo_capabilities();
 
+    u32 detect_max_samples();
+
     // ---- error detection ---- //
 
     void display_error_translation(const GLenum error_code);

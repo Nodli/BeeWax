@@ -1,16 +1,6 @@
 #ifndef H_RENDERER_GL3
 #define H_RENDERER_GL3
 
-enum Depth_Test_Type{
-    DEPTH_TEST_NONE,
-    DEPTH_TEST_LESS,
-    DEPTH_TEST_LESS_EQUAL,
-    DEPTH_TEST_EQUAL,
-    DEPTH_TEST_NOT_EQUAL,
-    DEPTH_TEST_GREATER_EQUAL,
-    DEPTH_TEST_GREATER,
-};
-
 struct Transient_Buffer_GL3{
     void* ptr = nullptr;
     size_t bytesize = 0u;
@@ -18,6 +8,7 @@ struct Transient_Buffer_GL3{
     GL::Vertex_Array vao = 0u;
     GL::Buffer vbo = 0u;
 };
+
 struct Transient_Buffer_Indexed_GL3{
     void* vptr = nullptr;
     size_t vbytesize = 0u;
@@ -28,6 +19,7 @@ struct Transient_Buffer_Indexed_GL3{
     GL::Buffer vbo = 0u;
     GL::Buffer ibo = 0u;
 };
+
 struct Texture_GL3{
     u32 width = 0u;
     u32 height = 0u;
@@ -35,6 +27,7 @@ struct Texture_GL3{
     Texture_Format format = TEXTURE_FORMAT_NONE;
     GL::Texture texture = 0u;
 };
+
 struct Render_Target_GL3{
     u32 width;
     u32 height;
@@ -72,6 +65,7 @@ struct Renderer_GL3{
     void update_texture(Texture_GL3& texture, u32 ox, u32 oy, u32 width, u32 height, Data_Type data_type, void* data);
 
     Render_Target_GL3 get_render_target(u32 width, u32 height);
+    Render_Target_GL3 get_render_target_multisample(u32 width, u32 height, u32 samples);
     void free_render_target(Render_Target_GL3& render_target);
 
     // -- state

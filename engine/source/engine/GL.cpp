@@ -253,6 +253,12 @@ namespace GL{
     }
 #endif
 
+    u32 detect_max_samples(){
+        s32 out;
+        glGetIntegerv(GL_MAX_SAMPLES, &out);
+        return out;
+    }
+
     void display_error_translation(const GLenum error_code){
         switch(error_code){
             case GL_INVALID_ENUM:
@@ -607,6 +613,8 @@ namespace GL{
             GLsizei length,
             const GLchar* message,
             const void* userParam){
+
+        //DEV_debug_break();
 
         if(false
         || severity == GL_DEBUG_SEVERITY_NOTIFICATION
