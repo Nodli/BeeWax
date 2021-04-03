@@ -87,6 +87,11 @@ bool point_inside_triangle(const vec2& p, const vec2& tA, const vec2& tB, const 
 
 bool line_intersect_line(const vec2& pA, const vec2& dA, const vec2& pB, const vec2& dB, vec2& out);
 
+// NOTE(hugo):
+// * > 0.f means the polygon winding order is CLOCKWISE
+// * < 0.f means the polygon winding order is COUNTER-CLOCKWISE
+float polygon_signed_area(const u32 nvertices, const vec2* vertices);
+
 // ---- triangulation
 
 // REF(hugo):

@@ -305,6 +305,23 @@ bool line_intersect_line(const vec2& pA, const vec2& dA, const vec2& pB, const v
     return true;
 }
 
+float polygon_signed_area(const u32 nvertices, const vec2* vertices){
+    assert(nvertices > 2u);
+
+    float signed_area = 0.f;
+    for(u32 iedge = 0u; iedge != nvertices - 1u; ++iedge){
+        const vec2& vA = vertices[iedge];
+        const vec2& vB = vertices[iedge + 1u];
+        signed_area += (vB.x - vA.x) * (vB.y + vA.y);
+    }
+
+    const vec2& vA = vertices[nvertices - 1u];
+    const vec2& vB = vertices[0u];
+    signed_area += (vB.x - vA.x) * (vB.y + vA.y);
+
+    return signed_area;
+}
+
 // ---- triangulation
 
 namespace BEEWAX_INTERNAL{
