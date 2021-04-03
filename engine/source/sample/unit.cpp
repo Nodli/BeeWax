@@ -33,7 +33,7 @@ namespace bw::utest{
         arena.initialize(GIGABYTES(64u));
 
         {
-            Virtual_Arena_Memory mem = arena.malloc(16u * sizeof(int), alignof(int));
+            Virtual_Arena_Memory mem = arena.allocate(16u * sizeof(int), alignof(int));
 
             success &= mem.ptr && mem.previous_cursor == 0u && arena.commit_page_count == 1u && arena.cursor == 16u * sizeof(int);
             memset(mem.ptr, 0u, 16u * sizeof(int));
@@ -45,10 +45,10 @@ namespace bw::utest{
         success &= arena.commit_page_count == 0u && arena.cursor == 0u;
 
         {
-            Virtual_Arena_Memory memA = arena.malloc(KILOBYTES(7u), alignof(char));
+            Virtual_Arena_Memory memA = arena.allocate(KILOBYTES(7u), alignof(char));
             success &= memA.ptr && arena.commit_page_count == 2u;
 
-            Virtual_Arena_Memory memB = arena.malloc(KILOBYTES(7u), alignof(char));
+            Virtual_Arena_Memory memB = arena.allocate(KILOBYTES(7u), alignof(char));
             success &= memB.ptr && arena.commit_page_count == 4u;
 
             arena.free(memB);
@@ -63,15 +63,15 @@ namespace bw::utest{
         success &= arena.commit_page_count == 0u && arena.cursor == 0u;
 
         {
-            Virtual_Arena_Memory malloc_tracker[128u];
-            malloc_tracker[0u].previous_cursor = 0u;
+            Virtual_Arena_Memory allocation_tracker[128u];
+            allocation_tracker[0u].previous_cursor = 0u;
 
             for(u32 ialloc = 1u; ialloc != 128u; ++ialloc){
                 u32 nbytes = random_u32_range_uniform(KILOBYTES(16u)) * ialloc;
 
                 size_t bytesize = nbytes * sizeof(char);
-                Virtual_Arena_Memory mem = arena.malloc(bytesize, 4u);
-                malloc_tracker[ialloc] = mem;
+                Virtual_Arena_Memory mem = arena.allocate(bytesize, 4u);
+                allocation_tracker[ialloc] = mem;
 
                 uintptr_t arena_bytesize = (uintptr_t)mem.ptr - (uintptr_t)arena.vmemory + bytesize;
                 size_t arena_page_count = arena_bytesize / BEEWAX_INTERNAL::vmemory_pagesize
@@ -83,7 +83,7 @@ namespace bw::utest{
                 memset(mem.ptr, 0u, bytesize);
             }
             for(u32 ialloc = 127u; ialloc != 0u; --ialloc){
-                arena.free(malloc_tracker[ialloc]);
+                arena.free(allocation_tracker[ialloc]);
             }
         }
         arena.reset();
@@ -1018,25 +1018,25 @@ int main(int argc, char* argv[]){
 
     // ---- regression tests
 
-    //bw::utest::t_Virtual_Arena();
+    bw::utest::t_Virtual_Arena();
 
-    //bw::utest::t_array();
-    //bw::utest::t_pool();
-    //bw::utest::t_dhashmap();
-    //bw::utest::t_dhashmap_randomized();
+    bw::utest::t_array();
+    bw::utest::t_pool();
+    bw::utest::t_dhashmap();
+    bw::utest::t_dhashmap_randomized();
 
-    //bw::utest::t_quat_rot();
-    //bw::utest::t_defer();
-    //bw::utest::t_align();
-    //bw::utest::t_isort();
-    //bw::utest::t_binsearch();
-    //bw::utest::t_constexpr_sqrt();
-    //bw::utest::t_Dense_Grid();
+    bw::utest::t_quat_rot();
+    bw::utest::t_defer();
+    bw::utest::t_align();
+    bw::utest::t_isort();
+    bw::utest::t_binsearch();
+    bw::utest::t_constexpr_sqrt();
+    bw::utest::t_Dense_Grid();
 
-    //bw::utest::t_coord_conversion();
-    //bw::utest::t_triangulation_2D();
+    bw::utest::t_coord_conversion();
+    bw::utest::t_triangulation_2D();
 
-    //bw::utest::t_hsv();
+    bw::utest::t_hsv();
 
     bw::utest::t_GJK();
 

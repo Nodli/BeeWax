@@ -36,6 +36,17 @@ u32 get_rightmost_set_bit(u32 number){
     return number & (~number + 1u);
 }
 
+// ---- normalized integer
+
+u32 float_to_unorm32(float f){
+    assert(f >= 0.f && f <= 1.f);
+    return (u32)((double)f * UINT32_MAX);
+}
+
+float unorm32_to_float(u32 u){
+    return (float)((double)u / (double)UINT32_MAX);
+}
+
 // ---- alignment
 
 size_t align_offset_next(uintptr_t uptr, size_t align){

@@ -42,8 +42,8 @@ struct Window_SDL_GL{
 
     // ---- data
 
-    s32 width = -1;
-    s32 height = -1;
+    s32 width = 0;
+    s32 height = 0;
     SDL_Window* handle = nullptr;
     u32 ID = 0u;
 

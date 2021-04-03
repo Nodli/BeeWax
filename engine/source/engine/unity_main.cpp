@@ -319,7 +319,7 @@ namespace bw{
 
 //#include "../application/GL4_3D.cpp"
 
-#include "../application/editor/editor.cpp"
+#include "../application/editor/main.cpp"
 
 //#include "../application/diffusion.cpp"
 //#include "../application/reaction_diffusion.cpp"

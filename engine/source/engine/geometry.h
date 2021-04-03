@@ -85,6 +85,8 @@ float point_side_segment(const vec2& p, const vec2& vA, const vec2& vB);
 
 bool point_inside_triangle(const vec2& p, const vec2& tA, const vec2& tB, const vec2& tC);
 
+bool line_intersect_line(const vec2& pA, const vec2& dA, const vec2& pB, const vec2& dB, vec2& out);
+
 // ---- triangulation
 
 // REF(hugo):

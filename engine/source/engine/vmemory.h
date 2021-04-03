@@ -17,12 +17,12 @@ struct Virtual_Arena{
     void reset();
     void reset_to_cursor();
 
-    Virtual_Arena_Memory malloc(size_t bytesize, size_t alignment);
+    Virtual_Arena_Memory allocate(size_t bytesize, size_t alignment);
     void free(const Virtual_Arena_Memory& memory);
 
     template<typename T>
-    Virtual_Arena_Memory malloc(u32 nT){
-        return malloc(nT * sizeof(T), alignof(T));
+    Virtual_Arena_Memory allocate(u32 nT){
+        return allocate(nT * sizeof(T), alignof(T));
     }
 
     // ---- data

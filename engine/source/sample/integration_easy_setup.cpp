@@ -245,10 +245,10 @@ struct Integration_Scene{
 };
 
 void easy_config(){
-    g_config::window_name = "integration_easy_setup";
-    g_config::window_width = 1280;
-    g_config::window_height = 720;
-    g_config::asset_catalog_path = "./data/asset_catalog.json";
+    g_config.window_name = "integration_easy_setup";
+    g_config.window_width = 1280;
+    g_config.window_height = 720;
+    g_config.asset_catalog_path = "./data/asset_catalog.json";
 }
 void* easy_setup(){
     g_engine.scene.push_scene<Integration_Scene>("Integration_Scene");

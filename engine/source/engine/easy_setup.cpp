@@ -21,9 +21,9 @@ void Engine::setup(){
     // ---- window
 
     Window_Settings window_settings;
-    window_settings.width = g_config::window_width;
-    window_settings.height = g_config::window_height;
-    window_settings.name = g_config::window_name;
+    window_settings.width = g_config.window_width;
+    window_settings.height = g_config.window_height;
+    window_settings.name = g_config.window_name;
     window_settings.mode = Window_Settings::mode_windowed;
     window_settings.synchronization = Window_Settings::synchronize;
     window_settings.OpenGL_major = 3u;
@@ -45,6 +45,8 @@ void Engine::setup(){
 
     glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 
+    glEnable(GL_MULTISAMPLE);
+
     glEnable(GL_FRAMEBUFFER_SRGB);
     glClearColor(0.5f, 0.5f, 0.5f, 1.f);
     glClearDepth(1.f);
@@ -60,7 +62,9 @@ void Engine::setup(){
 
     renderer.setup();
 
-    offscreen_target = renderer.get_render_target(window.width, window.height);
+    u32 target_width = g_config.target_width ? g_config.target_width : window.width;
+    u32 target_height = g_config.target_height ? g_config.target_height : window.height;
+    render_target = renderer.get_render_target_multisample(target_width, target_height, g_config.target_samples);
 
     // ---- imgui
 
@@ -87,7 +91,7 @@ void Engine::setup(){
 
     // ---- asset
 
-    import_asset_catalog_from_json(g_config::asset_catalog_path,
+    import_asset_catalog_from_json(g_config.asset_catalog_path,
         &audio_catalog,
         &texture_catalog,
         &audio,
@@ -126,7 +130,7 @@ void Engine::terminate(){
     ImGui::DestroyContext();
 
     audio.terminate();
-    renderer.free_render_target(offscreen_target);
+    renderer.free_render_target(render_target);
     renderer.terminate();
 
     window.terminate();
@@ -181,22 +185,26 @@ Engine_Code Engine::render_start(){
     ImGui::NewFrame();
 
     // NOTE(hugo): window resizing
-    if(offscreen_target.height != window.height || offscreen_target.width != window.width){
-        renderer.free_render_target(offscreen_target);
-        offscreen_target = renderer.get_render_target(window.width, window.height);
+    u32 target_width = g_config.target_width ? g_config.target_width : window.width;
+    u32 target_height = g_config.target_height ? g_config.target_height : window.height;
+    if(render_target.width != target_width || render_target.height != target_height){
+        renderer.free_render_target(render_target);
+        render_target = renderer.get_render_target_multisample(target_width, target_height, g_config.target_samples);
     }
 
-    renderer.use_render_target(offscreen_target);
-    renderer.clear_render_target(offscreen_target);
+    renderer.use_render_target(render_target);
+    renderer.clear_render_target(render_target);
 
     return Engine_Code::Nothing;
 }
 
 void Engine::render_end(){
+    renderer.copy_render_target(render_target, window.render_target());
+
+    renderer.use_render_target(window.render_target());
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    renderer.copy_render_target(offscreen_target, window.render_target());
     window.swap_buffers();
 
     DEV_next_frame();

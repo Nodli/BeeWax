@@ -77,7 +77,7 @@ void Virtual_Arena::reset_to_cursor(){
     }
 }
 
-Virtual_Arena_Memory Virtual_Arena::malloc(size_t bytesize, size_t alignment){
+Virtual_Arena_Memory Virtual_Arena::allocate(size_t bytesize, size_t alignment){
     size_t commit_bytesize = commit_page_count * BEEWAX_INTERNAL::vmemory_pagesize;
 
     size_t padding = align_offset_next((uintptr_t)vmemory + cursor, alignment);
@@ -93,7 +93,7 @@ Virtual_Arena_Memory Virtual_Arena::malloc(size_t bytesize, size_t alignment){
 #elif defined(PLATFORM_WINDOWS)
         ENGINE_CHECK(VirtualAlloc(base_vmemory, to_commit, MEM_COMMIT, PAGE_READWRITE), "FAILED VirtualAlloc");
 #else
-        static_assert(false, "Virtual_Arena::malloc() not implemented for this platform");
+        static_assert(false, "Virtual_Arena::allocate() not implemented for this platform");
 #endif
 
         commit_page_count += to_commit / BEEWAX_INTERNAL::vmemory_pagesize;

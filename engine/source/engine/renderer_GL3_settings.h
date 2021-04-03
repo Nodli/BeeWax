@@ -56,6 +56,16 @@ enum Primitive_Type{
     PRIMITIVE_NONE
 };
 
+enum Depth_Test_Type{
+    DEPTH_TEST_NONE,
+    DEPTH_TEST_LESS,
+    DEPTH_TEST_LESS_EQUAL,
+    DEPTH_TEST_EQUAL,
+    DEPTH_TEST_NOT_EQUAL,
+    DEPTH_TEST_GREATER_EQUAL,
+    DEPTH_TEST_GREATER,
+};
+
 struct Vertex_Format_Attribute{
     Data_Type type = TYPE_NONE;
     Data_Normalization norm = NORMALIZE_NO;
@@ -97,43 +107,26 @@ struct uniform_pattern_info{
     float pattern_size;
 };
 
-struct uniform_pixel_info{
-    float worldspace_size;
-};
-
-struct vertex_xyzrgba{
+struct vertex_xydrgba{
     vec2 vposition;
     u32 vdepth;
     u32 vcolor;
 };
-static Vertex_Format_Attribute vertex_format_attributes_xyzrgba[3] = {
-    {TYPE_FLOAT, NORMALIZE_NO,  2u, offsetof(vertex_xyzrgba, vposition)},
-    {TYPE_UINT, NORMALIZE_YES,  1u, offsetof(vertex_xyzrgba, vdepth)},
-    {TYPE_UBYTE, NORMALIZE_YES, 4u, offsetof(vertex_xyzrgba, vcolor)}
+static Vertex_Format_Attribute vertex_format_attributes_xydrgba[3] = {
+    {TYPE_FLOAT, NORMALIZE_NO,  2u, offsetof(vertex_xydrgba, vposition)},
+    {TYPE_UINT, NORMALIZE_YES,  1u, offsetof(vertex_xydrgba, vdepth)},
+    {TYPE_UBYTE, NORMALIZE_YES, 4u, offsetof(vertex_xydrgba, vcolor)}
 };
 
-struct vertex_xyzrgba_norm{
+struct vertex_xyduv{
     vec2 vposition;
     u32 vdepth;
-    u32 vcolor;
-    vec2 vnorm;
-};
-static Vertex_Format_Attribute vertex_format_attributes_xyzrgba_norm[4] = {
-    {TYPE_FLOAT, NORMALIZE_NO,  2u, offsetof(vertex_xyzrgba_norm, vposition)},
-    {TYPE_UINT, NORMALIZE_YES, 1u, offsetof(vertex_xyzrgba_norm, vdepth)},
-    {TYPE_UBYTE, NORMALIZE_YES, 4u, offsetof(vertex_xyzrgba_norm, vcolor)},
-    {TYPE_FLOAT, NORMALIZE_NO,  2u, offsetof(vertex_xyzrgba_norm, vnorm)}
-};
-
-struct vertex_xyzuv{
-    vec2 vposition;
-    float vdepth;
     u32 vtexcoord;
 };
-static Vertex_Format_Attribute vertex_format_attributes_xyzuv[3] = {
-    {TYPE_FLOAT,  NORMALIZE_NO,  2u, offsetof(vertex_xyzuv, vposition)},
-    {TYPE_UINT,  NORMALIZE_YES,  1u, offsetof(vertex_xyzuv, vdepth)},
-    {TYPE_USHORT, NORMALIZE_YES, 2u, offsetof(vertex_xyzuv, vtexcoord)}
+static Vertex_Format_Attribute vertex_format_attributes_xyduv[3] = {
+    {TYPE_FLOAT,  NORMALIZE_NO,  2u, offsetof(vertex_xyduv, vposition)},
+    {TYPE_UINT,  NORMALIZE_YES,  1u, offsetof(vertex_xyduv, vdepth)},
+    {TYPE_USHORT, NORMALIZE_YES, 2u, offsetof(vertex_xyduv, vtexcoord)}
 };
 
 #if defined(OPENGL_DESKTOP)
@@ -281,62 +274,22 @@ static const char* fragment_shader_polygon_2D_tex = R"(
     }
 )";
 
-// NOTE(hugo): polygon_2D_norm
-// /vcolor/ is expected in linear space
-static const char* shader_header_polygon_2D_norm = GLSL_version;
-static const char* vertex_shader_polygon_2D_norm = R"(
-    layout (std140) uniform u_camera_2D{
-        mat3 camera_matrix;
-    } camera_2D;
-
-    layout(std140) uniform u_pixel_info{
-        float worldspace_size;
-    } pixel_info;
-
-    layout(location = 0) in vec2 vposition;
-    layout(location = 1) in float vdepth;
-    layout(location = 2) in vec4 vcolor;
-    layout(location = 3) in vec2 vnorm;
-
-    out vec4 fragment_color;
-
-    void main(){
-        gl_Position = vec4(camera_2D.camera_matrix * vec3(vposition + 0.9 * pixel_info.worldspace_size * vnorm, 1.), 1.);
-        gl_Position.z = vdepth;
-        fragment_color = vcolor;
-    }
-)";
-static const char* fragment_shader_polygon_2D_norm = R"(
-    in vec4 fragment_color;
-
-    out vec4 output_color;
-
-    void main(){
-        output_color = fragment_color;
-    }
-)";
-
 #define FOR_EACH_UNIFORM_NAME_ENGINE(FUNCTION)          \
 FUNCTION(camera_2D)                                     \
 FUNCTION(pattern_info)                                  \
-FUNCTION(pixel_info)                                    \
 
 #define FOR_EACH_VERTEX_FORMAT_NAME_ENGINE(FUNCTION)    \
-FUNCTION(xyzrgba)                                       \
-FUNCTION(xyzrgba_norm)                                  \
-FUNCTION(xyzuv)                                         \
+FUNCTION(xydrgba)                                       \
+FUNCTION(xyduv)                                         \
 
 #define FOR_EACH_SHADER_NAME_ENGINE(FUNCTION)           \
 FUNCTION(editor_pattern)                                \
 FUNCTION(polygon_2D)                                    \
 FUNCTION(polygon_2D_tex)                                \
-FUNCTION(polygon_2D_norm)                               \
 
 #define FOR_EACH_UNIFORM_SHADER_PAIR_ENGINE(FUNCTION)   \
 FUNCTION(camera_2D, polygon_2D)                         \
 FUNCTION(camera_2D, polygon_2D_tex)                     \
-FUNCTION(camera_2D, polygon_2D_norm)                    \
-FUNCTION(pixel_info, polygon_2D_norm)                   \
 FUNCTION(pattern_info, editor_pattern)                  \
 
 #define FOR_EACH_TEXTURE_SHADER_PAIR_ENGINE(FUNCTION)   \

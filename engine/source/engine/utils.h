@@ -70,6 +70,11 @@ size_t round_up_multiple(size_t number, size_t multiple);
 
 u32 get_rightmost_set_bit(u32 number);
 
+// ---- normalized integer
+
+u32 float_to_unorm32(float f);
+float unorm32_to_float(u32 u);
+
 // ---- alignment
 // NOTE(hugo): align must be a power of two in [1, 64]
 // REF(hugo):

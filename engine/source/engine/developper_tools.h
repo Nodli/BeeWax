@@ -67,6 +67,8 @@ BEEWAX_INTERNAL::DEV_Timing_Container CONCATENATE(DEV_timing_container_at_, __LI
 
 namespace BEEWAX_INTERNAL{
     void DEV_timing_ImGui(){
+        if(DEV_timing_entries.size == 0u) return;
+
         for(u32 ientry = 0u; ientry != DEV_timing_entries.size; ++ientry){
             DEV_Timing_Entry& entry = DEV_timing_entries[ientry];
             LOG_RAW("DEV_Timing_Entry [%d]: %s HITS(%d) CYCLES(%d) AVG(%d)",
@@ -277,10 +279,9 @@ namespace BEEWAX_INTERNAL{
     // NOTE(hugo):
     // WARNING: values are not written to the source file when changed in the ImGui
     static void DEV_tweakable_ImGui(u32 window_width, u32 window_height){
-        ImGui::SetNextWindowCollapsed(false, ImGuiCond_Appearing);
-        ImGui::SetNextWindowPos({(float)window_width - 200.f, 0.f}, ImGuiCond_Appearing);
-        ImGui::SetNextWindowSize({200.f, (float)window_height}, ImGuiCond_Appearing);
-        if(ImGui::Begin("DEV_Tweak")){
+        ImGui::SetNextWindowPos({(float)window_width * 0.5f, (float)window_height * 0.5f}, ImGuiCond_Appearing, {0.5f, 0.5f});
+        if(ImGui::Begin("DEV_Tweak", nullptr, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize)){
+
             ImGui::PushItemWidth(-1);
 
             for(u32 ientry = 0u; ientry != DEV_tweakable_entries.size; ++ientry){

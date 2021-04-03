@@ -295,6 +295,16 @@ bool point_inside_triangle(const vec2& p, const vec2& tA, const vec2& tB, const 
     return sideAB == sign(point_side_segment(p, tB, tC)) && sideAB == sign(point_side_segment(p, tC, tA));
 }
 
+bool line_intersect_line(const vec2& pA, const vec2& dA, const vec2& pB, const vec2& dB, vec2& out){
+    float denom = dB.x * dA.y - dB.y * dA.x;
+    if(denom == 0.f) return false;
+
+    float t = (dA.x * (pB.y - pA.y) + dA.y * (pB.x - pA.x)) / denom;
+    out = pB + dB * t;
+
+    return true;
+}
+
 // ---- triangulation
 
 namespace BEEWAX_INTERNAL{

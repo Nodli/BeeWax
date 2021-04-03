@@ -31,7 +31,7 @@ struct Engine{
     Renderer renderer;
     Audio_Player audio;
 
-    Render_Target offscreen_target;
+    Render_Target render_target;
 
     Asset_Catalog<Audio_Asset> audio_catalog;
     Asset_Catalog<Texture_Asset> texture_catalog;
@@ -39,12 +39,17 @@ struct Engine{
     Scene_Manager scene;
 };
 
-namespace g_config {
-    static const char* window_name;
-    static s32 window_width;
-    static s32 window_height;
-    static File_Path asset_catalog_path;
-};
+static struct {
+    const char* window_name = "";
+    s32 window_width = 800;
+    s32 window_height = 600;
+
+    s32 target_width = 0;
+    s32 target_height = 0;
+    u32 target_samples = 8u;
+
+    File_Path asset_catalog_path = "./data/asset_catalog.json";
+} g_config;
 
 static Engine g_engine;
 
