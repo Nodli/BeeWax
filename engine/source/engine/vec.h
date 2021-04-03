@@ -251,12 +251,6 @@ struct vec::vec4{
             T s;
             T v;
         };
-        struct{
-            T s;
-            T t;
-            T p;
-            T q;
-        };
     };
 };
 

@@ -220,11 +220,11 @@ namespace bw{
 
     #include "dense_grid.h"
 
-    #include "collision.h"
-    #include "collision.cpp"
-
     #include "geometry.h"
     #include "geometry.cpp"
+
+    #include "collision.h"
+    #include "collision.cpp"
 
     #include "camera_math.h"
     #include "camera_math.cpp"

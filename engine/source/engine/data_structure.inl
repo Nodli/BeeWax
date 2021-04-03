@@ -269,7 +269,7 @@ const T& static_storage<T, static_capacity>::operator[](u32 index) const{
 
 template<typename T, u32 static_capacity>
 T& static_storage<T, static_capacity>::operator[](u32 index){
-    return const_cast<T&>(static_cast<const static_storage<T>&>(*this)[index]);
+    return const_cast<T&>(static_cast<const static_storage<T, static_capacity>&>(*this)[index]);
 }
 
 template<typename T, u32 static_capacity>
@@ -284,7 +284,7 @@ void static_storage<T, static_capacity>::increase_capacity_min(u32 min_capacity)
 
 template<typename T, u32 static_capacity>
 void static_storage<T, static_capacity>::free(){
-    *this = static_storage<T>();
+    *this = static_storage<T, static_capacity>();
 }
 
 template<typename T, u32 static_capacity>
