@@ -63,7 +63,9 @@ bool is_pow2(size_t number);
 
 // NOTE(hugo):
 // round_up_pow2(0u) = 0u
+// round_up_pow2(/already_power_of_two/) = /already_power_of_two/
 // round_up_multiple(0u, /multiple/) = 0u;
+// round_up_multiple(/already_multiple_of_m/, /m/) = /already_multiple_of_m/;
 u32 round_up_pow2(u32 number);
 u32 round_up_multiple(u32 number, u32 multiple);
 size_t round_up_multiple(size_t number, size_t multiple);
