@@ -267,7 +267,9 @@ namespace bw{
             #include "renderer_GL3.cpp"
             typedef Renderer_GL3 Renderer;
             typedef Transient_Buffer_GL3 Transient_Buffer;
+            typedef Static_Buffer_GL3 Static_Buffer;
             typedef Transient_Buffer_Indexed_GL3 Transient_Buffer_Indexed;
+            typedef Static_Buffer_Indexed_GL3 Static_Buffer_Indexed;
             typedef Texture_GL3 Texture;
             typedef Render_Target_GL3 Render_Target;
 

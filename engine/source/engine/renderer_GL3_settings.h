@@ -99,33 +99,38 @@ struct Vertex_Format_Attribute{
 // ---- engine settings
 
 struct uniform_camera_2D{
-    mat3_std140 matrix;
+    mat3_std140 matrix = to_std140((mat3){1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f});
+};
+
+struct uniform_transform_2D{
+    mat3_std140 matrix = to_std140((mat3){1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f});
+    float depth = 0u;
 };
 
 struct uniform_pattern_info{
-    vec4 center_height_aspectratio;
-    float pattern_size;
+    vec4 center_height_aspectratio = {0.f, 0.f, 1.f, 1.f};
+    float pattern_size = 1.f;
 };
 
 struct vertex_xydrgba{
     vec2 vposition;
-    u32 vdepth;
+    float vdepth;
     u32 vcolor;
 };
 static Vertex_Format_Attribute vertex_format_attributes_xydrgba[3] = {
     {TYPE_FLOAT, NORMALIZE_NO,  2u, offsetof(vertex_xydrgba, vposition)},
-    {TYPE_UINT, NORMALIZE_YES,  1u, offsetof(vertex_xydrgba, vdepth)},
+    {TYPE_UINT, NORMALIZE_NO,  1u, offsetof(vertex_xydrgba, vdepth)},
     {TYPE_UBYTE, NORMALIZE_YES, 4u, offsetof(vertex_xydrgba, vcolor)}
 };
 
 struct vertex_xyduv{
     vec2 vposition;
-    u32 vdepth;
+    float vdepth;
     u32 vtexcoord;
 };
 static Vertex_Format_Attribute vertex_format_attributes_xyduv[3] = {
     {TYPE_FLOAT,  NORMALIZE_NO,  2u, offsetof(vertex_xyduv, vposition)},
-    {TYPE_UINT,  NORMALIZE_YES,  1u, offsetof(vertex_xyduv, vdepth)},
+    {TYPE_UINT,  NORMALIZE_NO,  1u, offsetof(vertex_xyduv, vdepth)},
     {TYPE_USHORT, NORMALIZE_YES, 2u, offsetof(vertex_xyduv, vtexcoord)}
 };
 
@@ -212,8 +217,13 @@ static const char* fragment_shader_editor_pattern = R"(
 static const char* shader_header_polygon_2D = GLSL_version;
 static const char* vertex_shader_polygon_2D = R"(
     layout (std140) uniform u_camera_2D{
-        mat3 camera_matrix;
+        mat3 matrix;
     } camera_2D;
+
+    layout (std140) uniform u_transform_2D{
+        mat3 matrix;
+        float depth;
+    } transform_2D;
 
     layout(location = 0) in vec2 vposition;
     layout(location = 1) in float vdepth;
@@ -222,8 +232,8 @@ static const char* vertex_shader_polygon_2D = R"(
     out vec4 fragment_color;
 
     void main(){
-        gl_Position = vec4(camera_2D.camera_matrix * vec3(vposition, 1.), 1.);
-        gl_Position.z = vdepth;
+        gl_Position = vec4(camera_2D.matrix * transform_2D.matrix * vec3(vposition, 1.), 1.);
+        gl_Position.z = transform_2D.depth + vdepth;
         fragment_color = vcolor;
     }
 )";
@@ -242,8 +252,13 @@ static const char* fragment_shader_polygon_2D = R"(
 static const char* shader_header_polygon_2D_tex = GLSL_version;
 static const char* vertex_shader_polygon_2D_tex = R"(
     layout (std140) uniform u_camera_2D{
-        mat3 camera_matrix;
+        mat3 matrix;
     } camera_2D;
+
+    layout (std140) uniform u_transform_2D{
+        mat3 matrix;
+        float depth;
+    } transform_2D;
 
     layout(location = 0) in vec2 vposition;
     layout(location = 1) in float vdepth;
@@ -252,8 +267,8 @@ static const char* vertex_shader_polygon_2D_tex = R"(
     out vec2 fragment_texcoord;
 
     void main(){
-        gl_Position = vec4(camera_2D.camera_matrix * vec3(vposition, 1.), 1.);
-        gl_Position.z = vdepth;
+        gl_Position = vec4(camera_2D.matrix * transform_2D.matrix * vec3(vposition, 1.), 1.);
+        gl_Position.z = transform_2D.depth + vdepth;
         fragment_texcoord = vtexcoord;
     }
 )";
@@ -276,6 +291,7 @@ static const char* fragment_shader_polygon_2D_tex = R"(
 
 #define FOR_EACH_UNIFORM_NAME_ENGINE(FUNCTION)          \
 FUNCTION(camera_2D)                                     \
+FUNCTION(transform_2D)                                  \
 FUNCTION(pattern_info)                                  \
 
 #define FOR_EACH_VERTEX_FORMAT_NAME_ENGINE(FUNCTION)    \
@@ -290,6 +306,8 @@ FUNCTION(polygon_2D_tex)                                \
 #define FOR_EACH_UNIFORM_SHADER_PAIR_ENGINE(FUNCTION)   \
 FUNCTION(camera_2D, polygon_2D)                         \
 FUNCTION(camera_2D, polygon_2D_tex)                     \
+FUNCTION(transform_2D, polygon_2D)                      \
+FUNCTION(transform_2D, polygon_2D_tex)                  \
 FUNCTION(pattern_info, editor_pattern)                  \
 
 #define FOR_EACH_TEXTURE_SHADER_PAIR_ENGINE(FUNCTION)   \

@@ -42,16 +42,17 @@ static void use_vertex_format(Renderer_GL3* renderer, Vertex_Format_Name format_
 
 static void renderer_setup_uniform_storage(Renderer_GL3* renderer){
     UNUSED(renderer);
-#define SETUP_UNIFORM_STORAGE(UNIFORM_NAME)                                 \
-    {                                                                       \
-        GL::Buffer buffer;                                                  \
-        size_t bytesize = sizeof(CONCATENATE(uniform_, UNIFORM_NAME));      \
-        glGenBuffers(1, &buffer);                                           \
-        glBindBuffer(GL_UNIFORM_BUFFER, buffer);                            \
-        glBufferData(GL_UNIFORM_BUFFER, bytesize, NULL, GL_STREAM_DRAW);    \
-        glBindBuffer(GL_UNIFORM_BUFFER, 0u);                                \
-        renderer->uniform_storage[UNIFORM_NAME].buffer = buffer;            \
-        renderer->uniform_storage[UNIFORM_NAME].bytesize = bytesize;        \
+#define SETUP_UNIFORM_STORAGE(UNIFORM_NAME)                                         \
+    {                                                                               \
+        GL::Buffer buffer;                                                          \
+        size_t bytesize = sizeof(CONCATENATE(uniform_, UNIFORM_NAME));              \
+        glGenBuffers(1, &buffer);                                                   \
+        glBindBuffer(GL_UNIFORM_BUFFER, buffer);                                    \
+        CONCATENATE(uniform_, UNIFORM_NAME) default_value = {};                     \
+        glBufferData(GL_UNIFORM_BUFFER, bytesize, &default_value, GL_STREAM_DRAW);  \
+        glBindBuffer(GL_UNIFORM_BUFFER, 0u);                                        \
+        renderer->uniform_storage[UNIFORM_NAME].buffer = buffer;                    \
+        renderer->uniform_storage[UNIFORM_NAME].bytesize = bytesize;                \
     }
     FOR_EACH_UNIFORM_NAME(SETUP_UNIFORM_STORAGE)
 #undef SETUP_UNIFORM_STORAGE
@@ -239,86 +240,80 @@ void Renderer_GL3::terminate(){
 
 // -- resources
 
-Transient_Buffer_GL3 Renderer_GL3::get_transient_buffer(size_t bytesize){
-    Transient_Buffer_GL3 buffer;
-    glGenVertexArrays(1, &buffer.vao);
-    glGenBuffers(1, &buffer.vbo);
+static void get_buffer_GL3(Buffer_GL3* buffer, size_t bytesize, GLenum usage){
+    glGenVertexArrays(1, &buffer->vao);
+    glGenBuffers(1, &buffer->vbo);
 
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)bytesize, NULL, GL_STREAM_DRAW);
-    buffer.bytesize = bytesize;
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)bytesize, NULL, usage);
+    buffer->bytesize = bytesize;
     glBindBuffer(GL_ARRAY_BUFFER, 0u);
-
-    return buffer;
 }
 
-Transient_Buffer_Indexed_GL3 Renderer_GL3::get_transient_buffer_indexed(size_t vbytesize, size_t ibytesize){
-    Transient_Buffer_Indexed_GL3 buffer;
-    glGenVertexArrays(1, &buffer.vao);
-    glGenBuffers(1, &buffer.vbo);
-    glGenBuffers(1, &buffer.ibo);
+static void get_buffer_indexed_GL3(Buffer_Indexed_GL3* buffer, size_t vbytesize, size_t ibytesize, GLenum usage){
+    glGenVertexArrays(1, &buffer->vao);
+    glGenBuffers(1, &buffer->vbo);
+    glGenBuffers(1, &buffer->ibo);
 
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)vbytesize, NULL, GL_STREAM_DRAW);
-    buffer.vbytesize = vbytesize;
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)vbytesize, NULL, usage);
+    buffer->vbytesize = vbytesize;
     glBindBuffer(GL_ARRAY_BUFFER, 0u);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)ibytesize, NULL, GL_STREAM_DRAW);
-    buffer.ibytesize = ibytesize;
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)ibytesize, NULL, usage);
+    buffer->ibytesize = ibytesize;
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0u);
-
-    return buffer;
 }
 
-void Renderer_GL3::free_transient_buffer(Transient_Buffer_GL3& buffer){
-    if(buffer.ptr){
-        glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+static void free_buffer_GL3(Buffer_GL3* buffer){
+    if(buffer->ptr){
+        glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
         glUnmapBuffer(GL_ARRAY_BUFFER);
         glBindBuffer(GL_ARRAY_BUFFER, 0u);
     }
 
-    glDeleteVertexArrays(1u, &buffer.vao);
-    glDeleteBuffers(1u, &buffer.vbo);
+    glDeleteVertexArrays(1u, &buffer->vao);
+    glDeleteBuffers(1u, &buffer->vbo);
 
-    buffer = Transient_Buffer_GL3();
+    *buffer = Buffer_GL3();
 }
 
-void Renderer_GL3::free_transient_buffer(Transient_Buffer_Indexed_GL3& buffer){
-    if(buffer.vptr){
-        assert(buffer.iptr);
-        glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+static void free_buffer_indexed_GL3(Buffer_Indexed_GL3* buffer){
+    if(buffer->vptr){
+        assert(buffer->iptr);
+        glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
         glUnmapBuffer(GL_ARRAY_BUFFER);
         glBindBuffer(GL_ARRAY_BUFFER, 0u);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->ibo);
         glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
         glBindBuffer(GL_ARRAY_BUFFER, 0u);
     }
 
-    glDeleteVertexArrays(1u, &buffer.vao);
-    glDeleteBuffers(1u, &buffer.vbo);
-    glDeleteBuffers(1u, &buffer.ibo);
+    glDeleteVertexArrays(1u, &buffer->vao);
+    glDeleteBuffers(1u, &buffer->vbo);
+    glDeleteBuffers(1u, &buffer->ibo);
 
-    buffer = Transient_Buffer_Indexed_GL3();
+    *buffer = Buffer_Indexed_GL3();
 }
 
-void Renderer_GL3::format(const Transient_Buffer_GL3& buffer, Vertex_Format_Name format){
-    glBindVertexArray(buffer.vao);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+static void format_buffer_GL3(Renderer_GL3* renderer, Buffer_GL3* buffer, Vertex_Format_Name format){
+    glBindVertexArray(buffer->vao);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
 
-    use_vertex_format(this, format);
+    use_vertex_format(renderer, format);
 
     glBindVertexArray(0u);
     glBindBuffer(GL_ARRAY_BUFFER, 0u);
 }
 
-void Renderer_GL3::format(const Transient_Buffer_Indexed_GL3& buffer, Vertex_Format_Name format){
-    glBindVertexArray(buffer.vao);
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+static void format_buffer_indexed_GL3(Renderer_GL3* renderer, Buffer_Indexed_GL3* buffer, Vertex_Format_Name format){
+    glBindVertexArray(buffer->vao);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->ibo);
 
-    use_vertex_format(this, format);
+    use_vertex_format(renderer, format);
 
     glBindVertexArray(0u);
     glBindBuffer(GL_ARRAY_BUFFER, 0u);
@@ -327,61 +322,149 @@ void Renderer_GL3::format(const Transient_Buffer_Indexed_GL3& buffer, Vertex_For
 
 // NOTE(hugo):
 // * orphaning the buffer with glBufferData because it does not work with GL_WRITE_ONLY or GL_MAP_WRITE_BIT & GL_MAP_INVALIDATE_RANGE_BIT & GL_MAP_INVALIDATE_BUFFER_BIT
-// * using glMapBuffer instead of glMapBufferRange because we don't need the invalidation flag anymore
+// * using glMapBuffer instead of glMapBufferRange because that's what the driver expects for orphaning
 
-void Renderer_GL3::checkout(Transient_Buffer_GL3& buffer){
-    assert(buffer.ptr == nullptr);
+static void checkout_buffer_GL3(Buffer_GL3* buffer){
+    assert(buffer->ptr == nullptr);
 
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer.bytesize, NULL, GL_STREAM_DRAW);
-    buffer.ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-    //buffer.ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0u, buffer.bytesize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer->bytesize, NULL, GL_STREAM_DRAW);
+    buffer->ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    //buffer->ptr = glMapBufferRange(GL_ARRAY_BUFFER, 0u, buffer->bytesize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_RANGE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
     glBindBuffer(GL_ARRAY_BUFFER, 0u);
 
-    assert(buffer.ptr != nullptr);
+    assert(buffer->ptr != nullptr);
 }
 
-void Renderer_GL3::checkout(Transient_Buffer_Indexed_GL3& buffer){
-    assert(buffer.vptr == nullptr && buffer.iptr == nullptr);
+static void checkout_buffer_indexed_GL3(Buffer_Indexed_GL3* buffer){
+    assert(buffer->vptr == nullptr && buffer->iptr == nullptr);
 
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
-    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer.vbytesize, NULL, GL_STREAM_DRAW);
-    buffer.vptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
-    //buffer.vptr = glMapBufferRange(GL_ARRAY_BUFFER, 0u, buffer.vbytesize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
+    glBufferData(GL_ARRAY_BUFFER, (GLsizeiptr)buffer->vbytesize, NULL, GL_STREAM_DRAW);
+    buffer->vptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+    //buffer->vptr = glMapBufferRange(GL_ARRAY_BUFFER, 0u, buffer->vbytesize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
     glBindBuffer(GL_ARRAY_BUFFER, 0u);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)buffer.ibytesize, NULL, GL_STREAM_DRAW);
-    buffer.iptr = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
-    //buffer.iptr = glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0u, buffer.ibytesize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->ibo);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, (GLsizeiptr)buffer->ibytesize, NULL, GL_STREAM_DRAW);
+    buffer->iptr = glMapBuffer(GL_ELEMENT_ARRAY_BUFFER, GL_WRITE_ONLY);
+    //buffer->iptr = glMapBufferRange(GL_ELEMENT_ARRAY_BUFFER, 0u, buffer->ibytesize, GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0u);
 
-    assert(buffer.vptr != nullptr && buffer.iptr != nullptr);
+    assert(buffer->vptr != nullptr && buffer->iptr != nullptr);
 }
 
-void Renderer_GL3::commit(Transient_Buffer_GL3& buffer){
-    assert(buffer.ptr != nullptr);
+static void commit_buffer_GL3(Buffer_GL3* buffer){
+    assert(buffer->ptr != nullptr);
 
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
     glUnmapBuffer(GL_ARRAY_BUFFER);
     glBindBuffer(GL_ARRAY_BUFFER, 0u);
 
-    buffer.ptr = nullptr;
+    buffer->ptr = nullptr;
 }
 
-void Renderer_GL3::commit(Transient_Buffer_Indexed_GL3& buffer){
-    assert(buffer.vptr != nullptr && buffer.iptr != nullptr);
+static void commit_buffer_indexed_GL3(Buffer_Indexed_GL3* buffer){
+    assert(buffer->vptr != nullptr && buffer->iptr != nullptr);
 
-    glBindBuffer(GL_ARRAY_BUFFER, buffer.vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, buffer->vbo);
     glUnmapBuffer(GL_ARRAY_BUFFER);
     glBindBuffer(GL_ARRAY_BUFFER, 0u);
 
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer.ibo);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, buffer->ibo);
     glUnmapBuffer(GL_ELEMENT_ARRAY_BUFFER);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0u);
 
-    buffer.vptr = nullptr;
-    buffer.iptr = nullptr;
+    buffer->vptr = nullptr;
+    buffer->iptr = nullptr;
+}
+
+Transient_Buffer_GL3 Renderer_GL3::get_transient_buffer(size_t bytesize){
+    Transient_Buffer_GL3 buffer;
+    get_buffer_GL3((Buffer_GL3*)&buffer, bytesize, GL_STREAM_DRAW);
+    return buffer;
+}
+
+Static_Buffer_GL3 Renderer_GL3::get_static_buffer(size_t bytesize){
+    Static_Buffer_GL3 buffer;
+    get_buffer_GL3((Buffer_GL3*)&buffer, bytesize, GL_STATIC_DRAW);
+    return buffer;
+}
+
+Transient_Buffer_Indexed_GL3 Renderer_GL3::get_transient_buffer_indexed(size_t vbytesize, size_t ibytesize){
+    Transient_Buffer_Indexed_GL3 buffer;
+    get_buffer_indexed_GL3((Buffer_Indexed_GL3*)&buffer, vbytesize, ibytesize, GL_STREAM_DRAW);
+    return buffer;
+}
+
+Static_Buffer_Indexed_GL3 Renderer_GL3::get_static_buffer_indexed(size_t vbytesize, size_t ibytesize){
+    Static_Buffer_Indexed_GL3 buffer;
+    get_buffer_indexed_GL3((Buffer_Indexed_GL3*)&buffer, vbytesize, ibytesize, GL_STATIC_DRAW);
+    return buffer;
+}
+
+void Renderer_GL3::free_buffer(Transient_Buffer_GL3& buffer){
+    free_buffer_GL3((Buffer_GL3*)&buffer);
+}
+
+void Renderer_GL3::free_buffer(Static_Buffer_GL3& buffer){
+    free_buffer_GL3((Buffer_GL3*)&buffer);
+}
+
+void Renderer_GL3::free_buffer(Transient_Buffer_Indexed_GL3& buffer){
+    free_buffer_indexed_GL3((Buffer_Indexed_GL3*)&buffer);
+}
+
+void Renderer_GL3::free_buffer(Static_Buffer_Indexed_GL3& buffer){
+    free_buffer_indexed_GL3((Buffer_Indexed_GL3*)&buffer);
+}
+
+void Renderer_GL3::format(const Transient_Buffer_GL3& buffer, Vertex_Format_Name format){
+    format_buffer_GL3(this, (Buffer_GL3*)&buffer, format);
+}
+
+void Renderer_GL3::format(const Static_Buffer_GL3& buffer, Vertex_Format_Name format){
+    format_buffer_GL3(this, (Buffer_GL3*)&buffer, format);
+}
+
+void Renderer_GL3::format(const Transient_Buffer_Indexed_GL3& buffer, Vertex_Format_Name format){
+    format_buffer_indexed_GL3(this, (Buffer_Indexed_GL3*)&buffer, format);
+}
+
+void Renderer_GL3::format(const Static_Buffer_Indexed_GL3& buffer, Vertex_Format_Name format){
+    format_buffer_indexed_GL3(this, (Buffer_Indexed_GL3*)&buffer, format);
+}
+
+void Renderer_GL3::checkout(Transient_Buffer_GL3& buffer){
+    checkout_buffer_GL3((Buffer_GL3*)&buffer);
+}
+
+void Renderer_GL3::checkout(Static_Buffer_GL3& buffer){
+    checkout_buffer_GL3((Buffer_GL3*)&buffer);
+}
+
+void Renderer_GL3::checkout(Transient_Buffer_Indexed_GL3& buffer){
+    checkout_buffer_indexed_GL3((Buffer_Indexed_GL3*)&buffer);
+}
+
+void Renderer_GL3::checkout(Static_Buffer_Indexed_GL3& buffer){
+    checkout_buffer_indexed_GL3((Buffer_Indexed_GL3*)&buffer);
+}
+
+void Renderer_GL3::commit(Transient_Buffer_GL3& buffer){
+    commit_buffer_GL3((Buffer_GL3*)&buffer);
+}
+
+void Renderer_GL3::commit(Static_Buffer_GL3& buffer){
+    commit_buffer_GL3((Buffer_GL3*)&buffer);
+}
+
+void Renderer_GL3::commit(Transient_Buffer_Indexed_GL3& buffer){
+    commit_buffer_indexed_GL3((Buffer_Indexed_GL3*)&buffer);
+}
+
+void Renderer_GL3::commit(Static_Buffer_Indexed_GL3& buffer){
+    commit_buffer_indexed_GL3((Buffer_Indexed_GL3*)&buffer);
 }
 
 Texture_GL3 Renderer_GL3::get_texture(Texture_Format format, u32 width, u32 height, Data_Type data_type, void* data){
@@ -542,16 +625,32 @@ void Renderer_GL3::draw(Primitive_Type primitive, u32 index, u32 count){
     glBindVertexArray(0u);
 }
 
-void Renderer_GL3::draw(const Transient_Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count){
-    glBindVertexArray(buffer.vao);
+static void draw_primitive_GL3(Buffer_GL3* buffer, Primitive_Type primitive, u32 index, u32 count){
+    glBindVertexArray(buffer->vao);
     glDrawArrays(primitive, index, count);
     glBindVertexArray(0u);
 }
 
-void Renderer_GL3::draw(const Transient_Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 count, u64 offset){
-    glBindVertexArray(buffer.vao);
+static void draw_primitive_element_GL3(Buffer_Indexed_GL3* buffer, Primitive_Type primitive, Data_Type index_type, u32 count, u64 offset){
+    glBindVertexArray(buffer->vao);
     glDrawElements(primitive, count, index_type, (const void*)offset);
     glBindVertexArray(0u);
+}
+
+void Renderer_GL3::draw(const Transient_Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count){
+    draw_primitive_GL3((Buffer_GL3*)&buffer, primitive, index, count);
+}
+
+void Renderer_GL3::draw(const Static_Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count){
+    draw_primitive_GL3((Buffer_GL3*)&buffer, primitive, index, count);
+}
+
+void Renderer_GL3::draw(const Transient_Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 count, u64 offset){
+    draw_primitive_element_GL3((Buffer_Indexed_GL3*)&buffer, primitive, index_type, count, offset);
+}
+
+void Renderer_GL3::draw(const Static_Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 count, u64 offset){
+    draw_primitive_element_GL3((Buffer_Indexed_GL3*)&buffer, primitive, index_type, count, offset);
 }
 
 void Renderer_GL3::clear_render_target(const Render_Target_GL3& render_target){
