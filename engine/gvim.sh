@@ -1,14 +1,11 @@
 #!/bin/bash
 
-cd $(dirname $0)
-cd source
+pushd $(dirname $0) > /dev/null
 
-executable_path="../linux/makerun.sh"
-session_path="session.vim"
-vimrc_path="${PWD}/../.vimrc"
+session_path=$PWD/session.vim
+vimrc_path=~/.vimrc
 
-gvim -c ":nnoremap <F5> :wa<CR> :!${executable_path}<CR>"                                                                                                                                                                                       \
-     -c ":nnoremap <F6> :!<CR>"                                                                                                                                                                                                                 \
-     -c ":autocmd VimEnter * if filereadable(expand(\"${session_path}\")) | :source ${session_path} | :source ${vimrc_path} | else | :args **/*.h **/*.cpp **/*.inl **/*.txt | :set filetype=cpp | :source ${vimrc_path} | :b todo.txt | endif" \
-     -c ":autocmd VimLeave * :mksession! ${session_path}"                                                                                                                                                                                       \
-     -c ":nnoremap <F7> :e %:p:s,.h$,.X123X,:s,.cpp$,.h,:s,.X123X$,.cpp,<CR>"
+gvim -c ":autocmd VimEnter * if filereadable(expand(\"$session_path\")) | :source $session_path | :source $vimrc_path | else | :args source/*.* | :set filetype=cpp | :e todo.txt | :source $vimrc_path | endif" \
+     -c ":autocmd VimLeave * :mksession! $session_path"
+
+popd

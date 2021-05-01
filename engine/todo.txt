@@ -1,0 +1,252 @@
+FUTURE(engine) --------
+
+- function scope temporary allocation (global Virtual_Memory_Arena) + data structures storage type for that
+- renderer static buffers
+- audio stream, loops and synth
+- UTF8
+
+- other noise functions: voronoise, worley, ...
+- typed quick sort with inlined comparator (sort_search.h)
+- small-buffer-optimized vector (based off sarray)
+- data structures template of the bytesize as a base with a template of the typename as frontend
+- coroutines (https://www.chiark.greenend.org.uk/~sgtatham/coroutines.html)
+- https://blog.demofox.org/2016/05/18/who-cares-about-dynamic-array-growth-strategies/
+- https://twitter.com/lisyarus/status/1318605976786919424
+- https://web.archive.org/web/20140719100333/http://altdev.co/2011/10/27/quasi-compile-time-string-hashing/
+
+TODO ----------
+
+CURRENT ---------------
+
+DONE ------------------
+
+02/03/2021
+- editor pattern (prev. checker)
+
+28/02/2021
+- editor mouse drag & zoom
+- window resizing
+- 2D polygon triangulation using ear clipping
+- DEV_Tweak search using label
+
+27/02/2021
+- checker shader
+- fix tweakables registration & auto-integrate them in an ImGui window
+- fix conversions between pixel coordinates & screen coordinates
+
+26/02/2021
+- Virtual_Memory_Arena
+
+25/02/2021
+- integrate Dear ImGui
+
+23/02/2021
+- render target
+
+19/02/2021
+- mix in the audio callback to reduce latency
+
+15/02/2021
+- Vector_Graphics_Renderer::circle
+- color convertion sRGB / RGB
+- fix texture format for sRGB
+
+14/02/2021
+- Vector_Graphics_Renderer
+- Vector_Graphics_Renderer::segment
+
+13/02/2021
+- rewrite git history to remove branching & commits with copyrighted material
+
+09/02/2021
+- Emscripten compilation
+
+??/12/2020 -- 07/02/2021
+- assert & error handling
+- Vulkan sample
+- OpenGL4 PBR sample
+- reusable and configurable Frame_Timing
+- data structure overhaul
+- asset catalog & importation overhaul with JSON
+- geometry primitives
+- static string
+- file path
+
+05/12/2020
+- particle system
+
+04/12/2020
+- particle system
+- random sampling discs and circles
+
+03/12/2020
+- replace tweening_manager with a tween struct
+- implement tweening using easing functions
+
+30/11/2020
+- reimplement better tweening
+
+28/11/2020
+- dense grid
+
+27/11/2020
+- asset manager for font, texture and animations
+
+26/11/2020
+- work on the asset manager
+- animation player
+
+25/11/2020
+- work on the asset manager
+
+24/11/2020
+- implement sstring
+- work on the animation manager
+
+23/11/2020
+- parse & hotreload tweakable values directly in the __FILE__
+
+22/11/2020
+- replace Font_Renderer with Font_Manager to support multiple fonts
+
+21/11/2020
+- bugfix new Audio_Manager
+
+20/11/2020
+- size in diterpool
+- dpool
+- reimplement Audio_Manager
+
+15/11/2020
+- Mini Jam 67: "Void" - "Game must not contain any enemies"
+
+14/11/2020
+- conversion of wav audio to the device format
+- scene manager
+- easy_setup
+
+13/11/2020
+- implement an audio manager
+- fix atomic operation
+- hint laptops to use dedicated gpus
+
+12/11/2020
+- working signed-distance fonts
+
+11/11/2020
+- work on signed-distance font rendering
+
+10/11/2020
+- bugfix dhashmap
+- tweakable file hotreloading
+- simplex derivatives
+
+09/11/2020
+- review data_structure : daryheap, dhashmap
+- daryheap, dhashmap randomized test
+
+08/11/2020
+- debug_break
+- review data_structure : darena, dchunkarena, darray
+- linsearch and binsearch tests
+- make necessary changes to compile and run on windows (again !)
+- implementation and tests of a constexpr sqrt using newton raphson
+
+07/11/2020
+- DECORATE macro
+- insertion sort implementation and unit test
+- bugfix data_structure implementation
+
+06/11/2020
+- implement tweakable values in developper mode
+- importing / exporting of tweakable values from / to a config file
+
+05/11/2020
+- clean debug / developper tools
+- renderer samplers
+- fix texture row alignment issues triggered by using TEXTURE_FORMAT_RGB
+
+01/11/2020
+- intrinsics for SIMD and __rdtsc
+- debug performance counters
+
+25/10/2020
+- fixed the issue with simplex scaling !!
+
+23/10/2020
+- generic daryheap
+
+20/10/2020
+- fix the perlin noise analytical derivatives
+- clean the noise texture generation template
+
+08/10/2020
+- convert u64 into size_t
+- cleanup preprocessor includes for the platform layer and renderer
+
+24/08/2020
+- data unpacking with LE / BE conversions optimized depending on the compiler
+- documentation on font parsing / rendering
+
+22/08/2020
+- bugfix data structures
+- darena unit test
+- dqueue unit test
+- dhashmap unit test
+
+21/08/2020
+- fix dhashmap implementation
+- renderer textures
+
+20/08/2020
+- dhashmap using a table + pool
+
+19/09/2020
+- Vertex_Batch implementation
+
+18/08/2020
+- renderer architecture planning esp. wrt. batching
+
+17/08/2020
+- darena using malloc that allocates extensions & fuses them when cleared to avoid pointer invalidation
+- stateful renderer : uniforms, shaders, vertex formats
+
+16/08/2020
+- constructor / destructor handling in darray, dqueue and dpool
+- fix dpool bug related to clearing of the bitset before using it
+
+13/08/2020
+- fix dpool implementation and unit tests
+- cleanup the bw:: namespace situation
+
+12/08/2020
+- fix default constructors / initialize situation
+    -> default constructors for POD and structs with no initialize() function
+    -> then free() or terminate() is responsible for resetting to default values
+
+    -> initialize() should setup default values and must not rely on a default constructor
+    -> then free() or terminate() is not responsible of resetting to default values
+
+07/08/2020
+- fix windows compilation
+- pull vertex_array & state out of Vertex_Layout and put them inside Vertex_Data
+- input handling with SDL for keyboard
+- define for keyboard inputs to detect (variable_name, SDL_key_value) with NUMBER_OF_DETECTED_KEYS
+
+06/08/2020
+- Vertex_Data takes stored_format and stored_buffer for all but the couple (buffer, vao) should be owned by the renderer to avoid updating multiple times to the same format
+- renderer strategy when the arenas are full
+
+04/08/2020
+- renderer draw_queue() function
+- make a "Hello Triangle!" using the renderer
+
+03/08/2020
+- renderer uniforms
+- renderer vertex formats
+- renderer shaders
+
+02/08/2020
+- arena
+- dqueue
+- test void_align_up & void_align_down
