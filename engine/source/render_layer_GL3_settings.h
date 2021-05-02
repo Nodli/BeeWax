@@ -98,40 +98,35 @@ struct Vertex_Format_Attribute{
 
 // ---- engine settings
 
-struct uniform_camera_2D{
-    mat3_std140 matrix = to_std140((mat3){1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f});
-};
-
-struct uniform_transform_2D{
-    mat3_std140 matrix = to_std140((mat3){1.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 1.f});
-    float depth = 0u;
-};
-
 struct uniform_pattern_info{
     vec4 center_height_aspectratio = {0.f, 0.f, 1.f, 1.f};
     float pattern_size = 1.f;
 };
 
-struct vertex_xydrgba{
-    vec2 vposition;
-    float vdepth;
-    u32 vcolor;
-};
-static Vertex_Format_Attribute vertex_format_attributes_xydrgba[3] = {
-    {TYPE_FLOAT, NORMALIZE_NO,  2u, offsetof(vertex_xydrgba, vposition)},
-    {TYPE_UINT, NORMALIZE_NO,  1u, offsetof(vertex_xydrgba, vdepth)},
-    {TYPE_UBYTE, NORMALIZE_YES, 4u, offsetof(vertex_xydrgba, vcolor)}
+struct uniform_camera{
+    mat4_std140 matrix = to_std140(identity_matrix<mat4>);
 };
 
-struct vertex_xyduv{
-    vec2 vposition;
-    float vdepth;
+struct uniform_transform{
+    mat4_std140 matrix = to_std140(identity_matrix<mat4>);
+};
+
+struct vertex_xyzrgba{
+    vec3 vposition;
+    u32 vcolor;
+};
+static Vertex_Format_Attribute vertex_format_attributes_xyzrgba[] = {
+    {TYPE_FLOAT, NORMALIZE_NO,  3u, offsetof(vertex_xyzrgba, vposition)},
+    {TYPE_UBYTE, NORMALIZE_YES, 4u, offsetof(vertex_xyzrgba, vcolor)}
+};
+
+struct vertex_xyzuv{
+    vec3 vposition;
     u32 vtexcoord;
 };
-static Vertex_Format_Attribute vertex_format_attributes_xyduv[3] = {
-    {TYPE_FLOAT,  NORMALIZE_NO,  2u, offsetof(vertex_xyduv, vposition)},
-    {TYPE_UINT,  NORMALIZE_NO,  1u, offsetof(vertex_xyduv, vdepth)},
-    {TYPE_USHORT, NORMALIZE_YES, 2u, offsetof(vertex_xyduv, vtexcoord)}
+static Vertex_Format_Attribute vertex_format_attributes_xyzuv[] = {
+    {TYPE_FLOAT,  NORMALIZE_NO,  3u, offsetof(vertex_xyzuv, vposition)},
+    {TYPE_USHORT, NORMALIZE_YES, 2u, offsetof(vertex_xyzuv, vtexcoord)}
 };
 
 static const char* GLSL_version=
@@ -150,7 +145,7 @@ static const char* emit_fullscreen_triangle = R"(
         // NOTE(hugo): furthest z below 1.
         float z = intBitsToFloat(floatBitsToInt(1) - 1);
 
-        gl_Position = vec4(screenpos.xy, z, 1.);
+        gl_Position = vec4(screenpos, z, 1.);
         screenspace_coord = vec2(
             (screenpos.x + 1.) * 0.5,
             (screenpos.y + 1.) * 0.5
@@ -204,32 +199,29 @@ static const char* fragment_shader_editor_pattern = R"(
     }
 )";
 
-// NOTE(hugo): polygon_2D
+// NOTE(hugo): polygon
 // /vcolor/ is expected in linear space
-static const char* shader_header_polygon_2D = GLSL_version;
-static const char* vertex_shader_polygon_2D = R"(
-    layout (std140) uniform u_camera_2D{
-        mat3 matrix;
-    } camera_2D;
+static const char* shader_header_polygon = GLSL_version;
+static const char* vertex_shader_polygon = R"(
+    layout (std140) uniform u_camera{
+        mat4 matrix;
+    } camera;
 
-    layout (std140) uniform u_transform_2D{
-        mat3 matrix;
-        float depth;
-    } transform_2D;
+    layout (std140) uniform u_transform{
+        mat4 matrix;
+    } transform;
 
-    layout(location = 0) in vec2 vposition;
-    layout(location = 1) in float vdepth;
-    layout(location = 2) in vec4 vcolor;
+    layout(location = 0) in vec3 vposition;
+    layout(location = 1) in vec4 vcolor;
 
     out vec4 fragment_color;
 
     void main(){
-        gl_Position = vec4(camera_2D.matrix * transform_2D.matrix * vec3(vposition, 1.), 1.);
-        gl_Position.z = transform_2D.depth + vdepth;
+        gl_Position = camera.matrix * transform.matrix * vec4(vposition, 1.);
         fragment_color = vcolor;
     }
 )";
-static const char* fragment_shader_polygon_2D = R"(
+static const char* fragment_shader_polygon = R"(
     in vec4 fragment_color;
 
     out vec4 output_color;
@@ -239,32 +231,29 @@ static const char* fragment_shader_polygon_2D = R"(
     }
 )";
 
-// NOTE(hugo): polygon_2D_tex
+// NOTE(hugo): polygon_tex
 // /tex/ is expected in linear space ie use _SRGB or _SRGBA texture formats
-static const char* shader_header_polygon_2D_tex = GLSL_version;
-static const char* vertex_shader_polygon_2D_tex = R"(
-    layout (std140) uniform u_camera_2D{
-        mat3 matrix;
-    } camera_2D;
+static const char* shader_header_polygon_tex = GLSL_version;
+static const char* vertex_shader_polygon_tex = R"(
+    layout (std140) uniform u_camera{
+        mat4 matrix;
+    } camera;
 
-    layout (std140) uniform u_transform_2D{
-        mat3 matrix;
-        float depth;
-    } transform_2D;
+    layout (std140) uniform u_transform{
+        mat4 matrix;
+    } transform;
 
-    layout(location = 0) in vec2 vposition;
-    layout(location = 1) in float vdepth;
-    layout(location = 2) in vec2 vtexcoord;
+    layout(location = 0) in vec3 vposition;
+    layout(location = 1) in vec2 vtexcoord;
 
     out vec2 fragment_texcoord;
 
     void main(){
-        gl_Position = vec4(camera_2D.matrix * transform_2D.matrix * vec3(vposition, 1.), 1.);
-        gl_Position.z = transform_2D.depth + vdepth;
+        gl_Position = camera.matrix * transform.matrix * vec4(vposition, 1.);
         fragment_texcoord = vtexcoord;
     }
 )";
-static const char* fragment_shader_polygon_2D_tex = R"(
+static const char* fragment_shader_polygon_tex = R"(
     uniform sampler2D tex;
 
     in vec2 fragment_texcoord;
@@ -282,28 +271,28 @@ static const char* fragment_shader_polygon_2D_tex = R"(
 )";
 
 #define FOR_EACH_UNIFORM_NAME_ENGINE(FUNCTION)          \
-FUNCTION(camera_2D)                                     \
-FUNCTION(transform_2D)                                  \
 FUNCTION(pattern_info)                                  \
+FUNCTION(camera)                                        \
+FUNCTION(transform)                                     \
 
 #define FOR_EACH_VERTEX_FORMAT_NAME_ENGINE(FUNCTION)    \
-FUNCTION(xydrgba)                                       \
-FUNCTION(xyduv)                                         \
+FUNCTION(xyzrgba)                                       \
+FUNCTION(xyzuv)                                         \
 
 #define FOR_EACH_SHADER_NAME_ENGINE(FUNCTION)           \
 FUNCTION(editor_pattern)                                \
-FUNCTION(polygon_2D)                                    \
-FUNCTION(polygon_2D_tex)                                \
+FUNCTION(polygon)                                       \
+FUNCTION(polygon_tex)                                   \
 
 #define FOR_EACH_UNIFORM_SHADER_PAIR_ENGINE(FUNCTION)   \
-FUNCTION(camera_2D, polygon_2D)                         \
-FUNCTION(camera_2D, polygon_2D_tex)                     \
-FUNCTION(transform_2D, polygon_2D)                      \
-FUNCTION(transform_2D, polygon_2D_tex)                  \
 FUNCTION(pattern_info, editor_pattern)                  \
+FUNCTION(camera, polygon)                               \
+FUNCTION(transform, polygon)                            \
+FUNCTION(camera, polygon_tex)                           \
+FUNCTION(transform, polygon_tex)                        \
 
 #define FOR_EACH_TEXTURE_SHADER_PAIR_ENGINE(FUNCTION)   \
-FUNCTION(tex, 0, polygon_2D_tex)                        \
+FUNCTION(tex, 0, polygon_tex)                           \
 
 #define FOR_EACH_SAMPLER_NAME_ENGINE(FUNCTION)                                                  \
 FUNCTION(nearest_clamp, FILTER_NEAREST, FILTER_NEAREST, WRAP_CLAMP, WRAP_CLAMP, WRAP_CLAMP)     \

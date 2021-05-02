@@ -1,15 +1,16 @@
 # library folder
-engine/externals/lib
+externals/lib
 
 # binary folders
-engine/win_x64/bin/
-engine/win_x64/ems/
-engine/linux/bin/
+application/*/bin
 
-# session stuff
-engine/source/session.vim
-engine/.vscode/
-engine/win_x64/*.pdb
+# compiler output
+project/win_x64/*.pdb
+
+# vim session
+engine/session.vim
+common/session.vim
+application/**/session.vim
 
 # temporary files
 *.swp

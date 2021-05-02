@@ -10,6 +10,9 @@ struct Window_Settings_SDL_GL{
         synchronize_none = 0,
         synchronize = 1,
         synchronize_adaptive = -1,
+
+        size_control_none = 0,
+        size_control_allowed = 1,
     };
 
     s32 width = 0;
@@ -18,6 +21,7 @@ struct Window_Settings_SDL_GL{
     const char* name = nullptr;
     s32 mode = mode_windowed;
     s32 synchronization = synchronize_adaptive;
+    s32 size_control = size_control_none;
 
     u32 OpenGL_major = 0u;
     u32 OpenGL_minor = 0u;

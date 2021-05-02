@@ -33,6 +33,7 @@ struct Texture_GL3{
 struct Render_Target_GL3{
     u32 width;
     u32 height;
+    u32 samples;
 
     GL::Framebuffer framebuffer;
     union{
@@ -94,12 +95,12 @@ struct Render_Layer_GL3{
     // -- commands
 
     void draw(Primitive_Type primitive, u32 index, u32 count);
-    void draw(const Transient_Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count);
     void draw(const Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count);
-    void draw(const Transient_Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 count, u64 offset);
     void draw(const Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 count, u64 offset);
+    void draw(const Transient_Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count);
+    void draw(const Transient_Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 count, u64 offset);
 
-    void clear_render_target(const Render_Target_GL3& render_target);
+    void clear_render_target();
     void copy_render_target(const Render_Target_GL3& source, const Render_Target_GL3& destination);
 
     // ---- data

@@ -20,22 +20,25 @@ template<typename T>
 struct Tween{
     // NOTE(hugo): use as T
     operator T () const;
-    Tween<T>& operator=(const Tween<T>& rhs);
+    Tween<T>& operator=(const T& rhs);
 
-    void set(const T& value);
-    void from(const T& start, const T& stop,
+    // NOTE(hugo): use as Tween
+    Tween<T>& operator=(const Tween<T>& rhs);
+    void interpolate(const T& start, const T& stop,
             const u32 tick_duration, bool repeat = false,
             Tween_Function func = &ease_out_quint);
+
     void tick();
+    float progress();
 
     // ---- data
 
-    T value = {};
-    T base = {};
-    T range = {};
     u32 tick_count = 0u;
     s32 repeat_tick_duration = 1;
     Tween_Function function = &ease_identity;
+
+    T base;
+    T range;
 };
 
 #include "tween.inl"

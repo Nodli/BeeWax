@@ -53,4 +53,6 @@ namespace bw{
     #include "scene_manager.cpp"
 
     #include "asset_import.cpp"
+
+    #include "engine.cpp"
 }

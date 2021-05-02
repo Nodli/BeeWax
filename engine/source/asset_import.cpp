@@ -34,8 +34,8 @@ void import_asset_from_json(const File_Path& json, Engine* engine, Asset_Catalog
                 void** map_ptr;
                 u32 get_result = description[idesc].map_ptr->get(asset_tag, map_ptr);
                 assert(get_result);
-
                 *map_ptr = asset_ptr;
+
                 break;
             }
         }

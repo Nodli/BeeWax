@@ -13,7 +13,7 @@ void Action_Manager::create(){
     actions[MOUSE_BUTTON_EXTRA_2].type      = TYPE_BUTTON;
     actions[MOUSE_WHEEL_VERTICAL].type      = TYPE_AXIS;
     actions[MOUSE_WHEEL_HORIZONTAL].type    = TYPE_AXIS;
-    actions[MOUSE_MOTION].type              = TYPE_CURSOR;
+    actions[MOUSE_POSITION].type            = TYPE_CURSOR;
 }
 
 void Action_Manager::destroy(){
@@ -108,7 +108,7 @@ bool Action_Manager::register_event(const SDL_Event& event){
         return true;
 
     }else if(event.type == SDL_MOUSEMOTION){
-        register_type_cursor(actions[MOUSE_MOTION]);
+        register_type_cursor(actions[MOUSE_POSITION]);
         return true;
     }
 

@@ -87,6 +87,11 @@ bool vec::vec2<T>::operator==(const vec::vec2<T>& vec) const{
 }
 
 template<typename T>
+bool vec::vec2<T>::operator!=(const vec::vec2<T>& vec) const{
+    return !operator==(vec);
+}
+
+template<typename T>
 T& vec::vec2<T>::operator[](const u32 index){
     assert(index < 2u);
     return data[index];
@@ -250,6 +255,11 @@ vec::vec3<T> vec::vec3<T>::operator-() const{
 template<typename T>
 bool vec::vec3<T>::operator==(const vec::vec3<T>& vec) const{
     return (x == vec.x) && (y == vec.y) && (z == vec.z);
+}
+
+template<typename T>
+bool vec::vec3<T>::operator!=(const vec::vec3<T>& vec) const{
+    return !operator==(vec);
 }
 
 template<typename T>
@@ -426,6 +436,11 @@ vec::vec4<T> vec::vec4<T>::operator-() const{
 template<typename T>
 bool vec::vec4<T>::operator==(const vec::vec4<T>& vec) const{
     return (x == vec.x) && (y == vec.y) && (z == vec.z) && (w == vec.w);
+}
+
+template<typename T>
+bool vec::vec4<T>::operator!=(const vec::vec4<T>& vec) const{
+    return !operator==(vec);
 }
 
 template<typename T>

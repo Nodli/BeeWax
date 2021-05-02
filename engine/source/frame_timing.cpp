@@ -2,6 +2,9 @@ void Frame_Timing::create(u64 timer, u64 timer_frequency,
         u32 target_frames_per_second, double snapping_error,
         u32 in_max_skipped_frames, u32 smoothing_frames){
 
+    snap_ticks.create();
+    smoothing_history.create();
+
     ticks_per_frame = timer_frequency / target_frames_per_second;
     max_snap_error_ticks = (u64)(snapping_error * ticks_per_frame);
     max_skipped_frames = in_max_skipped_frames;

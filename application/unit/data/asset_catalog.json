@@ -1,0 +1,82 @@
+{
+    "assets" :
+    [
+        {
+            "tag": "lilypad",
+            "type": "texture",
+            "file": "texture/lilypad.png"
+        },
+        {
+            "tag": "frog",
+            "type": "texture",
+            "file": "texture/frog.png"
+        },
+        {
+            "tag": "fly",
+            "type": "texture",
+            "file": "texture/fly.png"
+        },
+        {
+            "tag": "fly_wing",
+            "type": "texture",
+            "file": "texture/fly_wing.png"
+        },
+        {
+            "tag": "water",
+            "type": "texture",
+            "file": "texture/water.png"
+        },
+
+        {
+            "tag": "frogfly",
+            "type": "texture",
+            "file": "texture/frogfly.png"
+        },
+        {
+            "tag": "oh_no",
+            "type": "texture",
+            "file": "texture/oh_no.png"
+        },
+        {
+            "tag": "restart",
+            "type": "texture",
+            "file": "texture/restart.png"
+        },
+        {
+            "tag": "start",
+            "type": "texture",
+            "file": "texture/start.png"
+        },
+        {
+            "tag": "mouse",
+            "type": "texture",
+            "file": "texture/mouse.png"
+        },
+
+        {
+            "tag": "soundtrack",
+            "type": "audio",
+            "file": "audio/the_farmer_in_the_dell.wav"
+        },
+        {
+            "tag": "eat",
+            "type": "audio",
+            "file": "audio/eat.wav"
+        },
+        {
+            "tag": "tongue_A",
+            "type": "audio",
+            "file": "audio/tongue_A.wav"
+        },
+        {
+            "tag": "tongue_B",
+            "type": "audio",
+            "file": "audio/tongue_B.wav"
+        },
+        {
+            "tag": "tongue_C",
+            "type": "audio",
+            "file": "audio/tongue_C.wav"
+        }
+    ]
+}

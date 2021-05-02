@@ -222,7 +222,7 @@ template<typename kT, typename vT>
 u32 hashmap<kT, vT>::search(const kT& key, vT*& v) const{
     khiter_t iter = kh_get(kinstance, &data, key);
     if(iter != kh_end(&data)){
-        v = &kh_value(&data, iter);
+        v = &(kh_value(&data, iter));
         return 1u;
     }
     return 0u;
@@ -306,7 +306,11 @@ template<typename kT, typename vT>
 typename hashmap<kT, vT>::iterator hashmap<kT, vT>::begin(){
     iterator iter;
     iter.ptr = &data;
-    iter.iter = kh_begin(&data);
+
+    khiter_t kiter = kh_begin(&data);
+    while(kiter != kh_end(&data) && !kh_exist(&data, kiter)) ++kiter;
+    iter.iter = kiter;
+
     return iter;
 }
 
@@ -322,7 +326,11 @@ template<typename kT, typename vT>
 const typename hashmap<kT, vT>::iterator hashmap<kT, vT>::begin() const{
     iterator iter;
     iter.ptr = &data;
-    iter.iter = kh_begin(&data);
+
+    khiter_t kiter = kh_begin(&data);
+    while(kiter != kh_end(&data) && !kh_exist(&data, kiter)) ++kiter;
+    iter.iter = kiter;
+
     return iter;
 }
 

@@ -1,6 +1,6 @@
 void make_texture_asset_from_png_file(Texture_Asset* asset, const File_Path& path, Render_Layer* render_layer){
     s32 width, height, nchannels;
-    asset->bitmap = stbi_load(path.data, &width, &height, &nchannels, 4u);
+    asset->bitmap = stbi_load(path.data, &width, &height, &nchannels, 4);
     asset->width = width;
     asset->height = height;
     ENGINE_CHECK(asset->bitmap, "failed to stbi_load with path: %s", path.data);

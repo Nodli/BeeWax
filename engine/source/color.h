@@ -19,13 +19,19 @@
 
 u32 rgba32(float r, float g, float b, float a);
 u32 rgba32(const vec4& rgba);
-
 vec4 rgbaf(u32 rgba);
 
-u32 rgba32_getr(float r);
-u32 rgba32_getg(float g);
-u32 rgba32_getb(float b);
-u32 rgba32_geta(float a);
+u32 rgba32_set_r(u32 rgba, float r);
+u32 rgba32_set_g(u32 rgba, float g);
+u32 rgba32_set_b(u32 rgba, float b);
+u32 rgba32_set_a(u32 rgba, float a);
+
+u32 uv32(float u, float v);
+u32 uv32(const vec2& uv);
+vec2 uvf(u32 uv);
+
+u32 uv32_u(u32 uv, float u);
+u32 uv32_v(u32 uv, float v);
 
 // ---- color space conversion
 

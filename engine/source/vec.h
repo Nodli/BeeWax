@@ -48,6 +48,7 @@ struct vec::vec2{
     vec2<T> operator-() const;
 
     bool operator==(const vec2<T>& vec) const;
+    bool operator!=(const vec2<T>& vec) const;
 
     T& operator[](const u32 index);
     T operator[](const u32 index) const;
@@ -61,12 +62,8 @@ struct vec::vec2{
             T y;
         };
         struct{
-            T r;
-            T g;
-        };
-        struct{
-            T s;
-            T t;
+            T u;
+            T v;
         };
     };
 };
@@ -132,6 +129,7 @@ struct vec::vec3{
     vec3<T> operator-() const;
 
     bool operator==(const vec3<T>& vec) const;
+    bool operator!=(const vec3<T>& vec) const;
 
     T& operator[](const u32 index);
     T operator[](const u32 index) const;
@@ -149,11 +147,6 @@ struct vec::vec3{
             T r;
             T g;
             T b;
-        };
-        struct{
-            T s;
-            T t;
-            T p;
         };
         struct{
             T i;
@@ -224,6 +217,7 @@ struct vec::vec4{
     vec4<T> operator-() const;
 
     bool operator==(const vec4<T>& vec) const;
+    bool operator!=(const vec4<T>& vec) const;
 
     T& operator[](const u32 index);
     T operator[](const u32 index) const;

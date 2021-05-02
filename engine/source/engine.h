@@ -1,23 +1,19 @@
 #ifndef H_ENGINE
 #define H_ENGINE
 
-using namespace bw;
-
-enum struct Engine_Code : u32{
-    Nothing = 0u,
-    No_Scene,
-    Window_Quit,
+struct Engine_Config{
+    const char* window_name;
+    u32 window_width;
+    u32 window_height;
+    u32 render_target_samples;
+    File_Path asset_catalog_path;
 };
 
 struct Engine{
-    void create();
+    void create(const Engine_Config& iconfig);
     void destroy();
 
-    Engine_Code process_event();
-    Engine_Code update_start();
-    void update_end();
-    Engine_Code render_start();
-    void render_end();
+    void run();
 
     // ---- data
 
@@ -34,6 +30,8 @@ struct Engine{
     Audio_Player audio;
 
     Scene_Manager scene_manager;
+
+    File_Path asset_catalog_path;
 
     Asset_Catalog<Audio_Asset> audio_catalog;
     Asset_Catalog<Texture_Asset> texture_catalog;

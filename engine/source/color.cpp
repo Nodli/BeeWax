@@ -6,11 +6,11 @@ u32 rgba32(float r, float g, float b, float a){
     b = min_max(b, 0.f, 1.f);
     a = min_max(a, 0.f, 1.f);
 
-    u32 out = 0;
-    out |= ((u32)(a * 255.f + 0.5f) & 0xFF) << 24u;
-    out |= ((u32)(b * 255.f + 0.5f) & 0xFF) << 16u;
-    out |= ((u32)(g * 255.f + 0.5f) & 0xFF) << 8u;
-    out |= ((u32)(r * 255.f + 0.5f) & 0xFF);
+    u32 out = 0u;
+    out |= ((u32)(a * 0xFF + 0.5f) & 0xFF) << 24u;
+    out |= ((u32)(b * 0xFF + 0.5f) & 0xFF) << 16u;
+    out |= ((u32)(g * 0xFF + 0.5f) & 0xFF) << 8u;
+    out |= ((u32)(r * 0xFF + 0.5f) & 0xFF);
 
     return out;
 }
@@ -21,28 +21,60 @@ u32 rgba32(const vec4& rgba){
 
 vec4 rgbaf(u32 rgba){
     vec4 out;
-    out.r = (float)(rgba & 0xFF) * 255.f;
-    out.g = (float)((rgba & 0xFF) >> 8u) * 255.f;
-    out.b = (float)((rgba & 0xFF) >> 16u) * 255.f;
-    out.a = (float)((rgba & 0xFF) >> 24u) * 255.f;
+    out.r = (float)(rgba & 0x000000FF) * 0xFF;
+    out.g = (float)((rgba & 0x0000FF00) >> 8u) * 0xFF;
+    out.b = (float)((rgba & 0x00FF0000) >> 16u) * 0xFF;
+    out.a = (float)((rgba & 0xFF000000) >> 24u) * 0xFF;
     return out;
 }
 
-u32 rgba32_r(u32 rgba, float r){
+u32 rgba32_set_r(u32 rgba, float r){
     r = min_max(r, 0.f, 1.f);
-    return (rgba & 0xFFFFFF00) | ((u32)(r * 255.f + 0.5f) & 0xFF);
+    return (rgba & 0xFFFFFF00) | ((u32)(r * 0xFF + 0.5f) & 0xFF);
 }
-u32 rgba32_g(u32 rgba, float g){
+u32 rgba32_set_g(u32 rgba, float g){
     g = min_max(g, 0.f, 1.f);
-    return (rgba & 0xFFFF00FF) | (((u32)(g * 255.f + 0.5f) & 0xFF) << 8u);
+    return (rgba & 0xFFFF00FF) | (((u32)(g * 0xFF + 0.5f) & 0xFF) << 8u);
 }
-u32 rgba32_b(u32 rgba, float b){
+u32 rgba32_set_b(u32 rgba, float b){
     b = min_max(b, 0.f, 1.f);
-    return (rgba & 0xFF00FFFF) | (((u32)(b * 255.f + 0.5f) & 0xFF) << 16u);
+    return (rgba & 0xFF00FFFF) | (((u32)(b * 0xFF + 0.5f) & 0xFF) << 16u);
 }
-u32 rgba32_a(u32 rgba, float a){
+u32 rgba32_set_a(u32 rgba, float a){
     a = min_max(a, 0.f, 1.f);
-    return (rgba & 0x00FFFFFF) | (((u32)(a * 255.f + 0.5f) & 0xFF) << 24u);
+    return (rgba & 0x00FFFFFF) | (((u32)(a * 0xFF + 0.5f) & 0xFF) << 24u);
+}
+
+u32 uv32(float u, float v){
+    u = min_max(u, 0.f, 1.f);
+    v = min_max(v, 0.f, 1.f);
+
+    u32 out = 0u;
+    out |= ((u32)(v * 0xFFFF + 0.5f) & 0xFFFF) << 16u;
+    out |= ((u32)(u * 0xFFFF + 0.5f) & 0xFFFF);
+
+    return out;
+}
+
+u32 uv32(const vec2& uv){
+    return uv32(uv.u, uv.v);
+}
+
+vec2 uvf(u32 uv){
+    vec2 out;
+    out.u = (float)(uv & 0x0000FFFF) * 0xFFFF;
+    out.v = (float)((uv & 0xFFFF0000) >> 16u) * 0xFFFF;
+    return out;
+}
+
+u32 uv32_u(u32 uv, float u){
+    u = min_max(u, 0.f, 1.f);
+    return (uv & 0xFFFF0000) | ((u32)(u * 0xFFFF + 0.5f) & 0x0000FFFF);
+
+}
+u32 uv32_v(u32 uv, float v){
+    v = min_max(v, 0.f, 1.f);
+    return (uv & 0xFFFF0000) | ((u32)(v * 0xFFFF + 0.5f) & 0xFFFF0000);
 }
 
 // ---- color space conversion

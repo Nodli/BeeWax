@@ -141,9 +141,9 @@
 #include "macro.h"
 #include "typedef.h"
 
-struct Engine;
-
 namespace bw{
+    struct Engine;
+
     #include "tracked_memory.h"
     #include "logprint.h"
     #include "debug_tools.h"
@@ -225,8 +225,8 @@ namespace bw{
 
     #include "asset_catalog.h"
     #include "asset_import.h"
-}
 
-#include "engine.h"
+    #include "engine.h"
+}
 
 #endif

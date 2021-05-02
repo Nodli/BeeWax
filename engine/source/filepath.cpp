@@ -30,14 +30,6 @@ File_Path asset_path(){
 
 File_Path::File_Path() : data(""), size(0u) {}
 
-File_Path::operator const char*() const{
-    return data;
-}
-
-File_Path::operator char*(){
-    return data;
-}
-
 File_Path& File_Path::operator=(const File_Path& rhs){
     memcpy(data, rhs.data, rhs.size);
     size = rhs.size;
@@ -97,14 +89,30 @@ void File_Path::extract_from(const char* iptr, u32 isize){
 }
 
 bool operator==(const File_Path& lhs, const File_Path& rhs){
-    return (lhs.size == rhs.size) && (memcmp(lhs.data, rhs.data, lhs.size) == 0);
+    return (lhs.size == rhs.size) && (lhs.size == 0u || memcmp(lhs.data, rhs.data, lhs.size) == 0);
 }
 
 bool operator==(const File_Path& lhs, const char* rhs){
     u32 rhs_size = strlen(rhs);
-    return (lhs.size == rhs_size) && (memcmp(lhs.data, rhs, rhs_size) == 0u);
+    return (lhs.size == rhs_size) && (rhs_size == 0u || memcmp(lhs.data, rhs, rhs_size) == 0u);
 }
 
 bool operator==(const char* lhs, const File_Path& rhs){
     return rhs == lhs;
+}
+
+bool operator!=(const File_Path& lhs, const File_Path& rhs){
+    return !(lhs == rhs);
+}
+
+bool operator!=(const File_Path& lhs, const char* rhs){
+    return !(lhs == rhs);
+}
+
+bool operator!=(const char* lhs, const File_Path& rhs){
+    return !(lhs == rhs);
+}
+
+u32 hashmap_hash(const File_Path& path){
+    return hashmap_hash(path.data);
 }

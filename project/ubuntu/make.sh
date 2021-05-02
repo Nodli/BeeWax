@@ -34,7 +34,7 @@ echo -------- Compiling source
 
 ExecutableName=Application
 
-Source_Engine=$EngineDirectory/source/engine_unity.cpp
+Source_Engine=$EngineDirectory/source/unity.cpp
 Include_Common="-I $CommonDirectory/source"
 
 Library_SDL=$(sdl2-config --cflags --libs)

@@ -4,7 +4,7 @@ static inline void texture_format_info(Texture_Format format,
         case TEXTURE_FORMAT_RGBA_BYTE:
         case TEXTURE_FORMAT_SRGBA_BYTE:
             nchan = 4u;
-            format_type = GL_RGB;
+            format_type = GL_RGBA;
             bytes_per_chan = 1u;
             break;
         case TEXTURE_FORMAT_RGB_BYTE:
@@ -517,6 +517,7 @@ Render_Target_GL3 Render_Layer_GL3::get_render_target(u32 width, u32 height){
 
     render_target.width = width;
     render_target.height = height;
+    render_target.samples = 1u;
 
     glGenRenderbuffers(2u, render_target.buffers);
     glBindRenderbuffer(GL_RENDERBUFFER, render_target.buffer_color);
@@ -539,6 +540,7 @@ Render_Target_GL3 Render_Layer_GL3::get_render_target_multisample(u32 width, u32
 
     render_target.width = width;
     render_target.height = height;
+    render_target.samples = samples;
 
     glGenRenderbuffers(2u, render_target.buffers);
     glBindRenderbuffer(GL_RENDERBUFFER, render_target.buffer_color);
@@ -637,11 +639,15 @@ static void draw_primitive_element_GL3(Buffer_Indexed_GL3* buffer, Primitive_Typ
     glBindVertexArray(0u);
 }
 
-void Render_Layer_GL3::draw(const Transient_Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count){
+void Render_Layer_GL3::draw(const Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count){
     draw_primitive_GL3((Buffer_GL3*)&buffer, primitive, index, count);
 }
 
-void Render_Layer_GL3::draw(const Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count){
+void Render_Layer_GL3::draw(const Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 count, u64 offset){
+    draw_primitive_element_GL3((Buffer_Indexed_GL3*)&buffer, primitive, index_type, count, offset);
+}
+
+void Render_Layer_GL3::draw(const Transient_Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count){
     draw_primitive_GL3((Buffer_GL3*)&buffer, primitive, index, count);
 }
 
@@ -649,11 +655,7 @@ void Render_Layer_GL3::draw(const Transient_Buffer_Indexed_GL3& buffer, Primitiv
     draw_primitive_element_GL3((Buffer_Indexed_GL3*)&buffer, primitive, index_type, count, offset);
 }
 
-void Render_Layer_GL3::draw(const Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 count, u64 offset){
-    draw_primitive_element_GL3((Buffer_Indexed_GL3*)&buffer, primitive, index_type, count, offset);
-}
-
-void Render_Layer_GL3::clear_render_target(const Render_Target_GL3& render_target){
+void Render_Layer_GL3::clear_render_target(){
     // NOTE(hugo): glUseProgram(0u) otherwise the glClear triggers a vertex shader recompilation on Nvidia GPUs
     glUseProgram(0u);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

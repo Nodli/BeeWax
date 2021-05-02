@@ -71,7 +71,11 @@ void Window_SDL_GL::create(const Window_Settings_SDL_GL& settings){
 
     // NOTE(hugo): ---- settings that do not require to recreate a window
 
-    SDL_SetWindowResizable(handle, SDL_TRUE);
+    if(settings.size_control == Window_Settings_SDL_GL::size_control_none){
+        SDL_SetWindowResizable(handle, SDL_FALSE);
+    }else if(settings.size_control == Window_Settings_SDL_GL::size_control_allowed){
+        SDL_SetWindowResizable(handle, SDL_TRUE);
+    }
     if(settings.mode == Window_Settings_SDL_GL::mode_borderless){
         SDL_SetWindowBordered(handle, SDL_FALSE);
     }else if(settings.mode == Window_Settings_SDL_GL::mode_fullscreen){

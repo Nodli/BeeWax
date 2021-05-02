@@ -22,10 +22,6 @@ struct File_Path{
     template<size_t isize>
     constexpr File_Path(const char (&idata)[isize]);
 
-    // NOTE(hugo): File_Path to const char*
-    operator const char* () const;
-    operator char* ();
-
     File_Path& operator=(const File_Path& rhs);
     File_Path& operator=(const char* rhs);
     File_Path& operator/(const File_Path& rhs);
@@ -42,6 +38,12 @@ struct File_Path{
 bool operator==(const File_Path& lhs, const File_Path& rhs);
 bool operator==(const File_Path& lhs, const char* rhs);
 bool operator==(const char* lhs, const File_Path& rhs);
+
+bool operator!=(const File_Path& lhs, const File_Path& rhs);
+bool operator!=(const File_Path& lhs, const char* rhs);
+bool operator!=(const char* lhs, const File_Path& rhs);
+
+u32 hashmap_hash(const File_Path& path);
 
 // ----
 

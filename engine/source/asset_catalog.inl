@@ -32,9 +32,10 @@ void Asset_Catalog<T>::remove_runtime_asset(const Asset_Tag& tag){
 template<typename T>
 const T* Asset_Catalog<T>::search_asset(const Asset_Tag& tag) const{
     void** map_ptr;
-    map.search(tag, map_ptr);
-    assert(map_ptr);
-
-    return (T*)*map_ptr;
+    if(map.search(tag, map_ptr)){
+        return (T*)(*map_ptr);
+    }
+    LOG_ERROR("unknown asset tag: %s", tag.data);
+    return nullptr;
 }
 

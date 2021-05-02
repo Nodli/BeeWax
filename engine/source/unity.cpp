@@ -4,8 +4,6 @@
 
 #include "unity_header.h"
 #include "unity_source.cpp"
-#include "engine_main.cpp"
-#include "engine.cpp"
 
 // ---- post-engine include
 
@@ -13,8 +11,37 @@
     #include APPLICATION_UNITY
 
 #else
-    void    user_config()       { printf("WARNING: no user_config()\n"); };
-    void*   user_create()       { printf("WARNING: no user_create()\n"); return nullptr;};
-    void    user_destroy(void*) { printf("WARNING: no user_destroy()\n"); };
+
+using namespace bw;
+
+int main(int argc, char* argv[]){
+    Engine_Config configuration;
+    configuration.window_name = "Engine";
+    configuration.window_width = 800u;
+    configuration.window_width = 600u;
+    configuration.render_target_samples = 1u;
+    configuration.asset_catalog_path = "";
+    Engine engine;
+
+    printf("-- starting\n");
+
+    engine.create(configuration);
+
+    printf("-- mainloop\n");
+
+    engine.run();
+
+    printf("-- engine destroy \n");
+
+    engine.destroy();
+
+    printf("-- memory leak detection\n");
+
+    DEV_Memtracker_Leakcheck();
+
+    printf("-- finished\n");
+
+    return 0;
+}
 
 #endif
