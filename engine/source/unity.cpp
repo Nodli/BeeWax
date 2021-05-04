@@ -18,7 +18,7 @@ int main(int argc, char* argv[]){
     Engine_Config configuration;
     configuration.window_name = "Engine";
     configuration.window_width = 800u;
-    configuration.window_width = 600u;
+    configuration.window_height = 600u;
     configuration.render_target_samples = 1u;
     configuration.asset_catalog_path = "";
     Engine engine;
