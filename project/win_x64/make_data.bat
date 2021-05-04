@@ -1,14 +1,19 @@
 @echo off
+setlocal
 
-set P=%cd%\..
-set BinDir=%1
-set DataDir=%2
+set DestinationDirectory=%1
+set SourceDirectory=%2
 
 echo -------- Mirroring data
 
-mkdir %P%\win_x64\%BinDir%
-xcopy %P%\data %P%\win_x64\%BinDir%\%DataDir% /E /Q /I /D /Y
-xcopy %P%\externals\SDL2-2.0.10\x64\SDL2.dll %P%\win_x64\%BinDir% /Q /I /D /Y
+echo "Source:       " %SourceDirectory%
+echo "Destination:  " %DestinationDirectory%
 
-echo.
+mkdir %DestinationDirectory%
+if not "%SourceDirectory%" == "" (
+    xcopy %SourceDirectory% %DestinationDirectory% /E /Q /I /D /Y
+) else (
+    echo "WARNING: Source folder does not exist"
+)
+
 echo -------- Finished mirroring data

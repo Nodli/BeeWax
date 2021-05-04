@@ -1,4 +1,5 @@
 #!/bin/bash
+
 echo -------- Generating external libraries
 
 pushd $(dirname $0) > /dev/null
@@ -26,9 +27,7 @@ Library_ImGui=imgui.a
 Compiled_ImGui=imgui.obj
 External_ImGui="-I $ExternalsDirectory/stb -I $ExternalsDirectory/gl3w/include $(sdl2-config --cflags)"
 
-echo $External_ImGui
-
-DebugFlags="-g -DDEBUG"
+#DebugFlags="-g -DDEBUG"
 if ! [[ -v DebugFlags ]];
 then
     echo -- release mode
