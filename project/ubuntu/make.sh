@@ -27,8 +27,8 @@ echo -------- Compiling data
 BinDirectory=$ApplicationDirectory/bin
 mkdir -p $BinDirectory
 
-$ProjectDirectory/make_data.sh $BinDirectory $EngineDirectory/data
-$ProjectDirectory/make_data.sh $BinDirectory $ApplicationDirectory/data
+$ProjectDirectory/make_data.sh $BinDirectory/data $EngineDirectory/data
+$ProjectDirectory/make_data.sh $BinDirectory/data $ApplicationDirectory/data
 
 echo -------- Compiling source
 
