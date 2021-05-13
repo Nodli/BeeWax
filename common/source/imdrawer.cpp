@@ -35,6 +35,8 @@ void ImDrawer::draw(){
                 get_engine().render_layer.setup_texture_unit(0u, command.polygon_textured.texture, nearest_clamp);
                 get_engine().render_layer.draw(buffers[command.polygon_textured.buffer_index].buffer, PRIMITIVE_TRIANGLES, command.polygon_textured.vertex_index, command.polygon_textured.vertex_count);
                 break;
+            default:
+                break;
         }
     }
 }

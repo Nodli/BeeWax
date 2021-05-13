@@ -5,10 +5,11 @@
 
 struct ImDrawer{
     enum Command_Type{
-        NONE,
         LINE,
         POLYGON,
         POLYGON_TEXTURED,
+        NUMBER_OF_COMMAND_TYPES,
+        NONE = NUMBER_OF_COMMAND_TYPES
     };
     struct Command_Polygon{
         u32 buffer_index;
