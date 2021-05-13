@@ -7,179 +7,94 @@ Engine& get_engine(){return *g_engine_ptr;};
 
 // ----
 
-#include <vector>
+#include "imdrawer.h"
+#include "imdrawer.cpp"
 
-struct ImDrawer{
-    struct ImDrawTextureCommand{
-        Texture texture;
-        u32 buffer_index;
-        u32 vertex_index;
-        u32 vertex_count;
-    };
+#include "physics_2D.h"
 
-    struct ImDrawVectorCommand{
-        u32 buffer_index;
-        u32 vertex_index;
-        u32 vertex_count;
-    };
-
-    struct ImDrawBuffer{
-        Transient_Buffer buffer = {};
-        size_t vertex_count = 0u;
-    };
-
-    ImDrawer(){
-    }
-
-    ~ImDrawer(){
-        for(auto& imbuffer : texture_buffers){
-            get_engine().render_layer.free_buffer(imbuffer.buffer);
-        }
-    }
-
-    void command_texture(const Texture_Asset* texture_asset, vec3 position, vec2 size){
-        // NOTE(hugo): find an available buffer
-        s32 buffer_index = -1;
-        for(s32 ibuffer = 0u; ibuffer != texture_buffers.size(); ++ibuffer){
-            u32 free_vertices = (texture_buffers[ibuffer].buffer.bytesize / sizeof(vertex_xyzuv) - texture_buffers[ibuffer].vertex_count);
-            if(free_vertices > 5u){
-                buffer_index = ibuffer;
-                break;
-            }
-        }
-
-        // NOTE(hugo): create a new one when necessary
-        if(buffer_index == -1){
-            ImDrawBuffer new_buffer;
-
-            new_buffer.buffer = get_engine().render_layer.get_transient_buffer(6u * 512u * sizeof(vertex_xyzuv));
-            get_engine().render_layer.format(new_buffer.buffer, xyzuv);
-            get_engine().render_layer.checkout(new_buffer.buffer);
-
-            new_buffer.vertex_count = 0u;
-            buffer_index = texture_buffers.size();
-            texture_buffers.push_back(new_buffer);
-        }
-
-        // NOTE(hugo): emit vertices
-        ImDrawBuffer& imbuffer = texture_buffers[buffer_index];
-        u32 vertex_index = imbuffer.vertex_count;
-        vertex_xyzuv* vptr = (vertex_xyzuv*)imbuffer.buffer.ptr + vertex_index;
-
-        vec2 hsize = size * 0.5f;
-
-        *vptr++ = {{position.x - hsize.x, position.y - hsize.y, position.z}, uv32(0.f, 0.f)};
-        *vptr++ = {{position.x + hsize.x, position.y - hsize.y, position.z}, uv32(1.f, 0.f)};
-        *vptr++ = {{position.x + hsize.x, position.y + hsize.y, position.z}, uv32(1.f, 1.f)};
-
-        *vptr++ = {{position.x - hsize.x, position.y - hsize.y, position.z}, uv32(0.f, 0.f)};
-        *vptr++ = {{position.x + hsize.x, position.y + hsize.y, position.z}, uv32(1.f, 1.f)};
-        *vptr++ = {{position.x - hsize.x, position.y + hsize.y, position.z}, uv32(0.f, 1.f)};
-
-        imbuffer.vertex_count += 6u;
-
-        // NOTE(hugo): queue draw command
-        ImDrawTextureCommand command;
-        command.texture = texture_asset->texture;
-        command.buffer_index = buffer_index;
-        command.vertex_index = vertex_index;
-        command.vertex_count = 6u;
-        texture_commands.push_back(command);
-    }
-
-    void command_quad(vec3 A, vec3 B, vec3 C, vec3 D, u32 rgba){
-        // NOTE(hugo): find an available buffer
-        s32 buffer_index = -1;
-        for(s32 ibuffer = 0u; ibuffer != vector_buffers.size(); ++ibuffer){
-            u32 free_vertices = (vector_buffers[ibuffer].buffer.bytesize / sizeof(vertex_xyzrgba) - vector_buffers[ibuffer].vertex_count);
-            if(free_vertices > 5u){
-                buffer_index = ibuffer;
-                break;
-            }
-        }
-
-        // NOTE(hugo): create a new one when necessary
-        if(buffer_index == -1){
-            ImDrawBuffer new_buffer;
-
-            new_buffer.buffer = get_engine().render_layer.get_transient_buffer(6u * 1024u * sizeof(vertex_xyzrgba));
-            get_engine().render_layer.format(new_buffer.buffer, xyzrgba);
-            get_engine().render_layer.checkout(new_buffer.buffer);
-
-            new_buffer.vertex_count = 0u;
-            buffer_index = vector_buffers.size();
-            vector_buffers.push_back(new_buffer);
-        }
-
-        // NOTE(hugo): emit vertices
-        ImDrawBuffer& imbuffer = vector_buffers[buffer_index];
-        u32 vertex_index = imbuffer.vertex_count;
-        vertex_xyzrgba* vptr = (vertex_xyzrgba*)imbuffer.buffer.ptr + vertex_index;
-
-        *vptr++ = {A, rgba};
-        *vptr++ = {B, rgba};
-        *vptr++ = {C, rgba};
-
-        *vptr++ = {A, rgba};
-        *vptr++ = {C, rgba};
-        *vptr++ = {D, rgba};
-
-        imbuffer.vertex_count += 6u;
-
-        // NOTE(hugo): queue draw command
-        ImDrawVectorCommand command;
-        command.buffer_index = buffer_index;
-        command.vertex_index = vertex_index;
-        command.vertex_count = 6u;
-        vector_commands.push_back(command);
-
-    }
-
-    void new_frame(){
-        texture_commands.clear();
-        for(auto& imbuffer : texture_buffers){
-            imbuffer.vertex_count = 0u;
-            get_engine().render_layer.checkout(imbuffer.buffer);
-        }
-
-        vector_commands.clear();
-        for(auto& imbuffer : vector_buffers){
-            imbuffer.vertex_count = 0u;
-            get_engine().render_layer.checkout(imbuffer.buffer);
-        }
-    }
-
-    void draw(){
-        for(auto& imbuffer : texture_buffers){
-            get_engine().render_layer.commit(imbuffer.buffer);
-        }
-        for(auto& imbuffer : vector_buffers){
-            get_engine().render_layer.commit(imbuffer.buffer);
-        }
-
-        get_engine().render_layer.use_shader(polygon_tex);
-        for(auto& command : texture_commands){
-            get_engine().render_layer.setup_texture_unit(0u, command.texture, nearest_clamp);
-            get_engine().render_layer.draw(texture_buffers[command.buffer_index].buffer, PRIMITIVE_TRIANGLES, command.vertex_index, command.vertex_count);
-        }
-
-        get_engine().render_layer.use_shader(polygon);
-        for(auto& command : vector_commands){
-            get_engine().render_layer.draw(vector_buffers[command.buffer_index].buffer, PRIMITIVE_TRIANGLES, command.vertex_index, command.vertex_count);
-        }
-    }
-
-    // ---- data
-
-    std::vector<ImDrawTextureCommand> texture_commands;
-    std::vector<ImDrawBuffer> texture_buffers;
-
-    std::vector<ImDrawVectorCommand> vector_commands;
-    std::vector<ImDrawBuffer> vector_buffers;
-};
+//#include "entity_manager.h"
 
 // --
 
+#if 0
+struct Entity{
+    Collider col;
+    bool being_collided_with;
+};
+
+#define FOR_EACH_ENTITY_TYPE(FUNCTION)  \
+FUNCTION(Entity)
+
+struct Physics_Scene{
+    Physics_Scene(){
+        A.position = {0.f, 0.f};
+        A.type = Collider::STATIC;
+        A.collider_data = nullptr;
+        A.collision_callback = nullptr;
+        A.shape.hsize = {2.f, 2.f};
+
+        B.position = {4.f, 0.f};
+        B.type = Collider::DYNAMIC;
+        B.collider_data = nullptr;
+        B.collision_callback = nullptr;
+        B.shape.hsize = {1.f, 1.f};
+
+        colcontext.register_collider(A);
+        colcontext.register_collider(B);
+
+        scene_camera.position = {0.f, 0.f, 2.f};
+        scene_camera.near_plane = 0.9f;
+        scene_camera.far_plane = 2.1f;
+        scene_camera.vertical_span = 12.f;
+
+        get_engine().action_manager.register_action(0u, MOUSE_POSITION);
+    }
+    ~Physics_Scene(){
+        colcontext.unregister_collider(A);
+        colcontext.unregister_collider(B);
+    }
+    void update(){
+        Action_Data action = get_engine().action_manager.get_action(0u);
+        vec2 mouse_position_screen = get_engine().window.pixel_to_screen_coordinates({action.cursor.position_x, action.cursor.position_y});
+        vec2 mouse_position = vec2({0.f, 0.f}) + mouse_position_screen * 6.f;
+
+        B.position = mouse_position;
+
+        colcontext.update();
+    }
+    void render(){
+        scene_camera.aspect_ratio = get_engine().window.aspect_ratio();
+
+        uniform_camera ucamera;
+        mat4 camera_matrix = scene_camera.orthographic_matrix() * scene_camera.view_matrix();
+        ucamera.matrix = to_std140(camera_matrix);
+        get_engine().render_layer.update_uniform(camera, (void*)&ucamera);
+
+        uniform_transform utransform;
+        get_engine().render_layer.update_uniform(transform, (void*)&utransform);
+
+        drawer.new_frame();
+
+        debug_draw_collision_context(colcontext, drawer, 1.f, rgba32(1.f, 0.f, 0.f, 1.f));
+
+        drawer.draw();
+    }
+
+    // ----
+
+    Collider A;
+    Collider B;
+
+    bool collision;
+
+    Camera_3D_FP scene_camera;
+
+    ImDrawer drawer;
+    Collision_Context colcontext;
+};
+#endif
+
+#if 0
 struct Fly{
     vec2 pos;
     float second_start;
@@ -229,12 +144,14 @@ struct Sample_Scene{
         get_engine().action_manager.register_action(SHOOT_POSITION, MOUSE_POSITION);
 
         const Audio_Asset* soundtrack = get_engine().audio_catalog.search_asset("soundtrack");
-        get_engine().audio.start(soundtrack, true);
+        soundtrack_channel = get_engine().audio.start(soundtrack, LOOP);
     }
 
     ~Sample_Scene(){
         get_engine().action_manager.remove_action(SHOOT_TONGUE);
         get_engine().action_manager.remove_action(SHOOT_POSITION);
+
+        get_engine().audio.stop(soundtrack_channel);
     }
 
     void update(){
@@ -251,7 +168,7 @@ struct Sample_Scene{
                     const Audio_Asset* audio[3] = {tA, tB, tC};
                     u32 rand = random_u32_range_uniform(3u);
                     rand = min(2u, rand);
-                    get_engine().audio.start(audio[rand]);
+                    get_engine().audio.start(audio[rand], PLAY);
                 }
 
                 Action_Data shoot_position_action = get_engine().action_manager.get_action(SHOOT_TONGUE);
@@ -268,7 +185,7 @@ struct Sample_Scene{
                     fly_on_tongue_index = -1;
 
                     const Audio_Asset* eat = get_engine().audio_catalog.search_asset("eat");
-                    get_engine().audio.start(eat);
+                    get_engine().audio.start(eat, PLAY);
                 }
 
                 for(u32 ifly = 0; ifly != flies.size(); ++ifly){
@@ -288,7 +205,7 @@ struct Sample_Scene{
             fly_on_tongue_index = -1;
 
             const Audio_Asset* eat = get_engine().audio_catalog.search_asset("eat");
-            get_engine().audio.start(eat);
+            get_engine().audio.start(eat, PLAY);
         }
         if(tongue_reload_frames) --tongue_reload_frames;
 
@@ -371,17 +288,17 @@ struct Sample_Scene{
         drawer.new_frame();
 
         const Texture_Asset* frog = get_engine().texture_catalog.search_asset("frog");
-        drawer.command_texture(frog, {6.f, 2.f, 0.6f}, {2., 2.f});
+        drawer.command_sprite(frog, {6.f, 2.f}, {2., 2.f}, 0.6f);
 
         const Texture_Asset* lilypad = get_engine().texture_catalog.search_asset("lilypad");
-        drawer.command_texture(lilypad, {5.5f, 2.f, 0.5f}, {4., 4.f});
+        drawer.command_sprite(lilypad, {5.5f, 2.f}, {4., 4.f}, 0.5f);
 
         const Texture_Asset* background = get_engine().texture_catalog.search_asset("water");
         float offset_x = 2.f * fmodf(timer_seconds(), 10.f) / 10.f;
         float offset_y = 2.f * fmodf(timer_seconds(), 5.f) / 5.f;
         for(s32 x = -2; x != 14; x+= 2)
             for(s32 y = 0; y != 14; y += 2)
-                drawer.command_texture(background, {(float)x + 1.f + offset_x, (float)y + 1.f - offset_y, 0.25f}, {2., 2.f});
+                drawer.command_sprite(background, {(float)x + 1.f + offset_x, (float)y + 1.f - offset_y}, {2., 2.f}, 0.25f);
 
         if(tongue_reload_frames){
             vec2 tongue_direction = (vec2)tongue_position - tongue_origin;
@@ -390,7 +307,7 @@ struct Sample_Scene{
             vec2 tongue_end_L = (vec2)tongue_position - tongue_ortho * 0.15f;
             vec2 tongue_end_R = (vec2)tongue_position + tongue_ortho * 0.25f;
 
-            drawer.command_quad({5.75f, 2.05f, 0.75f}, {6.25f, 2.05f, 0.75f}, {tongue_end_L.x, tongue_end_L.y, 0.75f}, {tongue_end_R.x, tongue_end_R.y, 0.75f}, rgba32({1.f, 0.f, 0.25f, 1.f}));
+            drawer.command_quad({5.75f, 2.05f}, {6.25f, 2.05f}, {tongue_end_L.x, tongue_end_L.y}, {tongue_end_R.x, tongue_end_R.y}, 0.75f, rgba32({1.f, 0.f, 0.25f, 1.f}));
         }
 
         if(state == START_MENU){
@@ -398,18 +315,18 @@ struct Sample_Scene{
             const Texture_Asset* start = get_engine().texture_catalog.search_asset("start");
             const Texture_Asset* mouse = get_engine().texture_catalog.search_asset("mouse");
 
-            drawer.command_texture(frogfly, {6.f, 8.f, 1.f}, {1.5777f * frogfly_scale, frogfly_scale});
-            drawer.command_texture(start,   {6.f, 4.f, 1.f}, {1.87f * start_scale, start_scale});
-            drawer.command_texture(mouse,   {9.f, 2.f, 1.f}, {0.8837f * mouse_scale, mouse_scale});
+            drawer.command_sprite(frogfly, {6.f, 8.f}, {1.5777f * frogfly_scale, frogfly_scale}, 1.f);
+            drawer.command_sprite(start,   {6.f, 4.f}, {1.87f * start_scale, start_scale}, 1.f);
+            drawer.command_sprite(mouse,   {9.f, 2.f}, {0.8837f * mouse_scale, mouse_scale}, 1.f);
 
         }else if(state == GAMEPLAY){
             const Texture_Asset* flyA = get_engine().texture_catalog.search_asset("fly");
             const Texture_Asset* flyB = get_engine().texture_catalog.search_asset("fly_wing");
             for(auto& fly : flies){
                 if(fmodf((float)timer_seconds() - fly.second_start, 0.25f) > 0.125f){
-                    drawer.command_texture(flyA, {fly.pos.x, fly.pos.y, 0.9f}, {2., 2.f});
+                    drawer.command_sprite(flyA, {fly.pos.x, fly.pos.y}, {2., 2.f}, 0.9f);
                 }else{
-                    drawer.command_texture(flyB, {fly.pos.x, fly.pos.y, 0.9f}, {2., 2.f});
+                    drawer.command_sprite(flyB, {fly.pos.x, fly.pos.y}, {2., 2.f}, 0.9f);
                 }
             }
 
@@ -417,8 +334,8 @@ struct Sample_Scene{
             const Texture_Asset* ohno = get_engine().texture_catalog.search_asset("oh_no");
             const Texture_Asset* restart = get_engine().texture_catalog.search_asset("restart");
 
-            drawer.command_texture(ohno,    {6.f, 8.f, 1.f}, {1.759f * ohno_scale, ohno_scale});
-            drawer.command_texture(restart, {6.f, 4.f, 1.f}, {2.33f * restart_scale, restart_scale});
+            drawer.command_sprite(ohno,    {6.f, 8.f}, {1.759f * ohno_scale, ohno_scale}, 1.f);
+            drawer.command_sprite(restart, {6.f, 4.f}, {2.33f * restart_scale, restart_scale}, 1.f);
         }
 
         drawer.draw();
@@ -427,6 +344,8 @@ struct Sample_Scene{
     // ----
 
     Camera_3D_FP scene_camera;
+
+    Audio_Channel soundtrack_channel;
 
     Game_State state;
 
@@ -443,8 +362,52 @@ struct Sample_Scene{
 
     ImDrawer drawer;
 };
+#endif
 
 // ----
+
+#if 0
+int main(int argc, char* argv[]){
+    Engine_Config configuration;
+    configuration.window_name = "Engine";
+    configuration.window_width = 1000u;
+    configuration.window_height = 1000u;
+    configuration.render_target_samples = 1u;
+    configuration.asset_catalog_path = "./data/asset_catalog.json";
+
+    Engine engine;
+    set_engine_ptr(&engine);
+
+    printf("-- starting\n");
+
+    engine.create(configuration);
+    //engine.scene_manager.push_scene<Sample_Scene>("Sample_Scene");
+    engine.scene_manager.push_scene<Physics_Scene>("Physics_Scene");
+
+    printf("-- mainloop\n");
+
+    engine.run();
+
+    printf("-- engine destroy \n");
+
+    engine.destroy();
+
+    printf("-- finished\n");
+
+    DEV_Memtracker_Leakcheck();
+
+    return 0;
+}
+#endif
+
+struct Component_Health{
+    u32 health;
+};
+struct Component_Position{
+    vec2 position;
+};
+
+#include "ecs.h"
 
 int main(int argc, char* argv[]){
     Engine_Config configuration;
@@ -460,21 +423,19 @@ int main(int argc, char* argv[]){
     printf("-- starting\n");
 
     engine.create(configuration);
-    engine.scene_manager.push_scene<Sample_Scene>("Sample_Scene");
 
     printf("-- mainloop\n");
 
-    engine.run();
+    //engine.run();
+    do_the_thing();
 
     printf("-- engine destroy \n");
 
     engine.destroy();
 
-    printf("-- memory leak detection\n");
+    printf("-- finished\n");
 
     DEV_Memtracker_Leakcheck();
-
-    printf("-- finished\n");
 
     return 0;
 }
