@@ -65,9 +65,15 @@ struct Type_Indexer_Recursion<T, U, Types...>{
     static constexpr size_t recursion_index = 1u + Type_Indexer_Recursion<T, Types...>::recursion_index;
 };
 
-// NOTE(hugo): bottom of the recursion when the type is equal
+// NOTE(hugo): restart the index for each T type in the parameter pack
 template<typename T, typename ... Types>
 struct Type_Indexer_Recursion<T, T, Types...>{
+    static constexpr size_t recursion_index = 0u;
+};
+
+// NOTE(hugo): bottom of recursion
+template<typename T>
+struct Type_Indexer_Recursion<T>{
     static constexpr size_t recursion_index = 0u;
 };
 
@@ -75,6 +81,11 @@ template<typename ... Types>
 template<typename T>
 constexpr size_t Type_Indexer<Types...>::type_index(){
     return Type_Indexer_Recursion<T, Types...>::recursion_index;
+}
+
+template<typename ... Types>
+constexpr size_t Type_Indexer<Types...>::type_count(){
+    return sizeof...(Types);
 }
 
 // ---- bitset

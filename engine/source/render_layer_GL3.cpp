@@ -381,24 +381,30 @@ static void commit_buffer_indexed_GL3(Buffer_Indexed_GL3* buffer){
 
 Buffer_GL3 Render_Layer_GL3::get_buffer(size_t bytesize){
     Buffer_GL3 buffer;
+    buffer.ptr = nullptr;
     get_buffer_GL3((Buffer_GL3*)&buffer, bytesize, GL_STATIC_DRAW);
     return buffer;
 }
 
 Transient_Buffer_GL3 Render_Layer_GL3::get_transient_buffer(size_t bytesize){
     Transient_Buffer_GL3 buffer;
+    buffer.ptr = nullptr;
     get_buffer_GL3((Buffer_GL3*)&buffer, bytesize, GL_STREAM_DRAW);
     return buffer;
 }
 
 Buffer_Indexed_GL3 Render_Layer_GL3::get_buffer_indexed(size_t vbytesize, size_t ibytesize){
     Buffer_Indexed_GL3 buffer;
+    buffer.vptr = nullptr;
+    buffer.iptr = nullptr;
     get_buffer_indexed_GL3((Buffer_Indexed_GL3*)&buffer, vbytesize, ibytesize, GL_STATIC_DRAW);
     return buffer;
 }
 
 Transient_Buffer_Indexed_GL3 Render_Layer_GL3::get_transient_buffer_indexed(size_t vbytesize, size_t ibytesize){
     Transient_Buffer_Indexed_GL3 buffer;
+    buffer.vptr = nullptr;
+    buffer.iptr = nullptr;
     get_buffer_indexed_GL3((Buffer_Indexed_GL3*)&buffer, vbytesize, ibytesize, GL_STREAM_DRAW);
     return buffer;
 }
@@ -471,6 +477,7 @@ Texture_GL3 Render_Layer_GL3::get_texture(Texture_Format format, u32 width, u32 
     Texture_GL3 texture;
     texture.width = width;
     texture.height = height;
+    texture.format = format;
 
     glGenTextures(1u, &texture.texture);
 

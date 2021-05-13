@@ -99,37 +99,39 @@ namespace BEEWAX_INTERNAL{
     }
 
     void memtracker_summary(){
-        LOG_INFO("-------- memtracker_summary --------");
-        LOG_INFO("HEAD:     %p", &memtracker_head);
-        LOG_INFO("next:     %p", memtracker_head.next);
+        LOG_RAW("-------- memtracker_summary --------");
+        LOG_RAW("HEAD:     %p", &memtracker_head);
+        LOG_RAW("next:     %p", memtracker_head.next);
 
         Tracked_Memory* ptr = memtracker_head.next;
         while(ptr){
-            LOG_INFO("-- Tracked_Memory --");
-            LOG_INFO("header:   %p", ptr);
-            LOG_INFO("data:     %p", (Tracked_Memory*)ptr + 1u);
-            LOG_INFO("prev:     %p", ptr->prev);
-            LOG_INFO("next:     %p", ptr->next);
-            LOG_INFO("filename: %s", ptr->filename);
-            LOG_INFO("function: %s", ptr->function);
-            LOG_INFO("line:     %d", ptr->line);
-            LOG_INFO("bytesize: %p", ptr->bytesize);
-            LOG_INFO("--");
+            LOG_RAW("-- Tracked_Memory --");
+            LOG_RAW("header:   %p", ptr);
+            LOG_RAW("data:     %p", (Tracked_Memory*)ptr + 1u);
+            LOG_RAW("prev:     %p", ptr->prev);
+            LOG_RAW("next:     %p", ptr->next);
+            LOG_RAW("filename: %s", ptr->filename);
+            LOG_RAW("function: %s", ptr->function);
+            LOG_RAW("line:     %d", ptr->line);
+            LOG_RAW("bytesize: %p", ptr->bytesize);
+            LOG_RAW("--");
 
 
             ptr = ptr->next;
         }
-        LOG_INFO("------------------------------------");
+        LOG_RAW("------------------------------------");
     }
 
     void memtracker_leakcheck(){
-        ENGINE_CHECK(memtracker_head.next == nullptr, "MEMORY LEAK !");
+        LOG_RAW("-------- memtracker_leakcheck --------");
 
         Tracked_Memory* ptr = memtracker_head.next;
         while(ptr){
-            LOG_ERROR("---- LEAK\nFILENAME: %s\nFUNCTION: %s\nLINE: %" PRId64 "\nBYTESIZE: %" PRId64, ptr->filename, ptr->function, ptr->line, ptr->bytesize);
+            LOG_RAW("LEAK!\nFILENAME: %s\nFUNCTION: %s\nLINE: %" PRId64 "\nBYTESIZE: %" PRId64, ptr->filename, ptr->function, ptr->line, ptr->bytesize);
             ptr = ptr->next;
         }
+
+        LOG_RAW("--------------------------------------");
     }
 }
 

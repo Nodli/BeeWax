@@ -56,7 +56,11 @@ void Engine::create(const Engine_Config& iconfig){
 
     render_layer.create();
 
-    render_target = render_layer.get_render_target_multisample(iconfig.window_width, iconfig.window_height, iconfig.render_target_samples);
+    assert(iconfig.render_target_samples != 0u);
+    if(iconfig.render_target_samples == 1u)
+        render_target = render_layer.get_render_target(iconfig.window_width, iconfig.window_height);
+    else
+        render_target = render_layer.get_render_target_multisample(iconfig.window_width, iconfig.window_height, iconfig.render_target_samples);
 
     // --
 
@@ -103,9 +107,19 @@ void Engine::create(const Engine_Config& iconfig){
     ImGui_ImplOpenGL3_Init(GLSL_version);
 
     DEV_create();
+
+    // ---- startup
+
+    audio.resume();
 }
 
 void Engine::destroy(){
+
+    // ---- shutdown
+
+    audio.pause();
+    audio.pause();
+
     // ---- dev tools
 
     DEV_destroy();

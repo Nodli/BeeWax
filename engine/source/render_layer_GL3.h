@@ -2,32 +2,32 @@
 #define H_RENDERER_GL3
 
 struct Buffer_GL3{
-    void* ptr = nullptr;
-    size_t bytesize = 0u;
+    void* ptr;
+    size_t bytesize;
 
-    GL::Vertex_Array vao = 0u;
-    GL::Buffer vbo = 0u;
+    GL::Vertex_Array vao;
+    GL::Buffer vbo;
 };
 struct Transient_Buffer_GL3 : Buffer_GL3 {};
 
 struct Buffer_Indexed_GL3{
-    void* vptr = nullptr;
-    size_t vbytesize = 0u;
-    void* iptr = nullptr;
-    size_t ibytesize = 0u;
+    void* vptr;
+    size_t vbytesize;
+    void* iptr;
+    size_t ibytesize;
 
-    GL::Vertex_Array vao = 0u;
-    GL::Buffer vbo = 0u;
-    GL::Buffer ibo = 0u;
+    GL::Vertex_Array vao;
+    GL::Buffer vbo;
+    GL::Buffer ibo;;
 };
 struct Transient_Buffer_Indexed_GL3 : Buffer_Indexed_GL3 {};
 
 struct Texture_GL3{
-    u32 width = 0u;
-    u32 height = 0u;
+    u32 width;
+    u32 height;
 
-    Texture_Format format = TEXTURE_FORMAT_NONE;
-    GL::Texture texture = 0u;
+    Texture_Format format;
+    GL::Texture texture;
 };
 
 struct Render_Target_GL3{
@@ -44,6 +44,11 @@ struct Render_Target_GL3{
         };
     };
 };
+
+constexpr Buffer_GL3            Render_Layer_Invalid_Buffer         = {nullptr, 0u, 0u, 0u};
+constexpr Buffer_Indexed_GL3    Render_Layer_Invalid_Buffer_Indexed = {nullptr, 0u, nullptr, 0u, 0u, 0u, 0u};
+constexpr Texture_GL3           Render_Layer_Invalid_Texture        = {0u, 0u, TEXTURE_FORMAT_NONE, 0u};
+constexpr Render_Target_GL3     Render_Layer_Invalid_Render_Target  = {0u, 0u, 0u, 0u, 0u, 0u};
 
 struct Render_Layer_GL3{
     void create();

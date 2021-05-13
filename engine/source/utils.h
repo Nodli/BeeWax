@@ -35,6 +35,8 @@ template<typename ... Types>
 struct Type_Indexer{
     template<typename T>
     constexpr size_t type_index();
+
+    constexpr size_t type_count();
 };
 
 // ---- bitset
