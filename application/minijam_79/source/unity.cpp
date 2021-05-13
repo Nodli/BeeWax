@@ -400,13 +400,6 @@ int main(int argc, char* argv[]){
 }
 #endif
 
-struct Component_Health{
-    u32 health;
-};
-struct Component_Position{
-    vec2 position;
-};
-
 #include "ecs.h"
 
 int main(int argc, char* argv[]){
@@ -426,7 +419,7 @@ int main(int argc, char* argv[]){
 
     printf("-- mainloop\n");
 
-    //engine.run();
+    engine.run();
     do_the_thing();
 
     printf("-- engine destroy \n");
