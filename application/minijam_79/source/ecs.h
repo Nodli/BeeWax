@@ -1,7 +1,8 @@
 constexpr size_t chunk_bytesize = KILOBYTES(16u) - 2u;
 constexpr size_t archetype_max_types = 4u;
+constexpr size_t system_max_types = archetype_max_types;
 
-// TODO(hugo): compare implementation with https://imgeself.github.io/posts/2021-01-16-imge/
+// REF(hugo):
 // https://ourmachinery.com/post/ecs-and-rendering/
 // https://ourmachinery.com/post/making-the-move-rotate-scale-gizmos-work-with-any-component/
 
@@ -13,9 +14,8 @@ struct Type_Metadata{
 };
 
 // TODO(hugo):
-// * use a linked list of slabs ; it's fine right now because Chunks cannot be referenced through pointers
-// * cache the number of entities per chunk & store the number of available entities instead of a cursor ?
-// * cache the last used chunk index to search this one first ?
+// * slabpool
+// * cache the number of entities per chunk instead of a cursor ?
 struct Data_Storage{
     struct Chunk{
         u8 data[chunk_bytesize];
@@ -176,49 +176,6 @@ u32 remove_entity(const Archetype& arch, Data_Storage& storage, u32 data_index){
     assert(remove_chunk_index < storage.chunks.size());
     Data_Storage::Chunk& remove_chunk = storage.chunks[remove_chunk_index];
 
-#if 0
-    // NOTE(hugo): move inside chunk
-    if(remove_chunk_index == storage.chunks.size() - 1u){
-        if(remove_chunk.cursor == arch.bytesize){
-            assert(remove_chunk_byte_offset == 0u);
-            storage.chunks.pop_back();
-            return UINT32_MAX;
-
-        }else if(remove_chunk.cursor == remove_chunk_byte_offset + arch.bytesize){
-            remove_chunk.cursor -= arch.bytesize;
-            return UINT32_MAX;
-
-        }else{
-            void* dst_ptr = remove_chunk.data + remove_chunk_byte_offset;
-            void* src_ptr = remove_chunk.data + remove_chunk.cursor - arch.bytesize;
-            memcpy(dst_ptr, src_ptr, arch.bytesize);
-
-            remove_chunk.cursor -= arch.bytesize;
-            u32 move_data_index = remove_chunk_index * entities_per_chunk + remove_chunk.cursor / arch.bytesize;
-
-            return move_data_index;
-        }
-
-    // NOTE(hugo): move between chunks
-    }else{
-        u32 move_chunk_index = storage.chunks.size() - 1u;
-        Chunk& move_chunk = storage.chunks[move_chunk_index];
-
-        u32 move_chunk_byte_offset = move_chunk.cursor - arch.bytesize;
-
-        void* dst_ptr = remove_chunk.data + remove_chunk_byte_offset;
-        void* src_ptr = move_chunk.data + move_chunk_byte_offset;
-        memcpy(dst_ptr, src_ptr, arch.bytesize);
-
-        move_chunk.cursor -= arch.bytesize;
-        u32 move_data_index = move_chunk_index + move_chunk_byte_offset / arch.bytesize;
-
-        if(move_chunk.cursor == 0u) storage.chunks.pop_back();
-
-        return move_data_index;
-    }
-
-#else
     u32 move_chunk_index = storage.chunks.size() - 1u;
     Data_Storage::Chunk& move_chunk = storage.chunks[move_chunk_index];
     u32 move_chunk_byte_offset = move_chunk.cursor - arch.bytesize;
@@ -235,8 +192,6 @@ u32 remove_entity(const Archetype& arch, Data_Storage& storage, u32 data_index){
     if(move_chunk.cursor == 0u) storage.chunks.pop_back();
 
     return move_data_index;
-
-#endif
 }
 
 Entity allocate_entity(Manager& manager, const Archetype& arch){
