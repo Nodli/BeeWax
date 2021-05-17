@@ -6,11 +6,16 @@ constexpr size_t system_max_types = archetype_max_types;
 // https://ourmachinery.com/post/ecs-and-rendering/
 // https://ourmachinery.com/post/making-the-move-rotate-scale-gizmos-work-with-any-component/
 
-struct Type_Metadata{
+struct Entity{
+    u32 archetype_index;
+    u32 data_index;
+};
+
+struct Archetype{
+    u32 ntypes;
     size_t bytesize;
-    size_t alignment;
-    void (*create)(void* ptr);
-    void (*destroy)(void* ptr);
+    u32 type_IDs[archetype_max_types];
+    u32 type_offsets[archetype_max_types];
 };
 
 // TODO(hugo):
@@ -26,29 +31,80 @@ struct Data_Storage{
     std::vector<Chunk> chunks;
 };
 
-struct Archetype{
-    u32 ntypes;
-    size_t bytesize;
-    u32 type_IDs[archetype_max_types];
-    u32 type_offsets[archetype_max_types];
+struct System_Param{
+    void* base_ptr;
+    u32 nentities;
+    size_t type_offsets[archetype_max_types];
 };
 
-struct Entity{
-    u32 archetype_index;
-    u32 data_index;
+struct System{
+    u32 ntypes;
+    u32 type_IDs[archetype_max_types];
+    void* data;
+    void (*update)(void* data, const System_Param& param);
+};
+
+struct Type_Metadata{
+    size_t bytesize;
+    size_t alignment;
+    void (*create)(void* ptr);
+    void (*destroy)(void* ptr);
 };
 
 struct Manager{
     Type_Metadata types[2u];
+
     std::vector<Archetype> archetypes;
     std::vector<Data_Storage> storage;
-    std::vector<u32> free_index;
+    std::vector<u32> free_archetype_storage;
+
+    std::vector<System> systems;
 };
 
+u32 system_assess_archetype(const Manager& man, const System& sys, const Archetype& arch, System_Param& param){
+    if(arch.ntypes < sys.ntypes) return 0u;
+
+    u32 iarch = 0u;
+    u32 isys = 0u;
+
+    while(iarch != arch.ntypes){
+        if(sys.type_IDs[isys] == arch.type_IDs[iarch]){
+            param.type_offsets[isys] = arch.type_offsets[iarch];
+            ++isys;
+            if(isys == sys.ntypes) return 1u;
+        }
+        ++iarch;
+    }
+
+    return 0u;
+}
+
+void update_systems(Manager& manager){
+    System_Param param;
+
+    for(auto& sys : manager.systems){
+        for(u32 iarch = 0u; iarch != manager.archetypes.size(); ++iarch){
+            Archetype& arch = manager.archetypes[iarch];
+
+            if(system_assess_archetype(manager, sys, arch, param){
+                assert(arch.bytesize);
+                Storage& storage = manager.storage[iarch];
+
+                for(auto& chunk : storage.chunks){
+                    param.base_ptr = chunk.data;
+                    param.nentities = chunk.cursor / arch.bytesize;
+
+                    sys.update(sys.data, param);
+                }
+            }
+        }
+    }
+}
+
 u32 add_archetype(Manager& manager){
-    if(manager.free_index.size()){
-        u32 index = manager.free_index[manager.free_index.size() - 1u];
-        manager.free_index.pop_back();
+    if(manager.free_archetype_storage.size()){
+        u32 index = manager.free_archetype_storage[manager.free_archetype_storage.size() - 1u];
+        manager.free_archetype_storage.pop_back();
 
         return index;
     }
@@ -64,7 +120,7 @@ void remove_archetype(Manager& manager, u32 index){
     assert(index < manager.archetypes.size());
     assert(manager.storage[index].nentities == 0u && manager.storage[index].chunks.size() == 0u);
 
-    manager.free_index.push_back(index);
+    manager.free_archetype_storage.push_back(index);
 }
 
 // TODO(hugo): update only for the types after index
