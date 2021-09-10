@@ -1,48 +1,60 @@
 #ifndef H_SSTRING
 #define H_SSTRING
 
-template<u32 capacity = 60u>
-struct sstring{
-    static_assert(capacity > 0u);
+// REF(hugo): https://www.youtube.com/watch?v=kPR8h4-qZdk
 
+template<size_t bytesize = 64u>
+struct sstring{
+    static_assert(bytesize);
+
+    /*
     sstring();
 
     // NOTE(hugo): const char* to sstring
-    template<u32 cstring_capacity>
-    constexpr sstring(const char (&cstring)[cstring_capacity]);
+    template<size_t cstr_bytesize>
+    constexpr sstring(const char (&cstr)[str_bytesize]);
+    */
 
-    template<u32 rhs_capacity>
-    sstring& operator=(const sstring<rhs_capacity>& rhs);
-    sstring& operator=(const char* rhs);
+    void extract_from(const char* str, size_t strlen);
 
-    void extract_from(const char* iptr, u32 isize);
+    template<size_t str_bytesize>
+    sstring& operator=(const sstring<str_bytesize>& str);
+    sstring& operator=(const char* str);
+
+    size_t strlen() const;
+    static constexpr size_t strcap();
 
     // ---- data
 
-    u32 size;
-    char data[capacity];
+    union{
+        char data[bytesize];
+        struct{
+            char padding[bytesize - 1u];
+            u8 empty_bytes;
+        };
+    };
 };
 
-template<u32 lhs_capacity, u32 rhs_capacity>
-bool operator==(const sstring<lhs_capacity>& lhs, const sstring<rhs_capacity>& rhs);
+template<size_t bytesizeL, size_t bytesizeR>
+bool operator==(const sstring<bytesizeL>& L, const sstring<bytesizeR>& R);
 
-template<u32 capacity>
-bool operator==(const sstring<capacity>& lhs, const char* rhs);
+template<size_t bytesize>
+bool operator==(const sstring<bytesize>& sstr, const char* cstr);
 
-template<u32 capacity>
-bool operator==(const char* lhs, const sstring<capacity>& rhs);
+template<size_t bytesize>
+bool operator==(const char* cstr, const sstring<bytesize>& sstr);
 
-template<u32 lhs_capacity, u32 rhs_capacity>
-bool operator!=(const sstring<lhs_capacity>& lhs, const sstring<rhs_capacity>& rhs);
+template<size_t bytesizeL, size_t bytesizeR>
+bool operator!=(const sstring<bytesizeL>& lhs, const sstring<bytesizeR>& rhs);
 
-template<u32 capacity>
-bool operator!=(const sstring<capacity>& lhs, const char* rhs);
+template<size_t bytesize>
+bool operator!=(const sstring<bytesize>& lhs, const char* rhs);
 
-template<u32 capacity>
-bool operator!=(const char* lhs, const sstring<capacity>& rhs);
+template<size_t bytesize>
+bool operator!=(const char* lhs, const sstring<bytesize>& rhs);
 
-template<u32 capacity>
-u32 hashmap_hash(const sstring<capacity>& str);
+template<size_t bytesize>
+u32 hashmap_hash(const sstring<bytesize>& str);
 
 #include "sstring.inl"
 

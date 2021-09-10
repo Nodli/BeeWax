@@ -1,3 +1,10 @@
+DEFINE_EQUALITY_OPERATOR(Buffer_GL3)
+DEFINE_EQUALITY_OPERATOR(Transient_Buffer_GL3)
+DEFINE_EQUALITY_OPERATOR(Buffer_Indexed_GL3)
+DEFINE_EQUALITY_OPERATOR(Transient_Buffer_Indexed_GL3)
+DEFINE_EQUALITY_OPERATOR(Texture_GL3)
+DEFINE_EQUALITY_OPERATOR(Render_Target_GL3)
+
 static inline void texture_format_info(Texture_Format format,
         u32& nchan, GLenum& format_type, size_t& bytes_per_chan){
     switch(format){
@@ -28,6 +35,22 @@ static inline void texture_format_info(Texture_Format format,
 static inline GLint compute_texture_row_alignment(u32 width, u32 height, u32 nchan, size_t bytes_per_chan){
     size_t row_bytesize = width * nchan * bytes_per_chan;
     return (GLint)min(4u, get_rightmost_set_bit(row_bytesize));
+}
+
+static inline size_t data_type_bytesize(Data_Type type){
+    switch(type){
+        case TYPE_UBYTE:
+            return 1u;
+        case TYPE_USHORT:
+            return 2u;
+        case TYPE_UINT:
+        case TYPE_FLOAT:
+            return 4u;
+        default:
+            LOG_ERROR("data type %d missing in data_type_bytesize", type);
+            assert(false);
+            return 0u;
+    }
 }
 
 static void use_vertex_format(Render_Layer_GL3* renderer, Vertex_Format_Name format_name){
@@ -113,12 +136,12 @@ static void renderer_free_uniform_shader_binding(Render_Layer_GL3* renderer){
 
 static void renderer_create_texture_shader_binding(Render_Layer_GL3* renderer){
     UNUSED(renderer);
-#define SETUP_TEXTURE_SHADER_BINDING(TEXTURE_NAME, TEXTURE_UNIT, SHADER_NAME)                                                   \
-    {                                                                                                                           \
-        GLint index_in_shader = glGetUniformLocation(renderer->shader_storage[SHADER_NAME].shader, STRINGIFY(TEXTURE_NAME));    \
-        assert(index_in_shader != GL_INVALID_INDEX);                                                                                                \
-        glUseProgram(renderer->shader_storage[SHADER_NAME].shader);                                                             \
-        glUniform1i(index_in_shader, TEXTURE_UNIT);                                                                             \
+#define SETUP_TEXTURE_SHADER_BINDING(TEXTURE_NAME, TEXTURE_UNIT, SHADER_NAME)                                                                           \
+    {                                                                                                                                                   \
+        GLint index_in_shader = glGetUniformLocation(renderer->shader_storage[SHADER_NAME].shader, STRINGIFY(TEXTURE_NAME));                            \
+        if(index_in_shader == GL_INVALID_INDEX) LOG_WARNING("texture '%s' not found in shader '%s'", STRINGIFY(TEXTURE_NAME), STRINGIFY(SHADER_NAME));  \
+        glUseProgram(renderer->shader_storage[SHADER_NAME].shader);                                                                                     \
+        glUniform1i(index_in_shader, TEXTURE_UNIT);                                                                                                     \
     }
     FOR_EACH_TEXTURE_SHADER_PAIR(SETUP_TEXTURE_SHADER_BINDING)
 #undef SETUP_TEXTURE_SHADER_BINDING
@@ -498,7 +521,7 @@ Texture_GL3 Render_Layer_GL3::get_texture(Texture_Format format, u32 width, u32 
         glTexImage2D(GL_TEXTURE_2D, 0, format, (GLsizei)width, (GLsizei)height, 0, format_type, data_type, data);
     }
 
-    // NOTE(hugo): MIP mapping setup is required
+    // NOTE(hugo): disable MIP mapping ; requirement for complete textures
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
 
@@ -640,9 +663,9 @@ static void draw_primitive_GL3(Buffer_GL3* buffer, Primitive_Type primitive, u32
     glBindVertexArray(0u);
 }
 
-static void draw_primitive_element_GL3(Buffer_Indexed_GL3* buffer, Primitive_Type primitive, Data_Type index_type, u32 count, u64 offset){
+static void draw_primitive_element_GL3(Buffer_Indexed_GL3* buffer, Primitive_Type primitive, Data_Type index_type, u32 index, u32 count){
     glBindVertexArray(buffer->vao);
-    glDrawElements(primitive, count, index_type, (const void*)offset);
+    glDrawElements(primitive, count, index_type, (const void*)(index * data_type_bytesize(index_type)));
     glBindVertexArray(0u);
 }
 
@@ -650,21 +673,40 @@ void Render_Layer_GL3::draw(const Buffer_GL3& buffer, Primitive_Type primitive, 
     draw_primitive_GL3((Buffer_GL3*)&buffer, primitive, index, count);
 }
 
-void Render_Layer_GL3::draw(const Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 count, u64 offset){
-    draw_primitive_element_GL3((Buffer_Indexed_GL3*)&buffer, primitive, index_type, count, offset);
+void Render_Layer_GL3::draw(const Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 index, u32 count){
+    draw_primitive_element_GL3((Buffer_Indexed_GL3*)&buffer, primitive, index_type, index, count);
 }
 
 void Render_Layer_GL3::draw(const Transient_Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count){
     draw_primitive_GL3((Buffer_GL3*)&buffer, primitive, index, count);
 }
 
-void Render_Layer_GL3::draw(const Transient_Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 count, u64 offset){
-    draw_primitive_element_GL3((Buffer_Indexed_GL3*)&buffer, primitive, index_type, count, offset);
+void Render_Layer_GL3::draw(const Transient_Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 index, u32 count){
+    draw_primitive_element_GL3((Buffer_Indexed_GL3*)&buffer, primitive, index_type, index, count);
 }
 
-void Render_Layer_GL3::clear_render_target(){
+void Render_Layer_GL3::generate_texture_mipmap(const Texture_GL3& texture, s32 max_level){
+    // TODO(hugo): use intrinsics for log2 to compute max MIP level
+    // https://community.khronos.org/t/gltexstorage2d-automatic-mipmap-level-calculation/68802/5
+
+    // NOTE(hugo): determine max MIP level
+    if(max_level = -1){
+        s32 mask = texture.width | texture.height;
+        max_level = 1;
+        while(mask >> max_level) ++max_level;
+    }
+
+    glBindTexture(GL_TEXTURE_2D, texture.texture);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, max_level);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0u);
+}
+
+void Render_Layer_GL3::clear_render_target(vec4 clear_color, float clear_depth){
     // NOTE(hugo): glUseProgram(0u) otherwise the glClear triggers a vertex shader recompilation on Nvidia GPUs
     glUseProgram(0u);
+    glClearColor(clear_color.r, clear_color.g, clear_color.b, clear_color.a);
+    glClearDepth(clear_depth);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
@@ -673,4 +715,24 @@ void Render_Layer_GL3::copy_render_target(const Render_Target_GL3& source, const
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, destination.framebuffer);
     glViewport(0u, 0u, destination.width, destination.height);
     glBlitFramebuffer(0u, 0u, source.width, source.height, 0u, 0u, destination.width, destination.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+}
+
+Texture_GL3 Render_Layer_GL3::copy_render_target_to_texture(const Render_Target_GL3& source){
+    Texture_GL3 texture = get_texture(TEXTURE_FORMAT_SRGBA_BYTE, source.width, source.height, TYPE_UBYTE, nullptr);
+
+    GL::Framebuffer framebuffer;
+    glGenFramebuffers(1u, &framebuffer);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+    glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, texture.texture, 0u);
+    glBindFramebuffer(GL_FRAMEBUFFER, 0u);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, source.framebuffer);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
+    glViewport(0u, 0u, source.width, source.height);
+    glBlitFramebuffer(0u, 0u, source.width, source.height, 0u, 0u, source.width, source.height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+    glDeleteFramebuffers(1u, &framebuffer);
+
+    return texture;
 }

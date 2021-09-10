@@ -1,11 +1,18 @@
 #ifndef H_FILE
 #define H_FILE
 
+// ---- directory
+
 // ---- io
 
+struct File_Data{
+    void* data;
+    size_t bytesize;
+};
+
 // NOTE(hugo): explicit free required
-array<u8> read_file(const File_Path& path, const char* mode);
-char* read_file_cstring(const File_Path& path);
+File_Data read_file(const File_Path& path, const char* mode);
+File_Data read_file_cstring(const File_Path& path);
 
 void write_file(const File_Path& path, const u8* data, size_t bytesize);
 

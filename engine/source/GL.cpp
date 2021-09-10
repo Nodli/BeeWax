@@ -46,10 +46,6 @@ namespace GL{
         return output;
     }
 
-    void delete_program(Program program){
-        glDeleteProgram(program);
-    }
-
     Program create_program(GLenum shaderA_type, const char* const shaderA_code,
             const char* const header_code){
         Program output = glCreateProgram();
@@ -97,6 +93,10 @@ namespace GL{
         return output;
     }
 
+    void delete_program(Program program){
+        glDeleteProgram(program);
+    }
+
     Program_Binary retrieve_program_cache(Program handle){
         GLint link_status;
         glGetProgramiv(handle, GL_LINK_STATUS, &link_status);
@@ -142,45 +142,26 @@ namespace GL{
         glDeleteTextures(1, &texture);
     }
 
-    Buffer create_immutable_buffer(size_t size, void* data, GLbitfield usage){
-        assert(size > 0);
+    // TODO(hugo): FORMAT
+    void* retrieve_texture_immediate(Texture texture){
+        assert(texture.width > 0 && texture.height > 0);
 
-        Buffer output;
-        glCreateBuffers(1, &output);
-        glNamedBufferStorage(output, (GLsizeiptr)size, data, usage);
-        return output;
-    }
-
-    void reallocate_immutable_buffer(Buffer buffer, size_t size, void* data, GLbitfield usage){
-        assert(size > 0);
-
-        glInvalidateBufferData(buffer);
-        glNamedBufferStorage(buffer, (GLsizeiptr)size, data, usage);
-    }
-
-    void delete_buffer(Buffer buffer){
-        glDeleteBuffers(1, &buffer);
-    }
-
-    void* retrieve_texture(Texture texture, uint width, uint height){
-        assert(width > 0 && height > 0);
-
-        size_t data_size = (size_t)width * (size_t)height * (size_t)4 * sizeof(char);
+        size_t data_size = (size_t)texture.width * (size_t)texture.height * (size_t)4 * sizeof(char);
         void* data = bw_malloc(data_size);
-        glGetTextureImage(texture, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLsizei)data_size, data);
+        glGetTextureImage(texture.handle, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLsizei)data_size, data);
         return data;
     }
 
-    Texture_Data_Request request_texture(Texture texture, uint width, uint height){
-        assert(width > 0 && height > 0);
+    Texture_Data_Request request_texture(Texture texture){
+        assert(texture.width > 0 && texture.height > 0);
 
         Texture_Data_Request output;
 
-        output.size = (size_t)width * (size_t)height * (size_t)4 * sizeof(char);
+        output.size = (size_t)texture.width * (size_t)texture.height * (size_t)4 * sizeof(char);
 
-        glCreateBuffers(1, &output.buffer);
-        glBindBuffer(GL_PIXEL_PACK_BUFFER, output.buffer);
-        glGetTextureImage(texture, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLsizei)output.size, 0);
+        glCreateBuffers(1, &output.copy_handle);
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, output.copy_handle);
+        glGetTextureImage(texture.handle, 0, GL_RGBA, GL_UNSIGNED_BYTE, (GLsizei)output.bytesize, 0);
         glBindBuffer(GL_PIXEL_PACK_BUFFER, 0);
 
         output.sync = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
@@ -188,14 +169,14 @@ namespace GL{
         return output;
     }
 
-    void* Texture_Data_Request::try_retrieval(){
+    void* Texture_Data_Request::retrieve_texture_try(){
         GLenum sync_status = glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, 0);
         if(sync_status == GL_CONDITION_SATISFIED || sync_status == GL_ALREADY_SIGNALED){
-            void* data = bw_malloc(size);
-            glGetNamedBufferSubData(buffer, 0, (GLsizeiptr)size, data);
+            void* data = bw_malloc(bytesize);
+            glGetNamedBufferSubData(copy_handle, 0, (GLsizeiptr)bytesize, data);
 
             glDeleteSync(sync);
-            glDeleteBuffers(1, &buffer);
+            glDeleteBuffers(1, &copy_handle);
 
             return data;
         }else{
@@ -203,17 +184,17 @@ namespace GL{
         }
     }
 
-    void* Texture_Data_Request::force_retrieval(){
+    void* Texture_Data_Request::retrieve_texture_immediate(){
         GLenum sync_status = GL_TIMEOUT_EXPIRED;
         do{
             sync_status = glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, 0);
         }while(sync_status != GL_CONDITION_SATISFIED && sync_status != GL_ALREADY_SIGNALED);
 
-        void* data = bw_malloc(size);
-        glGetNamedBufferSubData(buffer, 0, (GLsizeiptr)size, data);
+        void* data = bw_malloc(bytesize);
+        glGetNamedBufferSubData(copy_handle, 0, (GLsizeiptr)bytesize, data);
 
         glDeleteSync(sync);
-        glDeleteBuffers(1, &buffer);
+        glDeleteBuffers(1, &copy_handle);
 
         return data;
     }
@@ -649,14 +630,6 @@ namespace GL{
         bw_free(debug_message_log);
 
         return found_message;
-    }
-
-    void set_wireframe(){
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    }
-
-    void unset_wireframe(){
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
     }
 
     void push_debug_group(const char* const groupname){

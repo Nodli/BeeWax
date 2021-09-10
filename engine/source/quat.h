@@ -19,7 +19,7 @@ struct quaternion::quat{
     quat<T>& operator*=(const quat<T>& rhs);
 
     union{
-        T data[4] = {};
+        T data[4];
         struct{
             T s;
             T i;

@@ -8,6 +8,7 @@ struct indexmap_handle{
 
 constexpr u32 indexmap_null_virtual_index = 0u;
 constexpr u32 indexmap_null_generation = 0u;
+constexpr indexmap_handle indexmap_null_handle = {indexmap_null_virtual_index, indexmap_null_generation};
 
 // ----
 

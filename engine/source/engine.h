@@ -6,7 +6,6 @@ struct Engine_Config{
     u32 window_width;
     u32 window_height;
     u32 render_target_samples;
-    File_Path asset_catalog_path;
 };
 
 struct Engine{
@@ -30,12 +29,8 @@ struct Engine{
     Audio_Player audio;
 
     Scene_Manager scene_manager;
-
-    File_Path asset_catalog_path;
-
-    Asset_Catalog<Audio_Asset> audio_catalog;
-    Asset_Catalog<Texture_Asset> texture_catalog;
-    Asset_Catalog<Texture_Animation_Asset> texture_animation_catalog;
 };
+
+void set_noot_icon(Window& window);
 
 #endif

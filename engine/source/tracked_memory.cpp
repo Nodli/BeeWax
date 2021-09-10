@@ -37,8 +37,8 @@ namespace BEEWAX_INTERNAL{
     }
 
     void* memtracker_calloc(size_t count, size_t bytesize, const char* filename, const char* function, const u32 line){
-        size_t allocation_bytesize = count * bytesize;
-        size_t memtracker_bytesize = allocation_bytesize + sizeof(Tracked_Memory);
+        bytesize = bytesize * count;
+        size_t memtracker_bytesize = bytesize + sizeof(Tracked_Memory);
 
         Tracked_Memory* header = (Tracked_Memory*)::calloc(1u, memtracker_bytesize);
         if(header){
@@ -50,7 +50,7 @@ namespace BEEWAX_INTERNAL{
 
             header->filename = filename;
             header->function = function;
-            header->bytesize = allocation_bytesize;
+            header->bytesize = bytesize;
             header->line = line;
 
             header = header + 1u;

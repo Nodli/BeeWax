@@ -220,11 +220,14 @@ namespace bw{
     // --
 
     #include "texture.h"
+    #include "font.h"
 
     #include "scene_manager.h"
 
-    #include "asset_catalog.h"
-    #include "asset_import.h"
+    //#include "asset_catalog.h"
+    //#include "asset_import.h"
+
+    #include "asset_management.h"
 
     #include "engine.h"
 }

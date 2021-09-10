@@ -27,8 +27,12 @@ echo -------- Compiling data
 BinDirectory=$ApplicationDirectory/bin
 mkdir -p $BinDirectory
 
-$ProjectDirectory/make_data.sh $BinDirectory/data $EngineDirectory/data
-$ProjectDirectory/make_data.sh $BinDirectory/data $ApplicationDirectory/data
+$ProjectDirectory/make_data.sh $BinDirectory $EngineDirectory/data
+$ProjectDirectory/make_data.sh $BinDirectory $ApplicationDirectory/data
+
+echo $BinDirectory/data
+echo $EngineDirectory/data
+echo $ApplicationDirectory/data
 
 echo -------- Compiling source
 
@@ -58,11 +62,14 @@ Include_klib="-I $RootDirectory/externals/klib/"
 Include_ImGui="-I $RootDirectory/externals/imgui/"
 Library_ImGui="-L $RootDirectory/externals/lib -limgui"
 
+Include_Box2D="-I $RootDirectory/externals/box2D/include/"
+Library_Box2D="-L $RootDirectory/externals/box2D/x64 -lbox2d"
+
 CompilerFlags="-o $ExecutableName -std=c++17"
 LinkerFlags="-ldl"
-OptimizationFlags="-fno-rtti -fno-exceptions"
+OptimizationFlags="-O2 -fno-rtti -fno-exceptions"
 
-DebugFlags="-g -DDEBUG"
+#DebugFlags="-g -DDEBUG"
 #AdressSanitizer="-fsanitize=address"
 #WarningFlags="-Wall -Wextra -Werror"
 #WarningExtraFlags="-Wsign-compare -Wsign-conversion -Wconversion"
@@ -89,24 +96,25 @@ then
     DebugFlags=-DNDEBUG
 else
     echo -- debug mode
+    OptimizationFlags=""
 fi
 
 pushd $BinDirectory > /dev/null
 
-g++                                                                                         \
-$CompilerFlags                                                                              \
-$OptimizationFlags                                                                          \
-$DebugFlags                                                                                 \
-$AdressSanitizer                                                                            \
-$WarningFlags                                                                               \
-$WarningExtraFlags                                                                          \
-$EngineDefines                                                                              \
-$PreEngineDefines $PostEngineDefines                                                        \
-$Include_gl3w $Include_stb $Include_cJSON $Include_fast_obj $Include_klib $Include_ImGui    \
-$Include_Common                                                                             \
-$Source_Engine $Source_gl3w                                                                 \
-$LinkerFlags                                                                                \
-$Library_SDL $Library_OpenGL $Library_cJSON $Library_fast_obj $Library_ImGui $Library_stb
+g++                                                                                                         \
+$CompilerFlags                                                                                              \
+$OptimizationFlags                                                                                          \
+$DebugFlags                                                                                                 \
+$AdressSanitizer                                                                                            \
+$WarningFlags                                                                                               \
+$WarningExtraFlags                                                                                          \
+$EngineDefines                                                                                              \
+$PreEngineDefines $PostEngineDefines                                                                        \
+$Include_gl3w $Include_stb $Include_cJSON $Include_fast_obj $Include_klib $Include_ImGui $Include_Box2D     \
+$Include_Common                                                                                             \
+$Source_Engine $Source_gl3w                                                                                 \
+$LinkerFlags                                                                                                \
+$Library_SDL $Library_OpenGL $Library_cJSON $Library_fast_obj $Library_ImGui $Library_stb $Library_Box2D
 
 ReturnCode=$?
 

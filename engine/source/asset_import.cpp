@@ -1,5 +1,6 @@
 void import_asset_from_json(const File_Path& json, Engine* engine, Asset_Catalog_Description* description, u32 ndescription){
-    char* json_str = read_file_cstring(json);
+    File_Data file = read_file_cstring(json);
+    char* json_str = (char*)file.data;
 
     cJSON* json_tree = cJSON_Parse(json_str);
     ENGINE_CHECK(json_tree, "cJSON Error: %s", cJSON_GetErrorPtr() ? cJSON_GetErrorPtr() : "no error");
@@ -50,7 +51,8 @@ void import_asset_from_json(const File_Path& json, Engine* engine, Asset_Catalog
 }
 
 void remove_asset_from_json(const File_Path& json, Engine* engine, Asset_Catalog_Description* description, u32 ndescription){
-    char* json_str = read_file_cstring(json);
+    File_Data file = read_file_cstring(json);
+    char* json_str = (char*)file.data;
 
     cJSON* json_tree = cJSON_Parse(json_str);
     ENGINE_CHECK(json_tree, "cJSON Error: %s", cJSON_GetErrorPtr() ? cJSON_GetErrorPtr() : "no error");

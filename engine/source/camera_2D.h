@@ -15,7 +15,10 @@ struct Camera_2D{
     vec2 right();
     vec2 up();
 
-    mat3 camera_matrix();
+    // NOTE(hugo): camera_matrix = projection_matrix * view_matrix
+    mat3 view_matrix();
+    mat3 projection_matrix();
+
     // NOTE(hugo):
     // * screen coordinates (OpenGL) : origin at the bottom left ; ([-1.; 1.], [-1.; 1.])
     vec2 screen_to_world_coordinates(const vec2& screen_coord);

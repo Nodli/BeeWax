@@ -18,6 +18,7 @@ void free_audio_asset(Audio_Asset* asset);
 namespace BEEWAX_INTERNAL{
     constexpr u32 audio_device_buffer_in_samples = 256u;
     constexpr u32 audio_info_capacity = 32u;
+    constexpr u32 synth_info_capacity = 32u;
 };
 
 struct Audio_Channel{
@@ -26,11 +27,24 @@ struct Audio_Channel{
 };
 constexpr Audio_Channel Audio_Invalid_Channel = {0u, 0u};
 
-enum Audio_Channel_State : u32{
+enum struct Audio_Channel_State : u32{
     FREE = 0u,
     STOP,
     PLAY,
     LOOP
+};
+
+struct Synth_Channel{
+    u32 virtual_index;
+};
+constexpr Synth_Channel Audio_Invalid_Synth = {0u};
+
+typedef void (*Synth_Process)(void* data, float* buffer, s32 buffer_size);
+
+enum struct Synth_Channel_State : u32{
+    FREE = 0u,
+    DEACTIVATED,
+    ACTIVE
 };
 
 struct Audio_Player_SDL{
@@ -40,21 +54,36 @@ struct Audio_Player_SDL{
     Audio_Channel start(const Audio_Asset* asset, Audio_Channel_State state);
     void stop(const Audio_Channel& channel);
 
+    Synth_Channel start(void* data, Synth_Process process);
+    void stop(const Synth_Channel& channel);
+
     void pause();
     void resume();
 
+    // NOTE(hugo): ensures that the callback has seen or will see mixer state changes
+    // * before destroying stopped synth
+    // * before destroying stopeed audio asset
+    void ensure_modification_visibility();
+
     // ---- data
 
-    struct Audio_Info{
+    struct Audio_Channel_Data{
         const Audio_Asset* asset;
         Audio_Channel_State state;
         u32 cursor;
         u32 generation;
     };
 
+    struct Synth_Channel_Data{
+        void* data;
+        Synth_Process process;
+        Synth_Channel_State state;
+    };
+
     struct Audio_Mixer{
         float buffer[BEEWAX_INTERNAL::audio_device_buffer_in_samples];
-        Audio_Info audio_info[BEEWAX_INTERNAL::audio_info_capacity];
+        Audio_Channel_Data audio_info[BEEWAX_INTERNAL::audio_info_capacity];
+        Synth_Channel_Data synth_info[BEEWAX_INTERNAL::synth_info_capacity];
     };
 
     SDL_AudioDeviceID device;

@@ -1,7 +1,6 @@
 FUTURE(engine) --------
 
 - function scope temporary allocation (global Virtual_Memory_Arena) + data structures storage type for that
-- renderer static buffers
 - audio stream, loops and synth
 - UTF8
 
@@ -14,11 +13,21 @@ FUTURE(engine) --------
 - https://twitter.com/lisyarus/status/1318605976786919424
 - https://web.archive.org/web/20140719100333/http://altdev.co/2011/10/27/quasi-compile-time-string-hashing/
 
+- input bindings hashmap
+- decouple render_layer to GL
+
 TODO ----------
 
 CURRENT ---------------
 
 DONE ------------------
+
+31/07/2021
+- new Asset_Loader & Asset_Library
+- FBString style sstring & File_Path
+
+??/07/2021
+- renderer static buffers
 
 02/03/2021
 - editor pattern (prev. checker)

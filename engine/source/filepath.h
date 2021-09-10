@@ -1,51 +1,61 @@
 #ifndef H_FILEPATH
 #define H_FILEPATH
 
-constexpr u32 file_path_capacity = 255u;
-static_assert(((file_path_capacity + 1u) & file_path_capacity) == 0u);
-
+// REF(hugo): https://www.youtube.com/watch?v=kPR8h4-qZdk
 
 constexpr char path_separator();
 constexpr char path_separator_to_replace();
 void set_correct_path_separator(char* str);
 
-struct File_Path;
-File_Path asset_path();
-
 // NOTE(hugo): using File_Path instead of const char* as a function parameter
-// outputs the same assembly even without optimizations (assembly checked gcc & msvc)
+// outputs the same assembly even without optimizations (gcc & msvc)
 struct File_Path{
+    static constexpr size_t bytesize = 255u;
+    static_assert(bytesize && bytesize < 256u);
 
+    /*
     File_Path();
 
     // NOTE(hugo): const char* to File_Path
     template<size_t isize>
     constexpr File_Path(const char (&idata)[isize]);
+    */
 
-    File_Path& operator=(const File_Path& rhs);
-    File_Path& operator=(const char* rhs);
-    File_Path& operator/(const File_Path& rhs);
-    File_Path& operator/(const char* rhs);
+    void extract_from(const char* str, size_t strlen);
 
-    void extract_from(const char* ptr, u32 size);
+    File_Path& operator=(const File_Path& path);
+    File_Path& operator=(const char* str);
+    File_Path& operator/=(const File_Path& path);
+    File_Path& operator/=(const char* str);
+
+    size_t size() const;
+    static constexpr size_t capacity();
 
     // ---- data
 
-    u8 size;
-    char data[file_path_capacity];
+    union{
+        char data[bytesize];
+        struct{
+            char padding[bytesize - 1u];
+            u8 empty_bytes;
+        };
+    };
 };
 
-bool operator==(const File_Path& lhs, const File_Path& rhs);
-bool operator==(const File_Path& lhs, const char* rhs);
-bool operator==(const char* lhs, const File_Path& rhs);
+bool operator==(const File_Path& L, const File_Path& R);
+bool operator==(const File_Path& path, const char* str);
+bool operator==(const char* str, const File_Path& path);
 
-bool operator!=(const File_Path& lhs, const File_Path& rhs);
-bool operator!=(const File_Path& lhs, const char* rhs);
-bool operator!=(const char* lhs, const File_Path& rhs);
+bool operator!=(const File_Path& L, const File_Path& R);
+bool operator!=(const File_Path& path, const char* str);
+bool operator!=(const char* str, const File_Path& path);
 
 u32 hashmap_hash(const File_Path& path);
 
 // ----
+
+/*
+File_Path::File_Path() : data(""), size(0u) {}
 
 template<size_t isize>
 constexpr File_Path::File_Path(const char (&idata)[isize]){
@@ -58,5 +68,6 @@ constexpr File_Path::File_Path(const char (&idata)[isize]){
         }
     }
 }
+*/
 
 #endif

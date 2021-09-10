@@ -49,10 +49,13 @@ namespace bw{
     // ---- additional structures
 
     #include "texture.cpp"
+    #include "font.cpp"
 
     #include "scene_manager.cpp"
 
-    #include "asset_import.cpp"
+    //#include "asset_import.cpp"
+
+    #include "asset_management.cpp"
 
     #include "engine.cpp"
 }

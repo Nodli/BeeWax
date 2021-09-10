@@ -1,6 +1,10 @@
 #ifndef H_SCENE_MANAGER
 #define H_SCENE_MANAGER
 
+// TODO(hugo): scenes should be allowed to come from another DLL
+// ie declare a Scene vtable in each DLL and match with names
+// ie Scene_Manager should store a pointer to the Scene vtable
+
 struct Scene_Description{
     const char* name;
     void (*on_push)(void*& data);

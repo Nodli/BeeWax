@@ -85,6 +85,7 @@ void copy(array<T>* dest, array<T>* src);
 inline u32 hashmap_hash(const u32& key);
 inline u32 hashmap_hash(const s32& key);
 inline u32 hashmap_hash(const char* str);
+inline u32 hashmap_hash(const char* str, size_t strlen);
 
 template<typename kT>
 u32 hashmap_hash(const kT*& key);

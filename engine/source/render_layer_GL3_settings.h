@@ -129,6 +129,17 @@ static Vertex_Format_Attribute vertex_format_attributes_xyzuv[] = {
     {TYPE_USHORT, NORMALIZE_YES, 2u, offsetof(vertex_xyzuv, vtexcoord)}
 };
 
+struct vertex_xyzrgbauv{
+    vec3 vposition;
+    u32 vcolor;
+    u32 vtexcoord;
+};
+static Vertex_Format_Attribute vertex_format_attributes_xyzrgbauv[] = {
+    {TYPE_FLOAT,  NORMALIZE_NO,  3u, offsetof(vertex_xyzrgbauv, vposition)},
+    {TYPE_UBYTE,  NORMALIZE_YES, 4u, offsetof(vertex_xyzrgbauv, vcolor)},
+    {TYPE_USHORT, NORMALIZE_YES, 2u, offsetof(vertex_xyzrgbauv, vtexcoord)}
+};
+
 static const char* GLSL_version=
 R"(#version 330)" "\n";
 
@@ -270,6 +281,42 @@ static const char* fragment_shader_polygon_tex = R"(
     }
 )";
 
+// NOTE(hugo): text
+static const char* shader_header_text = GLSL_version;
+static const char* vertex_shader_text = R"(
+    layout(location = 0) in vec3 vposition;
+    layout(location = 1) in vec4 vcolor;
+    layout(location = 2) in vec2 vtexcoord;
+
+    out vec4 fragment_color;
+    out vec2 fragment_texcoord;
+
+    void main(){
+        vec2 screen_vposition = vec2(
+            vposition.x * 2. - 1.,
+            vposition.y * 2. - 1.
+        );
+        gl_Position = vec4(screen_vposition.xy, vposition.z, 1.);
+        fragment_color = vcolor;
+        fragment_texcoord = vtexcoord;
+    }
+)";
+static const char* fragment_shader_text = R"(
+    uniform sampler2D tex;
+
+    in vec4 fragment_color;
+    in vec2 fragment_texcoord;
+
+    out vec4 output_color;
+
+    void main(){
+        vec2 texcoord = vec2(fragment_texcoord.x, fragment_texcoord.y);
+        vec4 sample = texture(tex, texcoord);
+
+        output_color = vec4(fragment_color.rgb, fragment_color.a * sample.r);
+    }
+)";
+
 #define FOR_EACH_UNIFORM_NAME_ENGINE(FUNCTION)          \
 FUNCTION(pattern_info)                                  \
 FUNCTION(camera)                                        \
@@ -278,11 +325,13 @@ FUNCTION(transform)                                     \
 #define FOR_EACH_VERTEX_FORMAT_NAME_ENGINE(FUNCTION)    \
 FUNCTION(xyzrgba)                                       \
 FUNCTION(xyzuv)                                         \
+FUNCTION(xyzrgbauv)                                     \
 
 #define FOR_EACH_SHADER_NAME_ENGINE(FUNCTION)           \
 FUNCTION(editor_pattern)                                \
 FUNCTION(polygon)                                       \
 FUNCTION(polygon_tex)                                   \
+FUNCTION(text)                                          \
 
 #define FOR_EACH_UNIFORM_SHADER_PAIR_ENGINE(FUNCTION)   \
 FUNCTION(pattern_info, editor_pattern)                  \
@@ -293,10 +342,12 @@ FUNCTION(transform, polygon_tex)                        \
 
 #define FOR_EACH_TEXTURE_SHADER_PAIR_ENGINE(FUNCTION)   \
 FUNCTION(tex, 0, polygon_tex)                           \
+FUNCTION(tex, 0, text)                                  \
 
-#define FOR_EACH_SAMPLER_NAME_ENGINE(FUNCTION)                                                  \
-FUNCTION(nearest_clamp, FILTER_NEAREST, FILTER_NEAREST, WRAP_CLAMP, WRAP_CLAMP, WRAP_CLAMP)     \
-FUNCTION(linear_clamp, FILTER_LINEAR, FILTER_LINEAR, WRAP_CLAMP, WRAP_CLAMP, WRAP_CLAMP)        \
+#define FOR_EACH_SAMPLER_NAME_ENGINE(FUNCTION)                                                                      \
+FUNCTION(nearest_clamp, FILTER_NEAREST, FILTER_NEAREST, WRAP_CLAMP, WRAP_CLAMP, WRAP_CLAMP)                         \
+FUNCTION(linear_clamp, FILTER_LINEAR, FILTER_LINEAR, WRAP_CLAMP, WRAP_CLAMP, WRAP_CLAMP)                            \
+FUNCTION(nearest_nearest_clamp, FILTER_NEAREST_MIPMAP_NEAREST, FILTER_NEAREST, WRAP_CLAMP, WRAP_CLAMP, WRAP_CLAMP)  \
 
 // ---- user settings
 

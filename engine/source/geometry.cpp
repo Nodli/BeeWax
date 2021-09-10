@@ -285,13 +285,13 @@ Geometry_Mesh_3D generate_cuboid(vec3 position, vec3 size, u32 ntess){
 
 // ---- geometric predicates
 
-float point_side_segment(const vec2& p, const vec2& vA, const vec2& vB){
+float side_point_segment(const vec2& p, const vec2& vA, const vec2& vB){
     return cross(p - vA, vB - vA);
 }
 
-bool point_inside_triangle(const vec2& p, const vec2& tA, const vec2& tB, const vec2& tC){
-    float sideAB = sign(point_side_segment(p, tA, tB));
-    return sideAB == sign(point_side_segment(p, tB, tC)) && sideAB == sign(point_side_segment(p, tC, tA));
+bool intersection_point_triangle(const vec2& p, const vec2& tA, const vec2& tB, const vec2& tC){
+    float sideAB = sign(side_point_segment(p, tA, tB));
+    return sideAB == sign(side_point_segment(p, tB, tC)) && sideAB == sign(side_point_segment(p, tC, tA));
 }
 
 bool line_intersect_line(const vec2& pA, const vec2& dA, const vec2& pB, const vec2& dB, vec2& out){
@@ -330,6 +330,11 @@ namespace BEEWAX_INTERNAL{
     };
 }
 
+size_t triangulation_2D_bytesize(u32 nvertices){
+    assert(nvertices > 2u);
+    return sizeof(u32) * 3u * (nvertices - 2u);
+}
+
 // NOTE(hugo):
 // v0: working ; but unoptimized for large, mostly convex polygons
 // v1: non-working ; unoptimized for large, mostly reflex polygons
@@ -343,12 +348,12 @@ void triangulation_2D_v0(u32 nvertices, vec2* vertices, u32* nindices){
     };
 
     auto is_reflex = [&](u32 iprev, u32 ivert, u32 inext){
-        return point_side_segment(vertices[iprev], vertices[ivert], vertices[inext]) > 0.f;
+        return side_point_segment(vertices[iprev], vertices[ivert], vertices[inext]) > 0.f;
     };
     auto is_empty = [&](u32 iprev, u32 ivert, u32 inext){
         u32 itest = connectivity_LL[inext].next;
         while(itest != iprev){
-            if(point_inside_triangle(vertices[itest], vertices[iprev], vertices[ivert], vertices[inext])){
+            if(intersection_point_triangle(vertices[itest], vertices[iprev], vertices[ivert], vertices[inext])){
                 return false;
             }
             itest = connectivity_LL[itest].next;
@@ -418,7 +423,7 @@ void triangulation_2D_v1(u32 nvertices, vec2* vertices, u32* nindices){
     };
 
     auto is_reflex = [&](u32 iprev, u32 ivert, u32 inext){
-        return point_side_segment(vertices[iprev], vertices[ivert], vertices[inext]) > 0.f;
+        return side_point_segment(vertices[iprev], vertices[ivert], vertices[inext]) > 0.f;
     };
     auto is_empty_reflex = [&](u32 iprev, u32 ivert, u32 inext, u32 ireflex){
         // NOTE(hugo): previous vertices
@@ -426,7 +431,7 @@ void triangulation_2D_v1(u32 nvertices, vec2* vertices, u32* nindices){
             u32 itest = connectivity_LL[iprev].prev;
             u32 itest_next = iprev;
             while(itest_next < inext){
-                if(reflex_LL[itest] != not_reflex && point_inside_triangle(vertices[itest], vertices[iprev], vertices[ivert], vertices[inext])){
+                if(reflex_LL[itest] != not_reflex && intersection_point_triangle(vertices[itest], vertices[iprev], vertices[ivert], vertices[inext])){
                     return false;
                 }
                 itest_next = itest;
@@ -438,7 +443,7 @@ void triangulation_2D_v1(u32 nvertices, vec2* vertices, u32* nindices){
         {
             u32 itest = ireflex;
             while(itest != end_reflex_LL){
-                if(point_inside_triangle(vertices[itest], vertices[iprev], vertices[ivert], vertices[inext])){
+                if(intersection_point_triangle(vertices[itest], vertices[iprev], vertices[ivert], vertices[inext])){
                     return false;
                 }
                 itest = reflex_LL[itest];
@@ -537,26 +542,15 @@ void triangulation_2D(u32 nvertices, vec2* vertices, u32* nindices){
 
 // ---- geometric error
 
-float circular_cap_chord_to_arc_error(u32 ncap_vertices, float radius){
-    assert(ncap_vertices > 0u);
-    float rad = PI / (float)(ncap_vertices + 1u);
-    return radius * (1.f - cos(rad * 0.5f));
+u32 circle_sectors(float radius, float max_error){
+    // NOTE(hugo): (2 * PI) / (2 * acos(1 - max_error / radius))
+    u32 nsector = bw::ceil(PI / acos(1.f - max_error / radius));
+    return max(nsector, 3u);
 }
 
-u32 circular_cap_vertices(float radius, float max_error){
-    // NOTE(hugo): PI / (2 * acos(1 - max_error / radius))
-    u32 nvertices = bw::ceil(0.5f * PI / acos(1.f - max_error / radius));
-    return max(nvertices, 1u);
-}
-
-float circle_chord_to_arc_error(u32 nvertices, float radius){
-    assert(nvertices > 2);
-    float rad = 2.f * PI / (float)(nvertices);
-    return radius * (1.f - cos(rad * 0.5f));
-}
-
-u32 circle_vertices(float radius, float max_error){
-    // NOTE(hugo): PI / acos(1 - max_error / radius)
-    u32 nvertices = bw::ceil(PI / acos(1.f - max_error / radius));
-    return max(nvertices, 3u);
+u32 circle_arc_sectors(float radius, float arc_span, float max_error){
+    assert(arc_span > 0.f && arc_span < 2.f * PI);
+    u32 nsector = bw::ceil(0.5f * arc_span / acos(1.f - max_error / radius));
+    // NOTE(hugo): minimum two sectors to avoid issues when arc_span is PI or more
+    return max(nsector, 2u);
 }

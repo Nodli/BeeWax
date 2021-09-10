@@ -20,4 +20,7 @@ void destroy_Texture_Asset(void* asset, Engine* engine);
 void create_Texture_Animation_Asset_from_json(void*& out_ptr, Engine* engine, cJSON* json);
 void destroy_Texture_Animation_Asset(void* asset, Engine* engine);
 
+void create_Font_Asset_from_json(void*& out_ptr, Engine* engine, cJSON* json);
+void destroy_Font_Asset(void* asset, Engine* engine);
+
 #endif

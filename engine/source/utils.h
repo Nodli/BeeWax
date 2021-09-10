@@ -31,12 +31,8 @@ constexpr float GOLDEN_RATIO_FRACT = 0.6180339887498948482045L;
 
 // ---- constexpr template type indexing
 
-template<typename ... Types>
-struct Type_Indexer{
-    template<typename T>
-    static constexpr size_t type_index();
-    static constexpr size_t type_count();
-};
+template<typename T, typename ... Types>
+constexpr size_t type_index();
 
 // ---- bitset
 

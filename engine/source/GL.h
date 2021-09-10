@@ -8,12 +8,18 @@ namespace GL{
     typedef GLuint Handle;
     typedef Handle Shader;
     typedef Handle Program;
-    typedef Handle Texture;
     typedef Handle Framebuffer;
     typedef Handle Renderbuffer;
     typedef Handle Vertex_Array;
     typedef Handle Buffer;
     typedef Handle Sampler;
+
+    struct Texture{
+        u32 width;
+        u32 height;
+        Texture_Format format;
+        GL::Handle handle;
+    };
 
     Shader create_shader(GLenum shader_type,
             const char* const shader_code,
@@ -47,18 +53,18 @@ namespace GL{
     // ---- asynchronous / synchronization ---- //
 
     // NOTE(hugo): explicit free required
-    void* retrieve_texture(Texture texture, uint width, uint height);
+    void* retrieve_texture_immediate(Texture texture);
 
     struct Texture_Data_Request{
         // NOTE(hugo): explicit free required ; returns nullptr when the retrieval failed
-        void* try_retrieval();
-        void* force_retrieval();
+        void* retrieve_texture_try();
+        void* retrieve_texture_immediate();
 
-        size_t size;
-        Buffer buffer;
+        size_t bytesize;
+        Buffer copy_handle;
         GLsync sync;
     };
-    Texture_Data_Request request_texture(Texture, uint width, uint height);
+    Texture_Data_Request request_texture(Texture texture);
 
     // ---- hardware detection ---- //
 
@@ -103,9 +109,6 @@ namespace GL{
     void set_debug_message_callback();
     void unset_debug_message_callback();
     bool check_debug_message_log();
-
-    void set_wireframe();
-    void unset_wireframe();
 
     void push_debug_group(const char* const groupname);
     void pop_debug_group();

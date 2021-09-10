@@ -108,8 +108,9 @@ double random_double(BEEWAX_INTERNAL::xoroshiro128plus_state& seed){
 }
 
 u32 random_u32_range_uniform(u32 max, BEEWAX_INTERNAL::xoroshiro128plus_state& seed){
-    assert(max > 0u);
-    u32 bucket_size = UINT32_MAX / max + (UINT32_MAX % max == max - 1u);
+    if(max == 0u || max == 1u) return 0u;
+
+    u32 bucket_size = UINT32_MAX / max + ((UINT32_MAX % max) == (max - 1u));
     assert(bucket_size > 0u);
 
     u32 output;

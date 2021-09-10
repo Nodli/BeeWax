@@ -57,7 +57,7 @@ void Action_Manager::new_frame(){
 }
 
 bool Action_Manager::register_event(const SDL_Event& event){
-    auto register_type_button = [&](Action_Data& data){
+    auto register_type_key = [&](Action_Data& data){
         if(event.key.state == SDL_PRESSED){
             ++data.button.nstart;
             data.button.active = 1u;
@@ -76,6 +76,18 @@ bool Action_Manager::register_event(const SDL_Event& event){
         data.cursor.amplitude_y += (u32)abs(event.motion.y);
     };
 
+    auto register_type_mousebutton = [&](Action_Data& data){
+        if(event.button.state == SDL_PRESSED){
+            ++data.button.nstart;
+            data.button.active = 1u;
+
+        }else if(event.button.state == SDL_RELEASED){
+            ++data.button.nstop;
+            data.button.active = 0u;
+
+        }
+    };
+
     auto register_type_axis = [&](Action_Data& data, float value){
         data.axis.value = value;
     };
@@ -83,22 +95,23 @@ bool Action_Manager::register_event(const SDL_Event& event){
     // NOTE(hugo): keyboard
     if(event.type == SDL_KEYDOWN || event.type == SDL_KEYUP){
         switch(event.key.keysym.sym){
-            case SDLK_LEFT:     register_type_button(actions[KEYBOARD_ARROW_LEFT]);     return true;
-            case SDLK_RIGHT:    register_type_button(actions[KEYBOARD_ARROW_RIGHT]);    return true;
-            case SDLK_UP:       register_type_button(actions[KEYBOARD_ARROW_UP]);       return true;
-            case SDLK_DOWN:     register_type_button(actions[KEYBOARD_ARROW_DOWN]);     return true;
-            case SDLK_RETURN:   register_type_button(actions[KEYBOARD_ARROW_RETURN]);   return true;
-            case SDLK_SPACE:    register_type_button(actions[KEYBOARD_ARROW_SPACE]);    return true;
+            case SDLK_LEFT:     register_type_key(actions[KEYBOARD_ARROW_LEFT]);    return true;
+            case SDLK_RIGHT:    register_type_key(actions[KEYBOARD_ARROW_RIGHT]);   return true;
+            case SDLK_UP:       register_type_key(actions[KEYBOARD_ARROW_UP]);      return true;
+            case SDLK_DOWN:     register_type_key(actions[KEYBOARD_ARROW_DOWN]);    return true;
+            case SDLK_RETURN:   register_type_key(actions[KEYBOARD_RETURN]);        return true;
+            case SDLK_SPACE:    register_type_key(actions[KEYBOARD_SPACE]);         return true;
+            case SDLK_TAB:      register_type_key(actions[KEYBOARD_TAB]);           return true;
         };
 
     // NOTE(hugo): mouse
     }else if(event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP){
         switch(event.button.button){
-            case SDL_BUTTON_LEFT:       register_type_cursor(actions[MOUSE_BUTTON_LEFT]);       return true;
-            case SDL_BUTTON_MIDDLE:     register_type_cursor(actions[MOUSE_BUTTON_MIDDLE]);     return true;
-            case SDL_BUTTON_RIGHT:      register_type_cursor(actions[MOUSE_BUTTON_RIGHT]);      return true;
-            case SDL_BUTTON_X1:         register_type_cursor(actions[MOUSE_BUTTON_EXTRA_1]);    return true;
-            case SDL_BUTTON_X2:         register_type_cursor(actions[MOUSE_BUTTON_EXTRA_2]);    return true;
+            case SDL_BUTTON_LEFT:       register_type_mousebutton(actions[MOUSE_BUTTON_LEFT]);       return true;
+            case SDL_BUTTON_MIDDLE:     register_type_mousebutton(actions[MOUSE_BUTTON_MIDDLE]);     return true;
+            case SDL_BUTTON_RIGHT:      register_type_mousebutton(actions[MOUSE_BUTTON_RIGHT]);      return true;
+            case SDL_BUTTON_X1:         register_type_mousebutton(actions[MOUSE_BUTTON_EXTRA_1]);    return true;
+            case SDL_BUTTON_X2:         register_type_mousebutton(actions[MOUSE_BUTTON_EXTRA_2]);    return true;
         }
 
     }else if(event.type == SDL_MOUSEWHEEL){

@@ -68,7 +68,7 @@ struct mat::mat2{
 
     // ---- data
 
-    T data[4] = {};
+    T data[4];
 };
 
 template<typename T>
@@ -125,7 +125,7 @@ struct mat::mat3{
 
     // ---- data
 
-    T data[9] = {};
+    T data[9];
 };
 
 template<typename T>
@@ -182,7 +182,7 @@ struct mat::mat4{
 
     // ---- data
 
-    T data[16] = {};
+    T data[16];
 };
 
 template<typename T>
@@ -220,10 +220,22 @@ template<typename T>
 template<typename T>
 vec::vec4<T> operator*(const mat::mat4<T>& mat, const vec::vec4<T>& vec);
 
+// ---- matrix & coordinate basis
+
 template<typename T>
-mat::mat3<T> mat3_from_ortho_basis(const vec::vec3<T> right, const vec::vec3<T> up, const vec::vec3<T> forward);
+mat::mat3<T> mat3_from_ortho_basis_3D(const vec::vec3<T> right, const vec::vec3<T> up, const vec::vec3<T> forward);
 template<typename T>
-mat::mat4<T> mat4_from_ortho_basis(const vec::vec3<T> right, const vec::vec3<T> up, const vec::vec3<T> forward);
+mat::mat4<T> mat4_from_ortho_basis_3D(const vec::vec3<T> right, const vec::vec3<T> up, const vec::vec3<T> forward);
+
+// NOTE(hugo): angles in radian such as
+// * angleX = pitch     (nose up / down)
+// * angleY = yaw       (nose left / right);
+// * angleZ = roll      (nose roll left / nose roll right)
+template<typename T>
+mat::mat4<T> mat4_from_euler(const T pitch, const T yaw, const T roll);
+
+template<typename T>
+vec::vec3<T> mat4_to_euler(const mat::mat4<T>& mat);
 
 // ---- mat2 / mat3 / mat4 for std140---- //
 

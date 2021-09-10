@@ -24,95 +24,98 @@ void set_correct_path_separator(char* str){
     }
 }
 
-File_Path asset_path(){
-    return "./data";
+void File_Path::extract_from(const char* str, size_t strlen){
+    assert(strlen < bytesize);
+
+    memcpy(data, str, strlen);
+    data[strlen + 1u] = '\0';
+    empty_bytes = bytesize - strlen - 1u;
+
+    set_correct_path_separator(data);
 }
 
-File_Path::File_Path() : data(""), size(0u) {}
-
-File_Path& File_Path::operator=(const File_Path& rhs){
-    memcpy(data, rhs.data, rhs.size);
-    size = rhs.size;
-    data[size] = '\0';
+File_Path& File_Path::operator=(const File_Path& path){
+    memcpy(data, path.data, path.size() + 1u);
+    empty_bytes = path.empty_bytes;
 
     return *this;
 }
 
-File_Path& File_Path::operator=(const char* rhs){
-    u32 rhs_size = strlen(rhs);
-    assert((rhs_size + 1u) <= file_path_capacity);
+File_Path& File_Path::operator=(const char* str){
+    size_t str_size = strlen(str);
+    assert(str_size < bytesize);
 
-    memcpy(data, rhs, rhs_size);
-    size = rhs_size;
-    data[size] = '\0';
+    memcpy(data, str, str_size + 1u);
+    empty_bytes = bytesize - str_size - 1u;
 
     set_correct_path_separator(data);
 
     return *this;
 }
 
-File_Path& File_Path::operator/(const File_Path& rhs){
-    assert((size + 1u + rhs.size + 1u) <= file_path_capacity);
+File_Path& File_Path::operator/=(const File_Path& path){
+    size_t this_size = size();
+    size_t path_size = path.size();
+    size_t new_size = this_size + 1u + path_size;
 
-    data[size] = path_separator();
-    memcpy(data + size + 1u, rhs.data, rhs.size);
-    size = size + 1u + rhs.size;
-    data[size] = '\0';
+    assert(new_size < bytesize);
 
-    return *this;
-}
-
-File_Path& File_Path::operator/(const char* rhs){
-    u32 rhs_size = strlen(rhs);
-    assert((size + 1u + rhs_size + 1u) <= file_path_capacity);
-
-    char* separator_search = data + size + 1u;
-
-    data[size] = path_separator();
-    memcpy(data + size + 1u, rhs, rhs_size);
-    size = size + 1u + rhs_size;
-    data[size] = '\0';
-
-    set_correct_path_separator(separator_search);
+    data[this_size] = path_separator();
+    memcpy(data + this_size + 1u, path.data, path_size + 1u);
+    empty_bytes = bytesize - new_size - 1u;
 
     return *this;
 }
 
-void File_Path::extract_from(const char* iptr, u32 isize){
-    assert(size + 1u < file_path_capacity);
+File_Path& File_Path::operator/=(const char* str){
+    size_t this_size = size();
+    size_t str_size = strlen(str);
+    size_t new_size = this_size + 1u + str_size;
+    assert(new_size < bytesize);
 
-    memcpy(data, iptr, isize);
-    size = isize;
-    data[size] = '\0';
+    data[this_size] = path_separator();
+    memcpy(data + this_size + 1u, str, str_size + 1u);
+    empty_bytes = bytesize - new_size - 1u;
 
-    set_correct_path_separator(data);
+    set_correct_path_separator(data + this_size + 1u);
+
+    return *this;
 }
 
-bool operator==(const File_Path& lhs, const File_Path& rhs){
-    return (lhs.size == rhs.size) && (lhs.size == 0u || memcmp(lhs.data, rhs.data, lhs.size) == 0);
+size_t File_Path::size() const{
+    return max(bytesize - empty_bytes, (size_t) 1u) - 1u;
 }
 
-bool operator==(const File_Path& lhs, const char* rhs){
-    u32 rhs_size = strlen(rhs);
-    return (lhs.size == rhs_size) && (rhs_size == 0u || memcmp(lhs.data, rhs, rhs_size) == 0u);
+constexpr size_t File_Path::capacity(){
+    return bytesize - 1u;
 }
 
-bool operator==(const char* lhs, const File_Path& rhs){
-    return rhs == lhs;
+bool operator==(const File_Path& L, const File_Path& R){
+    return (L.empty_bytes == R.empty_bytes) && (memcmp(L.data, R.data, L.size()) == 0);
 }
 
-bool operator!=(const File_Path& lhs, const File_Path& rhs){
-    return !(lhs == rhs);
+bool operator==(const File_Path& path, const char* str){
+    size_t path_size = path.size();
+    size_t str_size = strlen(str);
+    return (path_size == str_size) && (memcmp(path.data, str, path_size) == 0);
 }
 
-bool operator!=(const File_Path& lhs, const char* rhs){
-    return !(lhs == rhs);
+bool operator==(const char* str, const File_Path& path){
+    return path == str;
 }
 
-bool operator!=(const char* lhs, const File_Path& rhs){
-    return !(lhs == rhs);
+bool operator!=(const File_Path& L, const File_Path& R){
+    return !(L == R);
+}
+
+bool operator!=(const File_Path& path, const char* str){
+    return !(path == str);
+}
+
+bool operator!=(const char* str, const File_Path& path){
+    return !(str == path);
 }
 
 u32 hashmap_hash(const File_Path& path){
-    return hashmap_hash(path.data);
+    return hashmap_hash(path.data, path.size());
 }

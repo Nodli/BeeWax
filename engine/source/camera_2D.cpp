@@ -23,14 +23,19 @@ vec2 Camera_2D::up(){
     return {0.f, 1.f};
 }
 
-mat3 Camera_2D::camera_matrix(){
+mat3 Camera_2D::view_matrix(){
+    // NOTE(hugo): world space --(translation)--> view space
+    return mat_translation2D(- center);
+}
+
+mat3 Camera_2D::projection_matrix(){
     float width = height * aspect_ratio;
     assert(width > 0.f && height > 0.f);
 
-mat3 mat = mat_orthographic2D(width, height) * mat_translation2D(- center);
-    // NOTE(hugo):
-    // world --(translation)-> view --(projecion scaling)-> clip
-    return mat_orthographic2D(width, height) * mat_translation2D(- center);
+    vec2 scaling = {2.f / width, 2.f / height};
+
+    // NOTE(hugo): view space --(projection scaling)--> clip space
+    return mat_scaling2D(scaling);
 }
 
 vec2 Camera_2D::screen_to_world_coordinates(const vec2& screen_coord){

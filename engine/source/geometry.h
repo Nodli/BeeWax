@@ -81,11 +81,10 @@ Geometry_Mesh_3D generate_cuboid(vec3 position, vec3 size, u32 ntess = 0u);
 // * > 0.f means p is on the RIGHT of (vA, vB)
 // * = 0.f means p is on (vA, vB)
 // * < 0.f means p is on the LEFT of (vA, vB)
-float point_side_segment(const vec2& p, const vec2& vA, const vec2& vB);
+float side_point_segment(const vec2& p, const vec2& vA, const vec2& vB);
 
-bool point_inside_triangle(const vec2& p, const vec2& tA, const vec2& tB, const vec2& tC);
-
-bool line_intersect_line(const vec2& pA, const vec2& dA, const vec2& pB, const vec2& dB, vec2& out);
+bool intersection_point_triangle(const vec2& p, const vec2& tA, const vec2& tB, const vec2& tC);
+bool intesection_line_line(const vec2& pA, const vec2& dA, const vec2& pB, const vec2& dB, vec2& out);
 
 // NOTE(hugo):
 // * > 0.f means the polygon winding order is CLOCKWISE
@@ -100,25 +99,17 @@ float polygon_signed_area(const u32 nvertices, const vec2* vertices);
 // NOTE(hugo): ear clipping triangulation
 // * vertices are ordered in counter-clockwise order
 // * requires a 'simple' polygon ie no overlapping edges (twist / loop) and no hole
-// * out_indices is provided by the user with size 3 * (nvertices - 2u)
+// * out_indices is allocated by the user using the bytesize returned by triangulation_2D_bytesize
+size_t triangulation_2D_bytesize(u32 nvertices);
 void triangulation_2D(u32 nvertices, vec2* vertices, u32* out_indices);
+
+// ---- spline ras
 
 // ---- geometric error
 
 // REF(hugo):
-// - circle chord to arc error
 // https://www.artwork.com/gerber/oasis2gbr/arc_recognition.htm
-
-// NOTE(hugo):
-// /ncap_vertices/ is the number of vertices in the spherical caps without counting the two body vertices
-// ie ncap_vertices = 1 represents a triangular cap
-float circular_cap_chord_to_arc_error(u32 ncap_vertices, float radius);
-u32 circular_cap_vertices(float radius, float max_error);
-
-// NOTE(hugo):
-// /nvertices/ is the number of vertices approximating the circle
-// nvertices must be 3 or more
-float circle_chord_to_arc_error(u32 nvertices, float radius);
-u32 circle_vertices(float radius, float max_error);
+u32 circle_sectors(float radius, float max_error);
+u32 circle_arc_sectors(float radius, float arc_span, float max_error);
 
 #endif

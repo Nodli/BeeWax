@@ -79,7 +79,7 @@ T array<T>::pop(){
 
 template<typename T>
 T& array<T>::insert(size_t index, const T& v){
-    array(!(index > size));
+    assert(!(index > size));
 
     if(size == capacity) BEEWAX_INTERNAL::array_increase_capacity(*this);
     if(index != size) memmove(data + index + 1u, data + index, (size - index) * sizeof(T));
@@ -90,7 +90,7 @@ T& array<T>::insert(size_t index, const T& v){
 
 template<typename T>
 T* array<T>::insert_multi(size_t index, size_t count){
-    array(!(index > size));
+    assert(!(index > size));
 
     if(size + count > capacity) BEEWAX_INTERNAL::array_increase_capacity_min(*this, size + count);
     if(index != size) memmove(data + index + count, data + index, (size - index) * sizeof(T));
@@ -110,14 +110,15 @@ template<typename T>
 void array<T>::remove_multi(size_t index, size_t count){
     assert(index + count < size + 1u);
 
-    if(index + count < size) memmove(data + index, data + index + count, (size - index + count) * sizeof(T));
+    if(index + count < size) memmove(data + index, data + index + count, (size - index - count) * sizeof(T));
     size -= count;
 }
 
 template<typename T>
 void array<T>::remove_swap(size_t index){
     assert(index < size);
-    data[index] = data[size--];
+    --size;
+    data[index] = data[size];
 }
 
 template<typename T>
@@ -173,6 +174,9 @@ inline u32 hashmap_hash(const s32& key){
 }
 inline u32 hashmap_hash(const char* str){
     return hash_FNV1a_32str(str);
+}
+inline u32 hashmap_hash(const char* str, size_t strlen){
+    return hash_FNV1a_32ptr((u8*)str, strlen);
 }
 template<typename kT>
 u32 hashmap_hash(const kT*& key){
@@ -242,7 +246,7 @@ template<typename kT, typename vT>
 u32 hashmap<kT, vT>::remove_func(const kT& key, void (*destroy_value)(vT& v)){
     khiter_t iter = kh_get(kinstance, &data, key);
     if(iter != kh_end(&data)){
-        func(kh_value(&data, iter));
+        destroy_value(kh_value(&data, iter));
         kh_del(kinstance, &data, iter);
         return 1u;
     }

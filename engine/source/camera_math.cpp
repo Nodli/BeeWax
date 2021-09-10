@@ -15,11 +15,11 @@ mat3 mat_translation2D(vec2 vec){
     );
 }
 
-mat3 mat_orthographic2D(float screen_width, float screen_height){
+mat3 mat_scaling2D(vec2 vec){
     return mat3_rm(
-        2.f / screen_width, 0.f,                    0.f,
-        0.f,                2.f / screen_height,    0.f,
-        0.f,                0.f,                    1.f
+        vec.x, 0.f,   0.f,
+        0.f,   vec.y, 0.f,
+        0.f,   0.f,   1.f
     );
 }
 

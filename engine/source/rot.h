@@ -15,7 +15,7 @@ struct rot::rot3{
     rot3<T>& operator*=(const rot3<T>& rot);
 
     union{
-        T data[4] = {};
+        T data[4];
         struct{
             T s;
             T xy;

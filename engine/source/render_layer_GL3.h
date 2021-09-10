@@ -22,13 +22,7 @@ struct Buffer_Indexed_GL3{
 };
 struct Transient_Buffer_Indexed_GL3 : Buffer_Indexed_GL3 {};
 
-struct Texture_GL3{
-    u32 width;
-    u32 height;
-
-    Texture_Format format;
-    GL::Texture texture;
-};
+typedef GL::Texture Texture_GL3;
 
 struct Render_Target_GL3{
     u32 width;
@@ -45,10 +39,19 @@ struct Render_Target_GL3{
     };
 };
 
-constexpr Buffer_GL3            Render_Layer_Invalid_Buffer         = {nullptr, 0u, 0u, 0u};
-constexpr Buffer_Indexed_GL3    Render_Layer_Invalid_Buffer_Indexed = {nullptr, 0u, nullptr, 0u, 0u, 0u, 0u};
-constexpr Texture_GL3           Render_Layer_Invalid_Texture        = {0u, 0u, TEXTURE_FORMAT_NONE, 0u};
-constexpr Render_Target_GL3     Render_Layer_Invalid_Render_Target  = {0u, 0u, 0u, 0u, 0u, 0u};
+DECLARE_EQUALITY_OPERATOR(Buffer_GL3)
+DECLARE_EQUALITY_OPERATOR(Transient_Buffer_GL3)
+DECLARE_EQUALITY_OPERATOR(Buffer_Indexed_GL3)
+DECLARE_EQUALITY_OPERATOR(Transient_Buffer_Indexed_GL3)
+DECLARE_EQUALITY_OPERATOR(Texture_GL3)
+DECLARE_EQUALITY_OPERATOR(Render_Target_GL3)
+
+constexpr Buffer_GL3                    Render_Layer_Invalid_Buffer                     = {nullptr, 0u, 0u, 0u};
+constexpr Buffer_Indexed_GL3            Render_Layer_Invalid_Buffer_Indexed             = {nullptr, 0u, nullptr, 0u, 0u, 0u, 0u};
+constexpr Transient_Buffer_GL3          Render_Layer_Invalid_Transient_Buffer           = {nullptr, 0u, 0u, 0u};
+constexpr Transient_Buffer_Indexed_GL3  Render_Layer_Invalid_Transient_Buffer_Indexed   = {nullptr, 0u, nullptr, 0u, 0u, 0u, 0u};
+constexpr Texture_GL3                   Render_Layer_Invalid_Texture                    = {0u, 0u, TEXTURE_FORMAT_NONE, 0u};
+constexpr Render_Target_GL3             Render_Layer_Invalid_Render_Target              = {0u, 0u, 0u, 0u, 0u, 0u};
 
 struct Render_Layer_GL3{
     void create();
@@ -80,7 +83,6 @@ struct Render_Layer_GL3{
     void checkout(Transient_Buffer_Indexed_GL3& buffer);
     void commit(Transient_Buffer_Indexed_GL3& buffer);
 
-
     Texture_GL3 get_texture(Texture_Format format, u32 witdh, u32 height, Data_Type data_type, void* data);
     void free_texture(Texture_GL3& texture);
     void update_texture(Texture_GL3& texture, u32 ox, u32 oy, u32 width, u32 height, Data_Type data_type, void* data);
@@ -101,12 +103,15 @@ struct Render_Layer_GL3{
 
     void draw(Primitive_Type primitive, u32 index, u32 count);
     void draw(const Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count);
-    void draw(const Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 count, u64 offset);
+    void draw(const Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 index, u32 count);
     void draw(const Transient_Buffer_GL3& buffer, Primitive_Type primitive, u32 index, u32 count);
-    void draw(const Transient_Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 count, u64 offset);
+    void draw(const Transient_Buffer_Indexed_GL3& buffer, Primitive_Type primitive, Data_Type index_type, u32 index, u32 count);
 
-    void clear_render_target();
+    void generate_texture_mipmap(const Texture_GL3& texture, s32 max_level = -1);
+
+    void clear_render_target(vec4 clear_color = {0.5f, 0.5f, 0.5f, 1.f}, float clear_depth = 1.f);
     void copy_render_target(const Render_Target_GL3& source, const Render_Target_GL3& destination);
+    Texture_GL3 copy_render_target_to_texture(const Render_Target_GL3& source);
 
     // ---- data
 
@@ -137,3 +142,11 @@ struct Render_Layer_GL3{
 };
 
 #endif
+
+//void set_wireframe(){
+//    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+//}
+//
+//void unset_wireframe(){
+//    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+//}

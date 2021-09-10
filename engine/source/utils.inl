@@ -31,7 +31,7 @@ constexpr float constexpr_sqrt(const float x){
 
 template<typename T>
 constexpr T sign(const T x){
-    return (T)((s32)(0 < x) - (s32)(x < 0));
+    return (T)((s32)(x > T(0)) - (s32)(x < T(0)));
 }
 
 template<typename T>
@@ -56,36 +56,32 @@ constexpr T min_max(const T x, const T min_value, const T max_value){
 
 // ---- constexpr template type indexing
 
-template<typename T, typename ... Types>
-struct Type_Indexer_Recursion_index;
+namespace BEEWAX_INTERNAL{
+    template<typename T, typename ... Types>
+    struct type_index_recursion;
 
-// NOTE(hugo): increment the index for each non-T type in the parameter pack
-template<typename T, typename U, typename ... Types>
-struct Type_Indexer_Recursion_index<T, U, Types...>{
-    static constexpr size_t recursion_index = 1u + Type_Indexer_Recursion_index<T, Types...>::recursion_index;
-};
+    // NOTE(hugo): increment the index for each non-T type in the parameter pack
+    template<typename T, typename U, typename ... Types>
+    struct type_index_recursion<T, U, Types...>{
+        static constexpr size_t recursion_index = 1u + type_index_recursion<T, Types...>::recursion_index;
+    };
 
-// NOTE(hugo): restart the index for each T type in the parameter pack
-template<typename T, typename ... Types>
-struct Type_Indexer_Recursion_index<T, T, Types...>{
-    static constexpr size_t recursion_index = 0u;
-};
+    // NOTE(hugo): restart the index for each T type in the parameter pack
+    template<typename T, typename ... Types>
+    struct type_index_recursion<T, T, Types...>{
+        static constexpr size_t recursion_index = 0u;
+    };
 
-// NOTE(hugo): bottom of recursion
-template<typename T>
-struct Type_Indexer_Recursion_index<T>{
-    static constexpr size_t recursion_index = 0u;
-};
-
-template<typename ... Types>
-template<typename T>
-static constexpr size_t Type_Indexer<Types...>::type_index(){
-    return Type_Indexer_Recursion_index<T, Types...>::recursion_index;
+    // NOTE(hugo): end recursion
+    template<typename T>
+    struct type_index_recursion<T>{
+        static constexpr size_t recursion_index = 0u;
+    };
 }
 
-template<typename ... Types>
-static constexpr size_t Type_Indexer<Types...>::type_count(){
-    return sizeof...(Types);
+template<typename T, typename ... Types>
+constexpr size_t type_index(){
+    return BEEWAX_INTERNAL::type_index_recursion<T, Types...>::recursion_index;
 }
 
 // ---- bitset
@@ -112,4 +108,11 @@ template<typename T>
 T extract_bit(T& bitset, u32 bit_index){
     assert(bit_index < sizeof(T) * 8u);
     return bitset & ((T)1u << bit_index);
+}
+
+// ---- bithacks
+
+template<typename T>
+bool is_pow2(T number){
+    return (number != T(0)) && ((number & (number - T(1))) == 0u);
 }

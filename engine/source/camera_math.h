@@ -15,7 +15,8 @@ mat4 mat3D_from_mat2D(const mat3& mat);
 
 // NOTE(hugo): translates p(x, y) to p'(x + vec.x, y + vec.y)
 mat3 mat_translation2D(vec2 vec);
-mat3 mat_orthographic2D(float screen_width, float screen_height);
+// NOTE(hugo): scales p(x, y) to p'(x * vec.x, y * vec.y)
+mat3 mat_scaling2D(vec2 vec);
 
 // NOTE(hugo): translates p(x, y, z) to p'(x + vec.x, y + vec.y, z + vec.z)
 mat4 mat_translation3D(vec3 vec);

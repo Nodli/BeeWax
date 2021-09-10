@@ -56,7 +56,7 @@ struct vec::vec2{
     // ---- data
 
     union{
-        T data[2] = {};
+        T data[2];
         struct{
             T x;
             T y;
@@ -137,7 +137,7 @@ struct vec::vec3{
     // ---- data
 
     union{
-        T data[3] = {};
+        T data[3];
         struct{
             T x;
             T y;
@@ -225,7 +225,7 @@ struct vec::vec4{
     // ---- data
 
     union{
-        T data[4] = {};
+        T data[4];
         struct{
             T x;
             T y;

@@ -62,6 +62,7 @@ void Audio_Player_SDL::create(){
 
     memset(mixer.buffer, 0x00, sizeof(mixer.buffer));
     memset(mixer.audio_info, 0x00, sizeof(mixer.audio_info));
+    memset(mixer.synth_info, 0x00, sizeof(mixer.synth_info));
 }
 
 void Audio_Player_SDL::destroy(){
@@ -82,7 +83,7 @@ Audio_Channel Audio_Player_SDL::start(const Audio_Asset* asset, Audio_Channel_St
     output.virtual_index = 0u;
 
     for(u32 iinfo = 0u; iinfo != BEEWAX_INTERNAL::audio_info_capacity; ++iinfo){
-        Audio_Info& info = mixer.audio_info[iinfo];
+        Audio_Channel_Data& info = mixer.audio_info[iinfo];
 
         if(atomic_get(&info.state) == Audio_Channel_State::FREE){
             info.asset = asset;
@@ -110,12 +111,49 @@ void Audio_Player_SDL::stop(const Audio_Channel& channel){
     }
 }
 
+Synth_Channel Audio_Player_SDL::start(void* data, Synth_Process process){
+    Synth_Channel output;
+    output.virtual_index = 0u;
+
+    for(u32 isynth = 0u; isynth != BEEWAX_INTERNAL::synth_info_capacity; ++isynth){
+        Synth_Channel_Data& info = mixer.synth_info[isynth];
+
+        if(atomic_get(&info.state) == Synth_Channel_State::FREE){
+            info.data = data;
+            info.process = process;
+
+            atomic_set(&info.state, Synth_Channel_State::ACTIVE);
+
+            output.virtual_index = Audio_Player_SDL_virtualize_index(isynth);
+            break;
+        }
+    }
+
+    return output;
+}
+
+void Audio_Player_SDL::stop(const Synth_Channel& channel){
+    u32 index = Audio_Player_SDL_devirtualize_index(channel.virtual_index);
+
+    if(channel.virtual_index
+    && index < BEEWAX_INTERNAL::synth_info_capacity
+    && atomic_get(&(mixer.synth_info[index].state)) == Synth_Channel_State::ACTIVE){
+
+        atomic_set(&(mixer.synth_info[index].state), Synth_Channel_State::ACTIVE);
+    }
+}
+
 void Audio_Player_SDL::pause(){
     SDL_PauseAudioDevice(device, 1);
 }
 
 void Audio_Player_SDL::resume(){
     SDL_PauseAudioDevice(device, 0);
+}
+
+void Audio_Player_SDL::ensure_modifications_visibility(){
+    SDL_LockAudioDevice(device);
+    SDL_UnlockAudioDevice(device);
 }
 
 namespace BEEWAX_INTERNAL{
@@ -129,9 +167,9 @@ namespace BEEWAX_INTERNAL{
         // NOTE(hugo): reset mixer buffer
         memset(mixer->buffer, 0x00, BEEWAX_INTERNAL::audio_device_buffer_in_samples * sizeof(float));
 
-        // NOTE(hugo): update & mix into buffer
+        // NOTE(hugo): channel mixing
         for(u32 iinfo = 0u; iinfo != BEEWAX_INTERNAL::audio_info_capacity; ++iinfo){
-            Audio_Player_SDL::Audio_Info& info = mixer->audio_info[iinfo];
+            Audio_Player_SDL::Audio_Channel_Data& info = mixer->audio_info[iinfo];
             Audio_Channel_State audio_state = atomic_get(&info.state);
 
             if(audio_state == Audio_Channel_State::LOOP && info.asset->nsamples > 0u){
@@ -163,15 +201,26 @@ namespace BEEWAX_INTERNAL{
                 if(asset_cursor == info.asset->nsamples){
                     audio_state = Audio_Channel_State::STOP;
                 }
-
             }
 
             if(audio_state == Audio_Channel_State::STOP){
-                info.asset = nullptr;
-                info.cursor = 0u;
                 ++info.generation;
 
                 atomic_set(&info.state, Audio_Channel_State::FREE);
+            }
+        }
+
+        // NOTE(hugo): synth processing
+        for(u32 isynth = 0u; isynth != BEEWAX_INTERNAL::synth_info_capacity; ++isynth){
+            Audio_Player_SDL::Synth_Channel_Data& info = mixer->synth_info[isynth];
+            Synth_Channel_State synth_state = atomic_get(&info.state);
+
+            if(synth_state == Synth_Channel_State::DEACTIVATED){
+                atomic_set(&info.state, Synth_Channel_State::FREE);
+            }
+
+            if(synth_state == Synth_Channel_State::ACTIVE){
+                info.process(info.data, mixer->buffer, BEEWAX_INTERNAL::audio_device_buffer_in_samples);
             }
         }
 

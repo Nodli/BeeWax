@@ -18,6 +18,7 @@
         void* memtracker_calloc(size_t count, size_t bytesize, const char* filename, const char* function, const u32 line);
         void* memtracker_realloc(void* ptr, size_t bytesize, const char* filename, const char* function, const u32 line);
         void memtracker_free(void* ptr);
+
         void memtracker_summary();
         void memtracker_leakcheck();
     }
@@ -33,5 +34,16 @@
     #define DEV_Memtracker_Leakcheck()
 
 #endif
+
+
+namespace BEEWAX_INTERNAL{
+    template<typename T>
+    void memtracker_destructor(T* ptr){
+        (*ptr).~T();
+    }
+}
+
+#define bw_new(typename, ...)       [](){ return new ( bw_malloc(sizeof( typename )) ) typename( __VA_ARGS__ ); }()
+#define bw_delete(ptr)              do{ BEEWAX_INTERNAL::memtracker_destructor(ptr); bw_free(ptr); } while(false)
 
 #endif

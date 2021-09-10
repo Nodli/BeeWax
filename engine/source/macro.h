@@ -85,6 +85,14 @@
         return ptrA > ptrB ? ptrA : ptrB;                                       \
     }()
 
+    #define DECLARE_EQUALITY_OPERATOR(TYPE)                 \
+    bool operator==(const TYPE & lhs, const TYPE & rhs);    \
+    bool operator!=(const TYPE & lhs, const TYPE & rhs);
+
+    #define DEFINE_EQUALITY_OPERATOR(TYPE)                                                                              \
+    bool operator==(const TYPE & lhs, const TYPE & rhs){return memcmp((void*)&lhs, (void*)&rhs, sizeof( TYPE )) == 0;}  \
+    bool operator!=(const TYPE & lhs, const TYPE & rhs){return !(lhs == rhs);}
+
     #include "defer_macro.h"
 
 #endif

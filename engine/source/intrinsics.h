@@ -7,7 +7,7 @@
 //             memory order release = memory read / write before the instruction are kept before
 // NOTE(hugo): those have acquire & release memory barriers
 template<typename T>
-inline T atomic_compare_exchange(volatile T* atomic, T new_value, T previous_value, bool can_fail_exchange = false);
+inline T atomic_compare_exchange(volatile T* atomic, T new_value, T previous_value);
 template<typename T>
 inline T atomic_exchange(volatile T* atomic, T new_value);
 template<typename T>
@@ -35,6 +35,8 @@ u32 bitscan_LM(u32 value);
 u32 bitscan_ML(u32 value);
 u32 bitscan_LM(u64 value);
 u32 bitscan_ML(u64 value);
+
+// ----
 
 // ---- cpu capabilities
 

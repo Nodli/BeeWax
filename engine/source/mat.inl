@@ -795,7 +795,7 @@ vec::vec4<T> operator*(const mat::mat4<T>& mat, const vec::vec4<T>& vec){
 // ---- additional matrix math
 
 template<typename T>
-mat::mat3<T> mat3_from_orthonormal_basis(const vec::vec3<T> right, const vec::vec3<T> up, const vec::vec3<T> forward){
+mat::mat3<T> mat3_from_ortho_basis_3D(const vec::vec3<T> right, const vec::vec3<T> up, const vec::vec3<T> forward){
     return {
         right.x, right.y, right.z,
         up.x, up.y, up.z,
@@ -804,7 +804,7 @@ mat::mat3<T> mat3_from_orthonormal_basis(const vec::vec3<T> right, const vec::ve
 }
 
 template<typename T>
-mat::mat4<T> mat4_from_orthonormal_basis(const vec::vec3<T> right, const vec::vec3<T> up, const vec::vec3<T> forward){
+mat::mat4<T> mat4_from_ortho_basis_3D(const vec::vec3<T> right, const vec::vec3<T> up, const vec::vec3<T> forward){
     return {
         right.x, right.y, right.z, (T)(0),
         up.x, up.y, up.z, (T)(0),

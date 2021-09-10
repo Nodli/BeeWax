@@ -1,10 +1,5 @@
 // ---- bithacks
 
-template<typename T>
-bool is_pow2(T number){
-    return (number != T(0)) && ((number & (number - T(1))) == 0u);
-}
-
 u32 round_up_pow2(u32 number){
     --number;
     number |= number >> 1u;

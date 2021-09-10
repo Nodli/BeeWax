@@ -20,7 +20,6 @@ int main(int argc, char* argv[]){
     configuration.window_width = 800u;
     configuration.window_height = 600u;
     configuration.render_target_samples = 1u;
-    configuration.asset_catalog_path = "";
     Engine engine;
 
     printf("-- starting\n");

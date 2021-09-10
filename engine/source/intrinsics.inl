@@ -1,7 +1,7 @@
 // ---- atomic operations
 
 template<typename T>
-inline T atomic_compare_exchange(volatile T* atomic, T new_value, T previous_value, bool can_fail_exchange){
+inline T atomic_compare_exchange(volatile T* atomic, T new_value, T previous_value){
     static_assert((sizeof(T) == 1u || sizeof(T) == 2u || sizeof(T) == 4u || sizeof(T) == 8u),
             "atomic_compare_exchange is not implemented for this type");
 
@@ -17,7 +17,7 @@ inline T atomic_compare_exchange(volatile T* atomic, T new_value, T previous_val
 #elif defined(COMPILER_GCC)
     static_assert(__atomic_always_lock_free(sizeof(T), NULL));
     T output;
-    __atomic_compare_exchange(atomic, &new_value, &output, can_fail_exchange, __ATOMIC_ACQ_REL, __ATOMIC_ACQ_REL);
+    __atomic_compare_exchange(atomic, &new_value, &output, false, __ATOMIC_ACQ_REL, __ATOMIC_ACQ_REL);
     return output;
 #else
     static_assert(false, "atomic_compare_exchange not implemented");

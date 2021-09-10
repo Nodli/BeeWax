@@ -72,12 +72,12 @@ namespace BEEWAX_INTERNAL{
 
         for(u32 ientry = 0u; ientry != DEV_timing_entries.size; ++ientry){
             DEV_Timing_Entry& entry = DEV_timing_entries[ientry];
-            LOG_RAW("DEV_Timing_Entry [%d]: %s HITS(%d) CYCLES(%d) AVG(%d)",
+            LOG_RAW("DEV_Timing_Entry [%d]: %s count: %d cycles: %dK avg: %dK",
                     ientry,
                     entry.function,
                     entry.hit_count,
-                    entry.cycle_counter,
-                    entry.cycle_counter / entry.hit_count);
+                    entry.cycle_counter / 1000u,
+                    entry.cycle_counter / (entry.hit_count * 1000u));
         }
     }
 }
@@ -135,13 +135,13 @@ namespace BEEWAX_INTERNAL{
         }
         DEV_tweakables_malloc.clear();
 
-        hashmap<File_Path, array<u8>> path_to_content;
+        hashmap<File_Path, File_Data> path_to_content;
         for(u32 ientry = 0u; ientry != DEV_tweakable_entries.size; ++ientry){
             DEV_Tweakable_Entry& entry = DEV_tweakable_entries[ientry];
 
             // NOTE(hugo): register the file in the hashmap and read it to memory when necessary
             bool file_not_loaded;
-            array<u8>* file_content;
+            File_Data* file_content;
             path_to_content.get(entry.file, file_content);
             if(file_content){
                 *file_content = read_file(entry.file, "r");
@@ -372,9 +372,9 @@ void DEV_destroy(){
     BEEWAX_INTERNAL::DEV_tweakables_malloc.destroy();
 }
 
-void DEV_ImGui(u32 window_width, u32 window_height){
+void DEV_ImGui(){
     BEEWAX_INTERNAL::DEV_timing_ImGui();
-    BEEWAX_INTERNAL::DEV_tweakable_ImGui(window_width, window_height);
+    BEEWAX_INTERNAL::DEV_tweakable_ImGui(1000u, 1000u);
 }
 
 #endif
